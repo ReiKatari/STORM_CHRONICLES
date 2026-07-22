@@ -53,6 +53,56 @@ export interface Item {
   affixes: ItemAffix[];
   sellPrice: number;
   score: number; // item power score
+  setId?: string; // Set Item identifier
+}
+
+export interface SetBonus {
+  reqPieces: number;
+  desc: string;
+  dmgBonus?: number;
+  armorBonus?: number;
+  hpBonus?: number;
+  critBonus?: number;
+  xpBonus?: number;
+  goldBonus?: number;
+}
+
+export interface SetDef {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  pieces: string[]; // piece names
+  bonuses: SetBonus[];
+}
+
+export interface WorldEventChoice {
+  id: string;
+  text: string;
+  costHpPct?: number;
+  costGold?: number;
+  rewardText: string;
+  effect: 'buff_dmg' | 'buff_gold' | 'buff_xp' | 'heal' | 'item' | 'gold';
+  effectValue: number;
+}
+
+export interface WorldEvent {
+  id: string;
+  title: string;
+  icon: string;
+  desc: string;
+  choices: WorldEventChoice[];
+  expiresAt: number;
+}
+
+export interface ActiveBuff {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  stat: 'dmg' | 'gold' | 'xp' | 'armor' | 'hp';
+  value: number; // percentage or flat
+  expiresAt: number;
 }
 
 // ===================== MONSTERS / ZONES =====================
@@ -72,31 +122,51 @@ export interface MonsterDef {
   color: string;
 }
 
+export interface ActiveMonster {
+  def: MonsterDef;
+  hp: number;
+  maxHp: number;
+  level: number;
+  dmg: number;
+  xp: number;
+  gold: number;
+  attackTimer: number;
+  dotTimer: number;
+  dots: { id: string; dmg: number; leftSec: number; intervalSec: number; elapsed: number }[];
+}
+
+export interface ZoneTheme {
+  skyTop: string;
+  skyBottom: string;
+  ground: string;
+  groundDark: string;
+  tiles: string[];
+  particles: string;
+  fog: string;
+}
+
 export interface ZoneDef {
   id: string;
   name: string;
   icon: string;
-  minLevel: number;      // player level to enter
-  stages: number;        // stages (stage N/2 miniboss, stage N boss)
+  minLevel: number;
+  stages: number;
   killsPerStage: number;
   monsterFamilies: string[];
-  // visual theme — tiles change per zone
-  theme: {
-    skyTop: string;
-    skyBottom: string;
-    ground: string;
-    groundDark: string;
-    tiles: string[];     // decorative ground tiles (emoji)
-    particles: string;   // ambient particle color
-    fog: string;
-  };
-  hidden?: boolean;
-  unlockHint?: string;
+  theme: ZoneTheme;
   bossName: string;
   bossIcon: string;
   miniBossName: string;
   miniBossIcon: string;
   desc: string;
+  hidden?: boolean;
+}
+
+export interface DungeonRun {
+  dungeonId: string;
+  wave: number;       // current wave
+  totalTimeSec: number;
+  timeLeftSec: number;
 }
 
 export interface DungeonDef {
@@ -120,51 +190,43 @@ export interface SkillDef {
   id: string;
   name: string;
   icon: string;
-  desc: string;
   unlockLevel: number;
   maxRank: number;
   manaCost: number;
-  cooldown: number;   // seconds
-  kind: 'damage' | 'heal' | 'buff' | 'dot';
-  basePower: number;  // % of main dmg or flat for heal
-  scaling: 'str' | 'int' | 'wil' | 'wis';
+  cooldown: number;
+  desc: string;
   color: string;
-  fx: 'slash' | 'fire' | 'ice' | 'lightning' | 'heal' | 'poison' | 'meteor' | 'shield' | 'blood' | 'summon';
 }
 
 export interface TalentDef {
   id: string;
-  branch: 'warrior' | 'mage' | 'wanderer';
   name: string;
   icon: string;
-  desc: string;
+  branch: 'warrior' | 'mage' | 'wanderer';
+  row: number;         // 0..4
   maxRank: number;
-  row: number;         // 0..4, requires row*2 points in branch
+  desc: string;
   per: (rank: number) => string;
 }
 
-// ===================== QUESTS =====================
+export interface BranchDef {
+  id: 'warrior' | 'mage' | 'wanderer';
+  name: string;
+  icon: string;
+  color: string;
+}
 
-export type QuestKind =
-  | 'kill'        // kill X of family (any zone)
-  | 'killAny'     // kill X any monsters
-  | 'boss'        // kill X bosses
-  | 'level'       // reach level X
-  | 'dungeon'     // clear X dungeons
-  | 'loot'        // loot X items of rarity+
-  | 'gold'        // earn X gold total
-  | 'secret';     // discover secret zone
+// ===================== QUESTS =====================
 
 export interface QuestDef {
   id: string;
   name: string;
   desc: string;
-  kind: QuestKind;
-  target: string;      // family id / rarity id / zone id / ''
+  type: 'kills' | 'bosses' | 'level' | 'gold' | 'dungeons' | 'stage';
   count: number;
   reward: {
-    gold: number;
-    xp: number;
+    gold?: number;
+    xp?: number;
     statPoints?: number;
     talentPoints?: number;
     skillPoints?: number;
@@ -173,40 +235,47 @@ export interface QuestDef {
 }
 
 export interface QuestState {
-  id: string;
   progress: number;
-  done: boolean;      // ready to claim
+  done: boolean;
   claimed: boolean;
 }
 
-// ===================== SAVE STATE =====================
+// ===================== DERIVED STATS =====================
 
-export interface ActiveMonster {
-  def: MonsterDef;
-  hp: number;
+export interface DerivedStats {
   maxHp: number;
-  level: number;
-  dmg: number;
-  xp: number;
-  gold: number;
-  attackTimer: number;
-  dotTimer: number;
-  dots: { dmg: number; ticks: number }[];
+  maxMana: number;
+  playerAtk: number;
+  playerDmgMin: number;
+  playerDmgMax: number;
+  armor: number;
+  critChance: number;
+  critMult: number;
+  dodgeChance: number;
+  regen: number;
+  manaRegen: number;
+  goldBonusPct: number;
+  xpBonusPct: number;
+  dropRatePct: number;
+  lifestealPct: number;
+  skillPower: number;
+  attackSpeed: number;
 }
 
-export interface DungeonRun {
-  dungeonId: string;
-  wave: number;
-  active: boolean;
-}
+// ===================== LOG & FX =====================
+
+export type FxType =
+  | 'playerHit' | 'crit' | 'monsterHit' | 'dodge'
+  | 'heal' | 'skill' | 'death' | 'levelup'
+  | 'loot' | 'bossSpawn' | 'quest';
 
 export interface FxEvent {
   id: number;
-  type: 'playerHit' | 'monsterHit' | 'crit' | 'skill' | 'death' | 'levelup' | 'loot' | 'heal' | 'dodge' | 'bossSpawn' | 'quest';
+  type: FxType;
+  value?: number;
   text?: string;
   color?: string;
   skillFx?: string;
-  value?: number;
 }
 
 export interface LogEntry {

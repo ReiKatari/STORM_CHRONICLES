@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Item } from '@/game/types';
-import { AFFIX_LABELS, getItemLore, rarityById } from '@/game/items';
+import { AFFIX_LABELS, getItemLore, rarityById, getSetById } from '@/game/items';
 
 export function ItemCard({ item, equippedItem, compact }: { item: Item; equippedItem?: Item | null; compact?: boolean }) {
   const r = rarityById(item.rarity);
   const eqRarity = equippedItem ? rarityById(equippedItem.rarity) : null;
   const lore = getItemLore(item);
+  const setDef = item.setId ? getSetById(item.setId) : null;
 
   // Stat comparisons
   const calcStat = (it: Item, statName: 'dmg' | 'armor' | 'hp') => {
@@ -92,6 +93,23 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
         {!compact && <div className="text-amber-300/80 pt-1 text-[10px]">💰 Продажа: {item.sellPrice} gold</div>}
       </div>
 
+      {/* Set Item Info */}
+      {!compact && setDef && (
+        <div className="mt-2 p-2 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-[10px] space-y-1">
+          <div className="font-extrabold flex items-center gap-1" style={{ color: setDef.color }}>
+            <span>{setDef.icon}</span>
+            <span>{setDef.name}</span>
+          </div>
+          <div className="text-[9px] text-slate-300 space-y-0.5">
+            {setDef.bonuses.map((b, i) => (
+              <div key={i} className="text-emerald-300">
+                • ({b.reqPieces} предм.): {b.desc}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Item Lore Story */}
       {!compact && (
         <div className="mt-2 p-2 rounded-lg bg-slate-950/70 border border-slate-800/80 text-[10px] italic text-slate-300 leading-relaxed shadow-inner">
@@ -155,7 +173,7 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
             </div>
           ) : (
             <div className="text-emerald-400 font-semibold text-center">
-              ✨ Слот свободен (предмет улучшит мошь)
+              ✨ Слот свободен (предмет улучшит мощь)
             </div>
           )}
         </div>
@@ -165,7 +183,7 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
 }
 
 /**
- * SmartItemTooltip: Clamps item card positioning strictly inside the visible viewport (left, right, top, bottom).
+ * SmartItemTooltip: Clamps item card positioning strictly within the #app-root container bounds.
  */
 export function SmartItemTooltip({
   item,
@@ -190,34 +208,39 @@ export function SmartItemTooltip({
       const el = containerRef.current;
       const cardW = el ? el.offsetWidth : 260;
       const cardH = el ? el.offsetHeight : 340;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
+
+      // Find the main app root container to constrain coordinates
+      const appEl = document.getElementById('app-root') || document.body;
+      const appRect = appEl.getBoundingClientRect();
+
+      const appLeft = appRect.left + 10;
+      const appRight = appRect.right - 10;
+      const appTop = appRect.top + 10;
+      const appBottom = appRect.bottom - 10;
 
       // Try placing to the left of anchor
       let x = anchorRect.left - cardW - 12;
-      // If going offscreen to the left, flip to the right of anchor
-      if (x < 10) {
+      // If going off container edge to the left, flip to the right of anchor
+      if (x < appLeft) {
         x = anchorRect.right + 12;
       }
-      // If going offscreen to the right, clamp to viewport edge
-      if (x + cardW > vw - 10) {
-        x = vw - cardW - 10;
+      // If going off container edge to the right, clamp to container right edge
+      if (x + cardW > appRight) {
+        x = appRight - cardW;
       }
-      x = Math.max(10, x);
+      x = Math.max(appLeft, x);
 
-      // Try top alignment with anchor
+      // Vertical placement aligned with top of target
       let y = anchorRect.top;
-      // If going offscreen at the bottom, clamp up
-      if (y + cardH > vh - 10) {
-        y = vh - cardH - 10;
+      if (y + cardH > appBottom) {
+        y = appBottom - cardH;
       }
-      y = Math.max(10, y);
+      y = Math.max(appTop, y);
 
       setPos({ x, y });
     };
 
     computePos();
-    // Recompute after render when element bounds are updated
     const t = setTimeout(computePos, 10);
     return () => clearTimeout(t);
   }, [anchorRect, item]);

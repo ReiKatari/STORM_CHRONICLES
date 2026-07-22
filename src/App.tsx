@@ -11,6 +11,7 @@ import SkillsPanel from '@/components/game/SkillsPanel';
 import TalentsPanel from '@/components/game/TalentsPanel';
 import QuestsPanel from '@/components/game/QuestsPanel';
 import WorldPanel from '@/components/game/WorldPanel';
+import EventsPanel from '@/components/game/EventsPanel';
 
 type Tab = 'inventory' | 'skills' | 'talents' | 'quests' | 'world';
 const TABS: { id: Tab; name: string; icon: string }[] = [
@@ -31,7 +32,7 @@ function Header() {
   const xpPct = Math.min(100, (xp / xpForLevel(level)) * 100);
 
   return (
-    <header className="bg-slate-900/95 border-b border-slate-700/60 px-4 py-2 flex items-center gap-3 flex-wrap backdrop-blur-md sticky top-0 z-40 shadow-lg">
+    <header className="bg-slate-900/95 border-b border-slate-700/60 px-4 py-2 flex items-center gap-3 flex-wrap backdrop-blur-md sticky top-0 z-40 shadow-lg shrink-0">
       <div className="flex items-center gap-2">
         <span className="text-xl">⚔️</span>
         <h1 className="font-black text-sm leading-none bg-gradient-to-r from-amber-300 via-orange-400 to-red-400 bg-clip-text text-transparent tracking-wide">
@@ -168,39 +169,44 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col" style={{ backgroundImage: 'radial-gradient(ellipse at 20% 0%, rgba(76,29,149,0.2), transparent 50%), radial-gradient(ellipse at 80% 100%, rgba(154,52,18,0.12), transparent 50%)' }}>
-      <Header />
-      <main className="p-2.5 grid gap-2.5 xl:grid-cols-[300px_1fr_370px] lg:grid-cols-[280px_1fr] flex-1 min-h-0 items-start">
-        {/* LEFT COLUMN */}
-        <div className="space-y-2.5 order-2 lg:order-1">
-          <StatsPanel />
-          <EquipmentPanel onSelectSlot={handleSelectEquipmentSlot} />
-        </div>
-
-        {/* CENTER */}
-        <div className="space-y-2.5 order-1 lg:order-2">
-          <StageBar />
-          <div className="rounded-xl border border-slate-700/60 overflow-hidden shadow-2xl bg-slate-900" style={{ height: 350 }}>
-            <CombatCanvas />
+      <div id="app-root" className="w-full max-w-[1600px] mx-auto min-h-screen relative flex flex-col">
+        <Header />
+        <main className="p-2.5 grid gap-2.5 xl:grid-cols-[300px_1fr_370px] lg:grid-cols-[280px_1fr] flex-1 min-h-0 items-start">
+          {/* LEFT COLUMN */}
+          <div className="space-y-2.5 order-2 lg:order-1">
+            <StatsPanel />
+            <EquipmentPanel onSelectSlot={handleSelectEquipmentSlot} />
           </div>
-          <SkillBar />
-          <BattleLog />
-          {/* mobile right panel */}
-          <div className="xl:hidden h-[450px] flex flex-col">
+
+          {/* CENTER */}
+          <div className="space-y-2.5 order-1 lg:order-2">
+            <StageBar />
+            <div className="rounded-xl border border-slate-700/60 overflow-hidden shadow-2xl bg-slate-900" style={{ height: 350 }}>
+              <CombatCanvas />
+            </div>
+            <SkillBar />
+            <BattleLog />
+            {/* Interactive World Events Panel in empty space under battle log */}
+            <EventsPanel />
+
+            {/* mobile right panel */}
+            <div className="xl:hidden h-[450px] flex flex-col">
+              <TabButtons tab={tab} setTab={setTab} />
+              <div className="flex-1 min-h-0 mt-2">
+                <TabContent tab={tab} />
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN (Full height of window flex container) */}
+          <div className="hidden xl:flex flex-col h-[calc(100vh-75px)] space-y-2 order-3 min-h-0 sticky top-[65px]">
             <TabButtons tab={tab} setTab={setTab} />
-            <div className="flex-1 min-h-0 mt-2">
+            <div className="flex-1 min-h-0">
               <TabContent tab={tab} />
             </div>
           </div>
-        </div>
-
-        {/* RIGHT COLUMN (Full height of window flex container) */}
-        <div className="hidden xl:flex flex-col h-[calc(100vh-75px)] space-y-2 order-3 min-h-0 sticky top-[65px]">
-          <TabButtons tab={tab} setTab={setTab} />
-          <div className="flex-1 min-h-0">
-            <TabContent tab={tab} />
-          </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
