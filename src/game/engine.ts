@@ -21,31 +21,36 @@ export function computeDerived(
   equipment: Partial<Record<SlotId, Item>>,
   talents: Record<string, number>,
 ): DerivedStats {
-  // aggregate item bonuses
   let iDmg = 0, iArmor = 0, iHp = 0;
   const iStats: Partial<Record<StatId, number>> = {};
   let iCrit = 0, iSpeed = 0, iGold = 0, iXp = 0;
   
-  // set bonuses accumulation
   const setPieceCounts: Record<string, number> = {};
 
-  Object.values(equipment).forEach(it => {
-    if (!it) return;
-    if (it.setId) setPieceCounts[it.setId] = (setPieceCounts[it.setId] ?? 0) + 1;
-    iDmg += it.base.dmg ?? 0;
-    iArmor += it.base.armor ?? 0;
-    iHp += it.base.hp ?? 0;
-    it.affixes.forEach(a => {
-      if (a.stat === 'dmg') iDmg += a.value;
-      else if (a.stat === 'armor') iArmor += a.value;
-      else if (a.stat === 'hp') iHp += a.value;
-      else if (a.stat === 'crit') iCrit += a.value;
-      else if (a.stat === 'speed') iSpeed += a.value;
-      else if (a.stat === 'gold') iGold += a.value;
-      else if (a.stat === 'xp') iXp += a.value;
-      else iStats[a.stat] = (iStats[a.stat] ?? 0) + a.value;
+  if (equipment && typeof equipment === 'object') {
+    Object.values(equipment).forEach(it => {
+      if (!it) return;
+      if (it.setId) setPieceCounts[it.setId] = (setPieceCounts[it.setId] ?? 0) + 1;
+      if (it.base) {
+        iDmg += it.base.dmg ?? 0;
+        iArmor += it.base.armor ?? 0;
+        iHp += it.base.hp ?? 0;
+      }
+      if (Array.isArray(it.affixes)) {
+        it.affixes.forEach(a => {
+          if (!a) return;
+          if (a.stat === 'dmg') iDmg += a.value ?? 0;
+          else if (a.stat === 'armor') iArmor += a.value ?? 0;
+          else if (a.stat === 'hp') iHp += a.value ?? 0;
+          else if (a.stat === 'crit') iCrit += a.value ?? 0;
+          else if (a.stat === 'speed') iSpeed += a.value ?? 0;
+          else if (a.stat === 'gold') iGold += a.value ?? 0;
+          else if (a.stat === 'xp') iXp += a.value ?? 0;
+          else if (a.stat) iStats[a.stat] = (iStats[a.stat] ?? 0) + (a.value ?? 0);
+        });
+      }
     });
-  });
+  }
 
   let setDmgPct = 0;
   let setArmorPct = 0;
@@ -69,24 +74,27 @@ export function computeDerived(
     });
   });
 
-  const S = (id: StatId) => stats[id] + (iStats[id] ?? 0) + (talents['w_juggernaut'] ?? 0) * 5;
-  const str = S('str'), agi = S('agi'), vit = S('vit'), int = S('int'), end = S('end');
-  const luk = S('luk') + (talents['t_luck'] ?? 0) * 3, wis = S('wis') + (talents['m_archon'] ?? 0) * 5;
-  const per = S('per'), cha = S('cha'), wil = S('wil');
-  const intTotal = int + (talents['m_archon'] ?? 0) * 5;
+  const safeStats = stats || { str: 5, agi: 5, vit: 5, int: 5, end: 5, luk: 5, wis: 5, per: 5, cha: 5, wil: 5 };
+  const safeTalents = talents || {};
 
-  const t = (id: string) => talents[id] ?? 0;
+  const S = (id: StatId) => (safeStats[id] ?? 5) + (iStats[id] ?? 0) + (safeTalents['w_juggernaut'] ?? 0) * 5;
+  const str = S('str'), agi = S('agi'), vit = S('vit'), int = S('int'), end = S('end');
+  const luk = S('luk') + (safeTalents['t_luck'] ?? 0) * 3, wis = S('wis') + (safeTalents['m_archon'] ?? 0) * 5;
+  const per = S('per'), cha = S('cha'), wil = S('wil');
+  const intTotal = int + (safeTalents['m_archon'] ?? 0) * 5;
+
+  const t = (id: string) => safeTalents[id] ?? 0;
 
   const hpMult = 1 + t('w_hp') * 0.08 - t('m_glass') * 0.03 + setHpPct / 100;
   const dmgMult = 1 + t('w_dmg') * 0.06 + t('m_glass') * 0.10 + setDmgPct / 100;
-  const baseDmg = 8 + level * 1.6 + str * 2 + iDmg;
+  const baseDmg = 8 + (level || 1) * 1.6 + str * 2 + iDmg;
 
   return {
-    maxHp: Math.floor((115 + level * 10 + vit * 12 + iHp) * hpMult),
-    maxMana: Math.floor((50 + level * 4 + wis * 8) * (1 + t('m_mana') * 0.10)),
+    maxHp: Math.floor((115 + (level || 1) * 10 + vit * 12 + iHp) * hpMult),
+    maxMana: Math.floor((50 + (level || 1) * 4 + wis * 8) * (1 + t('m_mana') * 0.10)),
     dmgMin: Math.floor(baseDmg * 0.85 * dmgMult),
     dmgMax: Math.floor(baseDmg * 1.15 * dmgMult),
-    skillPower: Math.floor((4 + level + intTotal * 2) * (1 + t('m_int') * 0.06 + wil * 0.01)),
+    skillPower: Math.floor((4 + (level || 1) + intTotal * 2) * (1 + t('m_int') * 0.06 + wil * 0.01)),
     armor: Math.floor((end * 1.5 + iArmor) * (1 + t('w_armor') * 0.10 + setArmorPct / 100)),
     critChance: Math.min(75, 5 + luk * 0.15 + per * 0.12 + iCrit + t('w_crit') * 2 + setCritPct),
     critMult: 1.8 + per * 0.004,
@@ -103,7 +111,6 @@ export function computeDerived(
   };
 }
 
-// ===================== MONSTER SCALING =====================
 export function monsterStats(level: number, hpMult: number, dmgMult: number) {
   const hp = Math.floor((45 + Math.pow(level, 1.72) * 9) * hpMult);
   const dmg = Math.floor((4 + Math.pow(level, 1.45) * 1.6) * dmgMult);
@@ -117,7 +124,6 @@ export function monsterReward(level: number, xpMult: number, goldMult: number) {
   };
 }
 
-// damage mitigation from armor
 export function mitigate(raw: number, armor: number): number {
   const red = armor / (armor + 80 + raw * 0.15);
   return Math.max(1, Math.round(raw * (1 - red)));
