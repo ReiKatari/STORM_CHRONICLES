@@ -3,14 +3,21 @@ import type { Item } from '@/game/types';
 import { AFFIX_LABELS, getItemLore, rarityById, getSetById } from '@/game/items';
 
 export function ItemCard({ item, equippedItem, compact }: { item: Item; equippedItem?: Item | null; compact?: boolean }) {
-  const r = rarityById(item.rarity);
-  const eqRarity = equippedItem ? rarityById(equippedItem.rarity) : null;
+  if (!item) return null;
+
+  const r = rarityById(item.rarity || 'common');
+  const eqRarity = equippedItem ? rarityById(equippedItem.rarity || 'common') : null;
   const lore = getItemLore(item);
   const setDef = item.setId ? getSetById(item.setId) : null;
 
-  // Stat comparisons
+  // Safe Stat comparisons
   const calcStat = (it: Item, statName: 'dmg' | 'armor' | 'hp') => {
-    return (it.base[statName] ?? 0) + it.affixes.filter(a => a.stat === statName).reduce((s, a) => s + a.value, 0);
+    if (!it) return 0;
+    const baseVal = it.base ? (it.base[statName] ?? 0) : 0;
+    const affixesVal = Array.isArray(it.affixes)
+      ? it.affixes.filter(a => a && a.stat === statName).reduce((s, a) => s + (a.value ?? 0), 0)
+      : 0;
+    return baseVal + affixesVal;
   };
 
   const itemDmg = calcStat(item, 'dmg');
@@ -25,7 +32,7 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
   const eqHp = equippedItem ? calcStat(equippedItem, 'hp') : 0;
   const hpDiff = itemHp - eqHp;
 
-  const scoreDiff = equippedItem ? item.score - equippedItem.score : item.score;
+  const scoreDiff = equippedItem ? (item.score || 0) - (equippedItem.score || 0) : (item.score || 0);
 
   return (
     <div
@@ -38,37 +45,37 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
           className="w-10 h-10 rounded-lg border flex items-center justify-center text-xl shrink-0 bg-slate-800"
           style={{ borderColor: r.color }}
         >
-          {item.icon}
+          {item.icon || '📦'}
         </div>
         <div className="min-w-0 flex-1">
           <div className="font-extrabold leading-tight truncate text-sm" style={{ color: r.color }}>
-            {item.name}
+            {item.name || 'Безымянный предмет'}
           </div>
           <div className="text-slate-400 text-[10px] flex items-center gap-1.5 mt-0.5">
             <span>{r.name}</span>
             <span>·</span>
-            <span>{item.ilvl} ур.</span>
+            <span>{item.ilvl || 1} ур.</span>
             <span>·</span>
-            <span className="text-amber-300 font-bold">⚡{item.score}</span>
+            <span className="text-amber-300 font-bold">⚡{item.score || 0}</span>
           </div>
         </div>
       </div>
 
       {/* Base Stats */}
       <div className="space-y-1 text-slate-300 text-[11px]">
-        {item.base.dmg ? (
+        {item.base && item.base.dmg ? (
           <div className="flex justify-between items-center">
             <span>⚔️ Урон:</span>
             <b className="text-white">+{item.base.dmg}</b>
           </div>
         ) : null}
-        {item.base.armor ? (
+        {item.base && item.base.armor ? (
           <div className="flex justify-between items-center">
             <span>🛡️ Броня:</span>
             <b className="text-white">+{item.base.armor}</b>
           </div>
         ) : null}
-        {item.base.hp ? (
+        {item.base && item.base.hp ? (
           <div className="flex justify-between items-center">
             <span>❤️ Здоровье:</span>
             <b className="text-white">+{item.base.hp}</b>
@@ -76,10 +83,12 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
         ) : null}
 
         {/* Affixes */}
-        {!compact && item.affixes.length > 0 && (
+        {!compact && Array.isArray(item.affixes) && item.affixes.length > 0 && (
           <div className="pt-1 border-t border-slate-800/60 space-y-0.5">
             {item.affixes.map((a, i) => {
+              if (!a) return null;
               const l = AFFIX_LABELS[a.stat];
+              if (!l) return null;
               return (
                 <div key={i} className="text-emerald-300 flex justify-between items-center text-[10px]">
                   <span>{l.icon} {l.name}:</span>
@@ -90,7 +99,7 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
           </div>
         )}
 
-        {!compact && <div className="text-amber-300/80 pt-1 text-[10px]">💰 Продажа: {item.sellPrice} gold</div>}
+        {!compact && <div className="text-amber-300/80 pt-1 text-[10px]">💰 Продажа: {item.sellPrice || 10} gold</div>}
       </div>
 
       {/* Set Item Info */}
@@ -202,14 +211,13 @@ export function SmartItemTooltip({
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: -9999, y: -9999 });
 
   useEffect(() => {
-    if (!anchorRect) return;
+    if (!anchorRect || !item) return;
 
     const computePos = () => {
       const el = containerRef.current;
       const cardW = el ? el.offsetWidth : 260;
       const cardH = el ? el.offsetHeight : 340;
 
-      // Find the main app root container to constrain coordinates
       const appEl = document.getElementById('app-root') || document.body;
       const appRect = appEl.getBoundingClientRect();
 
@@ -218,19 +226,15 @@ export function SmartItemTooltip({
       const appTop = appRect.top + 10;
       const appBottom = appRect.bottom - 10;
 
-      // Try placing to the left of anchor
       let x = anchorRect.left - cardW - 12;
-      // If going off container edge to the left, flip to the right of anchor
       if (x < appLeft) {
         x = anchorRect.right + 12;
       }
-      // If going off container edge to the right, clamp to container right edge
       if (x + cardW > appRight) {
         x = appRight - cardW;
       }
       x = Math.max(appLeft, x);
 
-      // Vertical placement aligned with top of target
       let y = anchorRect.top;
       if (y + cardH > appBottom) {
         y = appBottom - cardH;
@@ -245,7 +249,7 @@ export function SmartItemTooltip({
     return () => clearTimeout(t);
   }, [anchorRect, item]);
 
-  if (!anchorRect) return null;
+  if (!anchorRect || !item) return null;
 
   return (
     <>
