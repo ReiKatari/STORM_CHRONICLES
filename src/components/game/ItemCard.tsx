@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Item } from '@/game/types';
 import { AFFIX_LABELS, getItemLore, rarityById, getSetById } from '@/game/items';
 
@@ -36,8 +37,8 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
 
   return (
     <div
-      className="rounded-xl border p-2.5 text-xs bg-slate-900/95 min-w-[210px] max-w-[260px] shadow-2xl backdrop-blur-md"
-      style={{ borderColor: r.color, boxShadow: `0 0 14px ${r.glow}` }}
+      className="rounded-xl border p-3 text-xs bg-slate-900/98 min-w-[220px] max-w-[270px] shadow-[0_10px_35px_rgba(0,0,0,0.8)] backdrop-blur-md"
+      style={{ borderColor: r.color, boxShadow: `0 0 16px ${r.glow}, 0 10px 30px rgba(0,0,0,0.9)` }}
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-1.5 border-b border-slate-800 pb-1.5">
@@ -192,7 +193,8 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
 }
 
 /**
- * SmartItemTooltip: Clamps item card positioning strictly within both viewport and #app-root container bounds.
+ * SmartItemTooltip: Uses React Portal to render strictly onto document.body at z-[9999].
+ * Clamps coordinates strictly within viewport bounds so tooltips NEVER hide or clip!
  */
 export function SmartItemTooltip({
   item,
@@ -215,38 +217,28 @@ export function SmartItemTooltip({
 
     const computePos = () => {
       const el = containerRef.current;
-      const cardW = el ? el.offsetWidth : 260;
-      const cardH = el ? el.offsetHeight : 340;
+      const cardW = el ? el.offsetWidth : 270;
+      const cardH = el ? el.offsetHeight : 360;
 
-      const appEl = document.getElementById('app-root') || document.body;
-      const appRect = appEl.getBoundingClientRect();
+      const minX = 12;
+      const maxX = Math.max(12, window.innerWidth - cardW - 12);
+      const minY = 12;
+      const maxY = Math.max(12, window.innerHeight - cardH - 12);
 
-      const minX = Math.max(10, appRect.left + 10);
-      const maxX = Math.min(window.innerWidth - cardW - 10, appRect.right - cardW - 10);
-      const minY = Math.max(10, appRect.top + 10);
-      const maxY = Math.min(window.innerHeight - cardH - 10, appRect.bottom - cardH - 10);
-
-      // Prefer placing to the left of anchor
-      let x = anchorRect.left - cardW - 12;
+      // Prefer placing to the left of anchor item
+      let x = anchorRect.left - cardW - 14;
       if (x < minX) {
-        x = anchorRect.right + 12;
+        // If placing to left breaches minX, place to the right
+        x = anchorRect.right + 14;
       }
 
-      // Clamp x strictly within [minX, maxX]
-      if (x > maxX) {
-        x = maxX;
-      }
-      if (x < minX) {
-        x = minX;
-      }
+      // Clamp x strictly within viewport
+      if (x > maxX) x = maxX;
+      if (x < minX) x = minX;
 
       let y = anchorRect.top;
-      if (y > maxY) {
-        y = maxY;
-      }
-      if (y < minY) {
-        y = minY;
-      }
+      if (y > maxY) y = maxY;
+      if (y < minY) y = minY;
 
       setPos({ x, y });
     };
@@ -258,14 +250,14 @@ export function SmartItemTooltip({
 
   if (!anchorRect || !item) return null;
 
-  return (
+  const tooltipElement = (
     <>
       {onClose && (
-        <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]" onClick={onClose} />
+        <div className="fixed inset-0 z-[9998] bg-black/20 backdrop-blur-[1px]" onClick={onClose} />
       )}
       <div
         ref={containerRef}
-        className="fixed z-50 animate-fadeIn pointer-events-auto shadow-2xl"
+        className="fixed z-[9999] pointer-events-auto shadow-[0_20px_50px_rgba(0,0,0,0.9)] animate-fadeIn"
         style={{ left: pos.x, top: pos.y }}
       >
         <ItemCard item={item} equippedItem={equippedItem} />
@@ -273,4 +265,6 @@ export function SmartItemTooltip({
       </div>
     </>
   );
+
+  return createPortal(tooltipElement, document.body);
 }
