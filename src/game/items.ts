@@ -58,66 +58,55 @@ export const BASES: Record<SlotKind, BaseItem[]> = {
     { name: 'Кинжал', icon: '🗡️', dmg: 12 },
     { name: 'Арбалет', icon: '🏹', dmg: 17 },
     { name: 'Лук', icon: '🏹', dmg: 15 },
-    { name: 'Катана', icon: '⚔️', dmg: 19 },
-    { name: 'Глефа', icon: '🪓', dmg: 21 },
-    { name: 'Рапира', icon: '🗡️', dmg: 13 },
-    { name: 'Клеймор', icon: '⚔️', dmg: 24 },
-    { name: 'Скипетр', icon: '🪄', dmg: 16 },
-    { name: 'Булава', icon: '🔨', dmg: 19 },
-    { name: 'Алебарда', icon: '🔱', dmg: 22 },
-    { name: 'Жезл', icon: '🪄', dmg: 15 },
+    { name: 'Кастеты', icon: '🥊', dmg: 16 },
+    { name: 'Паровой Клинок', icon: '⚙️', dmg: 22 },
+    { name: 'Молот Завета', icon: '🔨', dmg: 24 },
+    { name: 'Секира Ярости', icon: '🪓', dmg: 28 },
   ],
   helmet: [
     { name: 'Кожаный шлем', icon: '🪖', armor: 3, hp: 10 },
-    { name: 'Железный шлем', icon: '🪖', armor: 6, hp: 18 },
-    { name: 'Лёгкий капюшон', icon: '🧢', armor: 2, hp: 12 },
-    { name: 'Шлем стражника', icon: '🪖', armor: 8, hp: 22 },
-    { name: 'Титановый рогач', icon: '🪖', armor: 11, hp: 30 },
-    { name: 'Корона пламени', icon: '👑', armor: 9, hp: 35 },
-    { name: 'Шлем дракона', icon: '🪖', armor: 14, hp: 45 },
-    { name: 'Астральный венец', icon: '👑', armor: 10, hp: 40 },
+    { name: 'Стальной салад', icon: '🪖', armor: 6, hp: 20 },
+    { name: 'Титановый рогач', icon: '🪖', armor: 12, hp: 45 },
+    { name: 'Астральный венец', icon: '👑', armor: 8, hp: 60 },
+    { name: 'Шлем дракона', icon: '🪖', armor: 15, hp: 80 },
+    { name: 'Корона Бездны', icon: '👑', armor: 22, hp: 120 },
   ],
   armor: [
-    { name: 'Кожаный кушак', icon: '🎽', armor: 5, hp: 20 },
-    { name: 'Стальная кираса', icon: '🛡️', armor: 12, hp: 40 },
-    { name: 'Мантия мага', icon: '🥋', armor: 4, hp: 30 },
-    { name: 'Доспехи рыцаря', icon: '🛡️', armor: 16, hp: 55 },
-    { name: 'Панцирь титана', icon: '🛡️', armor: 22, hp: 80 },
-    { name: 'Одеяние тени', icon: '🎽', armor: 8, hp: 35 },
-    { name: 'Драконий панцирь', icon: '🛡️', armor: 28, hp: 100 },
-    { name: 'Чешуя левиафана', icon: '🛡️', armor: 25, hp: 90 },
+    { name: 'Кожаная куртка', icon: '🧥', armor: 5, hp: 25 },
+    { name: 'Кольчуга', icon: '🛡️', armor: 10, hp: 50 },
+    { name: 'Латный панцирь', icon: '🛡️', armor: 18, hp: 90 },
+    { name: 'Одеяние тени', icon: '🧥', armor: 12, hp: 70 },
+    { name: 'Драконий панцирь', icon: '🛡️', armor: 25, hp: 140 },
+    { name: 'Панцирь титана', icon: '🛡️', armor: 35, hp: 200 },
   ],
   gloves: [
-    { name: 'Кожаные перчатки', icon: '🧤', armor: 2, hp: 5, g: 'p' },
-    { name: 'Стальные рукавицы', icon: '🧤', armor: 5, hp: 12, g: 'p' },
-    { name: 'Шёлковые перчатки', icon: '🧤', armor: 1, hp: 8, g: 'p' },
-    { name: 'Перчатки убийцы', icon: '🧤', armor: 4, hp: 15, g: 'p' },
-    { name: 'Рукавицы пламени', icon: '🧤', armor: 7, hp: 20, g: 'p' },
-    { name: 'Драконьи когти', icon: '🧤', armor: 10, hp: 30, g: 'p' },
+    { name: 'Тканевые перчатки', icon: '🧤', armor: 2, hp: 8, g: 'p' },
+    { name: 'Кожаные краги', icon: '🧤', armor: 4, hp: 18, g: 'p' },
+    { name: 'Латные рукавицы', icon: '🧤', armor: 8, hp: 35, g: 'p' },
+    { name: 'Перчатки убийцы', icon: '🧤', armor: 10, hp: 45, g: 'p' },
+    { name: 'Драконьи когти', icon: '🧤', armor: 15, hp: 75, g: 'p' },
   ],
   kneepads: [
-    { name: 'Кожаные наколенники', icon: '🦵', armor: 2, hp: 8, g: 'p' },
-    { name: 'Стальные наколенники', icon: '🦵', armor: 5, hp: 15, g: 'p' },
-    { name: 'Титановые щитки', icon: '🦵', armor: 8, hp: 22, g: 'p' },
-    { name: 'Драконьи щитки', icon: '🦵', armor: 11, hp: 32, g: 'p' },
+    { name: 'Кожаные щитки', icon: '🦵', armor: 2, hp: 10, g: 'p' },
+    { name: 'Стальные наколенники', icon: '🦵', armor: 5, hp: 22, g: 'p' },
+    { name: 'Наколенники титана', icon: '🦵', armor: 10, hp: 45, g: 'p' },
   ],
   shoulders: [
-    { name: 'Кожаные наплечники', icon: '🎽', armor: 3, hp: 10, g: 'p' },
-    { name: 'Стальные наплечники', icon: '🎽', armor: 7, hp: 20, g: 'p' },
-    { name: 'Наплечники виверны', icon: '🎽', armor: 10, hp: 28, g: 'p' },
-    { name: 'Наплечники титана', icon: '🎽', armor: 14, hp: 40, g: 'p' },
+    { name: 'Кожаные наплечники', icon: '🎽', armor: 3, hp: 12, g: 'p' },
+    { name: 'Стальные эполеты', icon: '🎽', armor: 7, hp: 28, g: 'p' },
+    { name: 'Наплечники титана', icon: '🎽', armor: 14, hp: 60, g: 'p' },
   ],
   boots: [
-    { name: 'Кожаные сапоги', icon: '🥾', armor: 2, hp: 8, g: 'p' },
-    { name: 'Железные сапоги', icon: '🥾', armor: 5, hp: 15, g: 'p' },
-    { name: 'Сапоги ветра', icon: '🥾', armor: 3, hp: 12, g: 'p' },
-    { name: 'Драконьи боты', icon: '🥾', armor: 9, hp: 25, g: 'p' },
+    { name: 'Легкие сапоги', icon: '🥾', armor: 2, hp: 10, g: 'p' },
+    { name: 'Кованые ботинки', icon: '🥾', armor: 5, hp: 22, g: 'p' },
+    { name: 'Боевые сабатоны', icon: '🥾', armor: 9, hp: 40, g: 'p' },
+    { name: 'Сапоги скорости', icon: '🥾', armor: 12, hp: 55, g: 'p' },
   ],
   pants: [
-    { name: 'Кожаные штаны', icon: '👖', armor: 4, hp: 15, g: 'p' },
-    { name: 'Железные поножи', icon: '👖', armor: 9, hp: 30, g: 'p' },
-    { name: 'Шелковые шаровары', icon: '👖', armor: 3, hp: 20, g: 'p' },
-    { name: 'Поножи титана', icon: '👖', armor: 15, hp: 50, g: 'p' },
+    { name: 'Холщовые штаны', icon: '👖', armor: 2, hp: 12, g: 'p' },
+    { name: 'Кожаные поножи', icon: '👖', armor: 5, hp: 25, g: 'p' },
+    { name: 'Латные поножи', icon: '👖', armor: 10, hp: 50, g: 'p' },
+    { name: 'Поножи титана', icon: '👖', armor: 16, hp: 80, g: 'p' },
   ],
   ring: [
     { name: 'Медное кольцо', icon: '💍', hp: 10, g: 'n' },
@@ -170,7 +159,7 @@ export const SETS: SetDef[] = [
     color: '#a855f7',
     pieces: ['Перчатки убийцы', 'Одеяние тени', 'Плащ теневого вора'],
     bonuses: [
-      { reqPieces: 2, desc: '+20% к урон и критическим ударам', dmgBonus: 20, critBonus: 15 },
+      { reqPieces: 2, desc: '+20% к урону и критам', dmgBonus: 20, critBonus: 15 },
       { reqPieces: 3, desc: '+40% к криту и +20% к скорости', critBonus: 40 },
     ],
   },
@@ -198,158 +187,151 @@ export const SETS: SetDef[] = [
   },
   {
     id: 'set_fortune',
-    name: 'Комплект Искателя Фортуны',
+    name: 'Комплект Фортуны Сокровищ',
     icon: '💰',
     color: '#facc15',
-    pieces: ['Золотое кольцо', 'Золотая серьга', 'Знамя гильдии'],
+    pieces: ['Золотое кольцо', 'Золотая серьга', 'Штандарт Бездны'],
     bonuses: [
-      { reqPieces: 2, desc: '+50% к выпадению золота', goldBonus: 50 },
-      { reqPieces: 3, desc: '+100% к золото и +25% к опыту', goldBonus: 100, xpBonus: 25 },
+      { reqPieces: 2, desc: '+35% к выпадающему золоту', goldBonus: 35 },
+      { reqPieces: 3, desc: '+80% к золоту и +40% к опыту', goldBonus: 80, xpBonus: 40 },
+    ],
+  },
+  {
+    id: 'set_paladin',
+    name: 'Комплект Несокрушимого Паладина',
+    icon: '☀️',
+    color: '#fbbf24',
+    pieces: ['Молот Завета', 'Латный панцирь', 'Латные рукавицы', 'Стяг победы'],
+    bonuses: [
+      { reqPieces: 2, desc: '+30% к Броне и +20% HP', armorBonus: 30, hpBonus: 20 },
+      { reqPieces: 4, desc: '+50% к Броне, +40% HP и +25% Урона', armorBonus: 50, hpBonus: 40, dmgBonus: 25 },
+    ],
+  },
+  {
+    id: 'set_berserk',
+    name: 'Комплект Неистовой Ярости',
+    icon: '🪓',
+    color: '#dc2626',
+    pieces: ['Секира Ярости', 'Латные поножи', 'Боевые сабатоны'],
+    bonuses: [
+      { reqPieces: 2, desc: '+35% к Урону', dmgBonus: 35 },
+      { reqPieces: 3, desc: '+70% к Урону и +25% Крита', dmgBonus: 70, critBonus: 25 },
+    ],
+  },
+  {
+    id: 'set_vampire',
+    name: 'Комплект Алого Вампира',
+    icon: '🩸',
+    color: '#e11d48',
+    pieces: ['Амулет силы', 'Око Бездны', 'Кольцо огня'],
+    bonuses: [
+      { reqPieces: 2, desc: '+25% HP и +15% Урона', hpBonus: 25, dmgBonus: 15 },
+      { reqPieces: 3, desc: '+50% HP и +35% Урона', hpBonus: 50, dmgBonus: 35 },
     ],
   },
 ];
 
-export function getSetById(setId: string): SetDef | undefined {
-  return SETS.find(s => s.id === setId);
+export function getSetById(id: string): SetDef | null {
+  return SETS.find(s => s.id === id) ?? null;
 }
 
-export function declinePrefix(prefix: string, g: Gender = 'm'): string {
-  if (g === 'm') return prefix;
-  if (g === 'f') {
-    if (prefix.endsWith('ый')) return prefix.slice(0, -2) + 'ая';
-    if (prefix.endsWith('ий')) return prefix.slice(0, -2) + 'яя';
-    if (prefix.endsWith('ой')) return prefix.slice(0, -2) + 'ая';
-  }
-  if (g === 'n') {
-    if (prefix.endsWith('ый')) return prefix.slice(0, -2) + 'ое';
-    if (prefix.endsWith('ий')) return prefix.slice(0, -2) + 'ее';
-    if (prefix.endsWith('ой')) return prefix.slice(0, -2) + 'ое';
-  }
-  if (g === 'p') {
-    if (prefix.endsWith('ый')) return prefix.slice(0, -2) + 'ые';
-    if (prefix.endsWith('ий')) return prefix.slice(0, -2) + 'ие';
-    if (prefix.endsWith('ой')) return prefix.slice(0, -2) + 'ые';
-  }
-  return prefix;
-}
-
-export const PREFIXES = [
-  'Сияющий', 'Древний', 'Теневой', 'Огненный', 'Ледяной',
-  'Грозовой', 'Кровавый', 'Проклятый', 'Священный', 'Астральный',
-  'Титанический', 'Рунический', 'Ядовитый', 'Звёздный', 'Солнечный',
-  'Драконий', 'Хаотический', 'Призрачный', 'Бессмертный', 'Абсолютный',
+const ADJECTIVES = [
+  { name: 'Древний', color: '#94a3b8' },
+  { name: 'Теневой', color: '#a855f7' },
+  { name: 'Огненный', color: '#f97316' },
+  { name: 'Ледяной', color: '#38bdf8' },
+  { name: 'Священный', color: '#facc15' },
+  { name: 'Проклятый', color: '#ef4444' },
+  { name: 'Сияющий', color: '#fde047' },
+  { name: 'Призрачный', color: '#a7f3d0' },
+  { name: 'Хаотический', color: '#ec4899' },
+  { name: 'Абсолютный', color: '#e0e7ff' },
+  { name: 'Ядовитый', color: '#84cc16' },
+  { name: 'Звёздный', color: '#38bdf8' },
+  { name: 'Грозовой', color: '#facc15' },
 ];
 
-export const SUFFIXES = [
-  'Ветра', 'Бури', 'Пламени', 'Бездны', 'Хаоса',
-  'Ночи', 'Зари', 'Титанов', 'Духов', 'Ярости',
-  'Крови', 'Владык', 'Теней', 'Света', 'Космоса',
-  'Королей', 'Смерти', 'Судьбы', 'Гроза', 'Вечности',
+const SUFFIXES = [
+  'Ярости', 'Бури', 'Света', 'Теней', 'Бездны',
+  'Вечности', 'Хаоса', 'Крови', 'Фортуны', 'Титанов',
 ];
 
-export const STAT_POOL: ItemAffix['stat'][] = [
-  'str', 'agi', 'vit', 'int', 'end', 'luk', 'wis', 'per', 'cha', 'wil',
-  'dmg', 'hp', 'armor', 'crit', 'speed', 'gold', 'xp',
-];
+export function generateItem(level: number, forceRarity?: RarityId): Item {
+  const slotKindKeys = Object.keys(BASES) as SlotKind[];
+  const slot = slotKindKeys[Math.floor(Math.random() * slotKindKeys.length)];
+  const bases = BASES[slot];
+  const baseDef = bases[Math.floor(Math.random() * bases.length)];
 
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function randRange(min: number, max: number): number {
-  return Math.floor(min + Math.random() * (max - min + 1));
-}
-
-let uidCounter = 0;
-function uid(): string {
-  return `itm_${Date.now()}_${++uidCounter}`;
-}
-
-export function generateItem(ilvl: number, forceRarity?: RarityId): Item {
-  let rarity: RarityDef;
-  if (forceRarity) {
-    rarity = rarityById(forceRarity);
-  } else {
+  let rarity = forceRarity;
+  if (!rarity) {
     const totalW = RARITIES.reduce((s, r) => s + r.weight, 0);
-    let rVal = Math.random() * totalW;
-    rarity = RARITIES[0];
+    let rnd = Math.random() * totalW;
+    rarity = RARITIES[0].id;
     for (const r of RARITIES) {
-      if (rVal <= r.weight) { rarity = r; break; }
-      rVal -= r.weight;
+      if (rnd <= r.weight) { rarity = r.id; break; }
+      rnd -= r.weight;
     }
   }
 
-  const slotKeys = Object.keys(BASES) as SlotKind[];
-  const slot = pick(slotKeys);
-  const baseList = BASES[slot];
-  const base = pick(baseList);
+  const rDef = rarityById(rarity);
 
-  const prefix = pick(PREFIXES);
-  const suffix = pick(SUFFIXES);
-  const g = base.g ?? 'm';
-  const name = `${declinePrefix(prefix, g)} ${base.name.toLowerCase()} ${suffix}`;
+  let setId: string | undefined;
+  if ((rarity === 'epic' || rarity === 'legendary' || rarity === 'mythic' || rarity === 'divine') && Math.random() < 0.3) {
+    const matchingSets = SETS.filter(s => s.pieces.some(p => p.toLowerCase().includes(baseDef.name.toLowerCase())));
+    if (matchingSets.length > 0) {
+      setId = matchingSets[Math.floor(Math.random() * matchingSets.length)].id;
+    }
+  }
 
-  const itemBase: Item['base'] = {};
-  if (base.dmg) itemBase.dmg = Math.round(base.dmg * (1 + ilvl * 0.15) * rarity.mult);
-  if (base.armor) itemBase.armor = Math.round(base.armor * (1 + ilvl * 0.15) * rarity.mult);
-  if (base.hp) itemBase.hp = Math.round(base.hp * (1 + ilvl * 0.25) * rarity.mult);
+  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const suf = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
+
+  let fullName = `${adj.name} ${baseDef.name.toLowerCase()}`;
+  if (rarity === 'legendary' || rarity === 'mythic' || rarity === 'divine') {
+    fullName += ` ${suf}`;
+  }
+
+  const ilvl = Math.max(1, level);
+  const mult = rDef.mult * (1 + (ilvl - 1) * 0.15);
+
+  const base: Item['base'] = {};
+  if (baseDef.dmg) base.dmg = Math.floor(baseDef.dmg * mult);
+  if (baseDef.armor) base.armor = Math.floor(baseDef.armor * mult);
+  if (baseDef.hp) base.hp = Math.floor(baseDef.hp * mult);
 
   const affixes: ItemAffix[] = [];
-  const usedStats = new Set<string>();
-  for (let i = 0; i < rarity.affixes; i++) {
-    const stat = pick(STAT_POOL.filter(s => !usedStats.has(s)));
-    usedStats.add(stat);
-    let val = 0;
-    if (stat === 'crit' || stat === 'speed') {
-      val = Math.round((1 + Math.random() * 3 * rarity.mult));
-    } else if (stat === 'gold' || stat === 'xp') {
-      val = Math.round((3 + Math.random() * 6 * rarity.mult));
-    } else if (stat === 'dmg' || stat === 'armor') {
-      val = Math.round((2 + ilvl * 0.8) * rarity.mult * (0.8 + Math.random() * 0.4));
-    } else if (stat === 'hp') {
-      val = Math.round((8 + ilvl * 2) * rarity.mult * (0.8 + Math.random() * 0.4));
-    } else {
-      val = Math.round((1 + ilvl * 0.4) * rarity.mult * (0.8 + Math.random() * 0.4));
-    }
-    affixes.push({ stat, value: Math.max(1, val) });
+  const possibleStats: ItemAffix['stat'][] = ['str', 'agi', 'vit', 'int', 'end', 'luk', 'wis', 'per', 'cha', 'wil', 'crit', 'speed', 'gold', 'xp'];
+  for (let i = 0; i < rDef.affixes; i++) {
+    const st = possibleStats[Math.floor(Math.random() * possibleStats.length)];
+    const val = st === 'crit' || st === 'speed' ? Math.floor(2 + Math.random() * 5 * mult) : Math.floor(3 + Math.random() * 8 * mult);
+    affixes.push({ stat: st, value: val });
   }
 
-  const score = Math.round(
-    ilvl * 3 + rarity.mult * 20 +
-    (itemBase.dmg ?? 0) * 3 + (itemBase.armor ?? 0) * 2 + (itemBase.hp ?? 0) * 0.5 +
-    affixes.reduce((s, a) => s + a.value * (a.stat === 'dmg' ? 3 : a.stat === 'hp' ? 0.5 : a.stat === 'armor' ? 2 : 1.2), 0)
-  );
-
-  // Check if item matches a set piece
-  let matchedSetId: string | undefined = undefined;
-  if (rarity.id === 'epic' || rarity.id === 'legendary' || rarity.id === 'mythic' || rarity.id === 'divine') {
-    if (Math.random() < 0.35) {
-      const setMatch = SETS.find(s => s.pieces.some(p => base.name.includes(p) || p.includes(base.name)));
-      if (setMatch) matchedSetId = setMatch.id;
-    }
-  }
+  const baseVal = (base.dmg ?? 0) * 2 + (base.armor ?? 0) * 1.5 + (base.hp ?? 0) * 0.5;
+  const score = Math.floor(baseVal + rDef.affixes * 12 * rDef.mult + ilvl * 4);
+  const sellPrice = Math.floor(score * 0.8 + ilvl * 2);
 
   return {
-    id: uid(),
-    name,
+    id: `it_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    name: fullName,
     slot,
-    rarity: rarity.id,
+    rarity,
     ilvl,
-    icon: base.icon,
-    base: itemBase,
+    icon: baseDef.icon,
+    base,
     affixes,
-    sellPrice: Math.round((5 + ilvl * 2) * rarity.mult * (1 + rarity.affixes * 0.3)),
+    sellPrice,
     score,
-    setId: matchedSetId,
+    setId,
   };
 }
 
-export function countCombinations(): number {
-  const bases = Object.values(BASES).reduce((s, b) => s + b.length, 0);
-  return bases * PREFIXES.length * SUFFIXES.length * RARITIES.length * 500;
+export function getItemLore(item: Item): string {
+  const r = rarityById(item.rarity);
+  return `«Легендарное снаряжение, закаленное в битвах Бездны. Обладает мощью ${r.name.toLowerCase()} качества.»`;
 }
 
-export const AFFIX_LABELS: Record<ItemAffix['stat'], { name: string; icon: string; suffix?: string }> = {
+export const AFFIX_LABELS: Record<string, { name: string; icon: string; suffix?: string }> = {
   str: { name: 'Сила', icon: '💪' },
   agi: { name: 'Ловкость', icon: '🌀' },
   vit: { name: 'Живучесть', icon: '❤️' },
@@ -360,55 +342,11 @@ export const AFFIX_LABELS: Record<ItemAffix['stat'], { name: string; icon: strin
   per: { name: 'Восприятие', icon: '👁️' },
   cha: { name: 'Харизма', icon: '✨' },
   wil: { name: 'Воля', icon: '🔥' },
-  dmg: { name: 'Урон', icon: '⚔️' },
-  hp: { name: 'Здоровье', icon: '❤️' },
-  armor: { name: 'Броня', icon: '🛡️' },
-  crit: { name: 'Шанс крита', icon: '💥', suffix: '%' },
-  speed: { name: 'Скорость атаки', icon: '⚡', suffix: '%' },
-  gold: { name: 'Золото', icon: '💰', suffix: '%' },
-  xp: { name: 'Опыт', icon: '📈', suffix: '%' },
+  dmg: { name: 'Доп. Урон', icon: '⚔️' },
+  armor: { name: 'Доп. Броня', icon: '🛡️' },
+  hp: { name: 'Доп. Здоровье', icon: '❤️' },
+  crit: { name: 'Шанс Крита', icon: '💥', suffix: '%' },
+  speed: { name: 'Скорость', icon: '⚡', suffix: '%' },
+  gold: { name: 'Бонус Золота', icon: '💰', suffix: '%' },
+  xp: { name: 'Бонус Опыта', icon: '📈', suffix: '%' },
 };
-
-const LORE_TEMPLATES: Record<RarityId, string[]> = {
-  common: [
-    'Простое, надежное снаряжение ремесленников, спасавшее не одного начинающего искателя приключений.',
-    'Стандартный предмет городского ополчения. Выполнен из простого сплава для повседневных битв.',
-    'Обыденная вещь из местных кузниц, проверенная временем и дорожной пылью.',
-  ],
-  uncommon: [
-    'Закаленный предмет с легкими руническими чарами. Ощущается непривычная легкая вибрация при касании.',
-    'Снаряжение ветеранов приграничных войн. Качественная сталь с нанесенными знаками защиты.',
-    'Выковано подмастерьями высшей гильдии. Материал впитал крупицы природной магии.',
-  ],
-  rare: [
-    'Старинная реликвия, извлеченная из заброшенных катакомб Древнего Ордена. Металл не поддается ржавчине и в темноте испускает мягкий таинственный свет.',
-    'Принадлежало легендарному следопыту Забытого Дола. Хранит память о десятках побед над нежитью и монстрами Бездны.',
-    'Закалено в астральном пламени под свет Кровавой Луны. Магические знаки на поверхности до сих пор шепчут древние заклятия.',
-  ],
-  epic: [
-    'Овеянное легендами снаряжение великих чемпионов прошлой эпохи. В его глубинах пульсирует дремлющее пламя упавшей звезды, готовое вырваться наружу.',
-    'Выковано гномьими владыками из руды глубоких подземных жил. Легенды гласят, что этот предмет способно расколоть лишь оружие богов.',
-    'Найденный артефакт из сокровищницы Драконьего Владыки. Несет в себе отголоски пламени, сожгшего сотни древних королевств.',
-  ],
-  legendary: [
-    'Легендарный артефакт, выкованный в самом сердце Потустороннего Вулкана. Его прошлые владельцы становились нерушимыми правителями империи и в одиночку поворачивали ход войн.',
-    'Создано из слез древних стихийных духов и закалено в крови Высших Демонов. Обладает собственной волей и шепчет воину забытые секреты Бездны.',
-    'Мифическое оружие Первозданных Героев. Каждая нить металла пропитана силой, способной раскалывать небеса и призывать грозы.',
-  ],
-  mythic: [
-    'Мифическое сокровище Первозданного Хаоса. Материя предмета не принадлежит земному миру — это кристаллизованная энергия угасших созвездий. Владение им разрывает саму ткань пространства вокруг воина.',
-    'Артефакт Древнейших Титанов, существовавших до появления солнца. Его аура искривляет гравитацию и дарует волю над судьбами царств.',
-    'Сокровище из астральной кузни Бездны. Каждая руна на нем выжжена первородной магией создания, неподвластной смертному разуму.',
-  ],
-  divine: [
-    'БОЖЕСТВЕННЫЙ АПОКРИФ СОЗДАНИЯ. Сотворен Высшим Архитектором Вселенной зари времен. Каждый разум, глядящий на него, испытывает благоговейный трепет перед абсолютной мощью.',
-    'СВЯЩЕННАЯ РЕЛИКВИЯ БОГОВ. Несет в себе свет перворожденного космоса и тьму поглощенных галактик. Держащий этот предмет сам становится воплощением Судьбы и Владыкой Бездны.',
-  ],
-};
-
-export function getItemLore(item: Item): string {
-  const pool = LORE_TEMPLATES[item.rarity] || LORE_TEMPLATES.common;
-  let charSum = 0;
-  for (let i = 0; i < item.name.length; i++) charSum += item.name.charCodeAt(i);
-  return pool[charSum % pool.length];
-}
