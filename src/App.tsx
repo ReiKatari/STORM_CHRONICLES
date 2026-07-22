@@ -26,10 +26,8 @@ const TABS: { id: Tab; name: string; icon: string }[] = [
 ];
 
 function Header({
-  onOpenPaperdoll,
   onOpenMerchant,
 }: {
-  onOpenPaperdoll: () => void;
   onOpenMerchant: () => void;
 }) {
   const name = useGame(s => s.characterName);
@@ -76,7 +74,7 @@ function Header({
         <span className="text-[9px] text-slate-500 font-mono">{MAX_LEVEL}</span>
       </div>
 
-      {/* Meta Stats, Merchant & Paperdoll Buttons */}
+      {/* Meta Stats & Merchant Button */}
       <div className="flex items-center gap-2 ml-auto text-xs font-semibold">
         <button
           onClick={onOpenMerchant}
@@ -84,14 +82,6 @@ function Header({
         >
           <span>🏪</span>
           <span>Торговля & NPC</span>
-        </button>
-
-        <button
-          onClick={onOpenPaperdoll}
-          className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-200 transition-all shadow-md active:scale-95 flex items-center gap-1"
-        >
-          <span>🥋</span>
-          <span>Кукла</span>
         </button>
 
         <span className="text-amber-300">💰 {fmt(gold)}</span>
@@ -250,7 +240,6 @@ export default function App() {
 
       <div id="app-root" className="w-full max-w-[1600px] mx-auto min-h-screen relative flex flex-col">
         <Header
-          onOpenPaperdoll={handleOpenPaperdoll}
           onOpenMerchant={() => setShowMerchantModal(true)}
         />
         <main className="p-2.5 grid gap-2.5 xl:grid-cols-[300px_1fr_370px] lg:grid-cols-[280px_1fr] flex-1 min-h-0 items-start">
