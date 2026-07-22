@@ -56,7 +56,7 @@ export default function MerchantModal({ onClose }: { onClose: () => void }) {
             <span className="text-2xl">🏪</span>
             <div>
               <h2 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider">
-                Городская Торговая Площадь & Торговцы NPC
+                Городская Торговая Площадь и Торговцы NPC
               </h2>
               <span className="text-[10px] text-amber-300 font-bold">💰 Ваше золото: {gold} gold</span>
             </div>

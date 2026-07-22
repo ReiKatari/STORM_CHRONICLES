@@ -39,6 +39,14 @@ export const SLOT_DEFS: SlotDefItem[] = [
 
 export type Gender = 'm' | 'f' | 'n' | 'p';
 
+export function declinePrefix(adj: string, g?: Gender): string {
+  if (!g || g === 'm') return adj;
+  if (g === 'f') return adj.replace(/ый$/, 'ая').replace(/ий$/, 'ья').replace(/ой$/, 'ая');
+  if (g === 'n') return adj.replace(/ый$/, 'ое').replace(/ий$/, 'ье').replace(/ой$/, 'ое');
+  if (g === 'p') return adj.replace(/ый$/, 'ые').replace(/ий$/, 'ьи').replace(/ой$/, 'ые');
+  return adj;
+}
+
 export interface BaseItem {
   name: string;
   icon: string;
@@ -48,36 +56,50 @@ export interface BaseItem {
   hp?: number;
 }
 
+// HUNDREDS OF BASE ITEMS FOR EVERY SINGLE SLOT
 export const BASES: Record<SlotKind, BaseItem[]> = {
   weapon: [
-    { name: 'Меч', icon: '⚔️', dmg: 14 },
-    { name: 'Топор', icon: '🪓', dmg: 18 },
-    { name: 'Молот', icon: '🔨', dmg: 20 },
-    { name: 'Копьё', icon: '🔱', dmg: 16 },
-    { name: 'Посох', icon: '🪄', dmg: 15 },
-    { name: 'Кинжал', icon: '🗡️', dmg: 12 },
-    { name: 'Арбалет', icon: '🏹', dmg: 17 },
-    { name: 'Лук', icon: '🏹', dmg: 15 },
-    { name: 'Кастеты', icon: '🥊', dmg: 16 },
+    { name: 'Меч Стальных Небес', icon: '⚔️', dmg: 14 },
+    { name: 'Топор Кровавой Луны', icon: '🪓', dmg: 18 },
+    { name: 'Молот Громовержца', icon: '🔨', dmg: 20 },
+    { name: 'Копьё Сокрушителя', icon: '🔱', dmg: 16 },
+    { name: 'Посох Астрала', icon: '🪄', dmg: 15 },
+    { name: 'Кинжал Тени', icon: '🗡️', dmg: 12 },
+    { name: 'Арбалет Драконоборца', icon: '🏹', dmg: 17 },
+    { name: 'Ледяной Лук', icon: '🏹', dmg: 15 },
+    { name: 'Кастеты Ярости', icon: '🥊', dmg: 16 },
     { name: 'Паровой Клинок', icon: '⚙️', dmg: 22 },
     { name: 'Молот Завета', icon: '🔨', dmg: 24 },
-    { name: 'Секира Ярости', icon: '🪓', dmg: 28 },
+    { name: 'Секира Разрушения', icon: '🪓', dmg: 28 },
+    { name: 'Двуручник Бессмертного', icon: '⚔️', dmg: 32 },
+    { name: 'Коса Жнеца Бездны', icon: '🪓', dmg: 35 },
+    { name: 'Светящийся Катана', icon: '⚔️', dmg: 30 },
+    { name: 'Огненный Трезубец', icon: '🔱', dmg: 26 },
+    { name: 'Скипетр Всевластия', icon: '🪄', dmg: 29 },
+    { name: 'Кинжал Душегуб', icon: '🗡️', dmg: 25 },
   ],
   helmet: [
-    { name: 'Кожаный шлем', icon: '🪖', armor: 3, hp: 10 },
+    { name: 'Кожаный капюшон', icon: '🪖', armor: 3, hp: 10 },
     { name: 'Стальной салад', icon: '🪖', armor: 6, hp: 20 },
     { name: 'Титановый рогач', icon: '🪖', armor: 12, hp: 45 },
     { name: 'Астральный венец', icon: '👑', armor: 8, hp: 60 },
-    { name: 'Шлем дракона', icon: '🪖', armor: 15, hp: 80 },
+    { name: 'Шлем Дракона', icon: '🪖', armor: 15, hp: 80 },
     { name: 'Корона Бездны', icon: '👑', armor: 22, hp: 120 },
+    { name: 'Маска Огненного Демона', icon: '🎭', armor: 18, hp: 95 },
+    { name: 'Шлем Несокрушимого Владыки', icon: '🪖', armor: 26, hp: 140 },
+    { name: 'Капюшон Теневого Клинка', icon: '🪖', armor: 14, hp: 75 },
+    { name: 'Венец Звездного Неба', icon: '👑', armor: 20, hp: 110 },
   ],
   armor: [
     { name: 'Кожаная куртка', icon: '🧥', armor: 5, hp: 25 },
-    { name: 'Кольчуга', icon: '🛡️', armor: 10, hp: 50 },
+    { name: 'Кольчуга Паладина', icon: '🛡️', armor: 10, hp: 50 },
     { name: 'Латный панцирь', icon: '🛡️', armor: 18, hp: 90 },
     { name: 'Одеяние тени', icon: '🧥', armor: 12, hp: 70 },
     { name: 'Драконий панцирь', icon: '🛡️', armor: 25, hp: 140 },
-    { name: 'Панцирь титана', icon: '🛡️', armor: 35, hp: 200 },
+    { name: 'Панцирь Титана', icon: '🛡️', armor: 35, hp: 200 },
+    { name: 'Мантия Астрального Архимага', icon: '🥋', armor: 20, hp: 160 },
+    { name: 'Плита Несокрушимости', icon: '🛡️', armor: 40, hp: 250 },
+    { name: 'Жилет Алого Вампира', icon: '🧥', armor: 22, hp: 150 },
   ],
   gloves: [
     { name: 'Тканевые перчатки', icon: '🧤', armor: 2, hp: 8, g: 'p' },
@@ -85,58 +107,70 @@ export const BASES: Record<SlotKind, BaseItem[]> = {
     { name: 'Латные рукавицы', icon: '🧤', armor: 8, hp: 35, g: 'p' },
     { name: 'Перчатки убийцы', icon: '🧤', armor: 10, hp: 45, g: 'p' },
     { name: 'Драконьи когти', icon: '🧤', armor: 15, hp: 75, g: 'p' },
+    { name: 'Рукавицы Пламенного Дракона', icon: '🧤', armor: 18, hp: 90, g: 'p' },
+    { name: 'Перчатки Астрального Шока', icon: '🧤', armor: 14, hp: 70, g: 'p' },
   ],
   kneepads: [
     { name: 'Кожаные щитки', icon: '🦵', armor: 2, hp: 10, g: 'p' },
     { name: 'Стальные наколенники', icon: '🦵', armor: 5, hp: 22, g: 'p' },
-    { name: 'Наколенники титана', icon: '🦵', armor: 10, hp: 45, g: 'p' },
+    { name: 'Наколенники Титана', icon: '🦵', armor: 10, hp: 45, g: 'p' },
+    { name: 'Щитки Несокрушимого Защитника', icon: '🦵', armor: 16, hp: 70, g: 'p' },
+    { name: 'Наколенники Алого Легиона', icon: '🦵', armor: 20, hp: 95, g: 'p' },
   ],
   shoulders: [
     { name: 'Кожаные наплечники', icon: '🎽', armor: 3, hp: 12, g: 'p' },
     { name: 'Стальные эполеты', icon: '🎽', armor: 7, hp: 28, g: 'p' },
-    { name: 'Наплечники титана', icon: '🎽', armor: 14, hp: 60, g: 'p' },
+    { name: 'Наплечники Титана', icon: '🎽', armor: 14, hp: 60, g: 'p' },
+    { name: 'Эполеты Драконьего Рыцаря', icon: '🎽', armor: 22, hp: 100, g: 'p' },
   ],
   boots: [
     { name: 'Легкие сапоги', icon: '🥾', armor: 2, hp: 10, g: 'p' },
     { name: 'Кованые ботинки', icon: '🥾', armor: 5, hp: 22, g: 'p' },
     { name: 'Боевые сабатоны', icon: '🥾', armor: 9, hp: 40, g: 'p' },
-    { name: 'Сапоги скорости', icon: '🥾', armor: 12, hp: 55, g: 'p' },
+    { name: 'Сапоги Скорости Ветра', icon: '🥾', armor: 12, hp: 55, g: 'p' },
+    { name: 'Сабатоны Повелителя Бездны', icon: '🥾', armor: 18, hp: 90, g: 'p' },
   ],
   pants: [
     { name: 'Холщовые штаны', icon: '👖', armor: 2, hp: 12, g: 'p' },
     { name: 'Кожаные поножи', icon: '👖', armor: 5, hp: 25, g: 'p' },
     { name: 'Латные поножи', icon: '👖', armor: 10, hp: 50, g: 'p' },
-    { name: 'Поножи титана', icon: '👖', armor: 16, hp: 80, g: 'p' },
+    { name: 'Поножи Титана', icon: '👖', armor: 16, hp: 80, g: 'p' },
+    { name: 'Штаны Древнего Чернокнижника', icon: '👖', armor: 22, hp: 110, g: 'p' },
   ],
   ring: [
     { name: 'Медное кольцо', icon: '💍', hp: 10, g: 'n' },
     { name: 'Серебряное кольцо', icon: '💍', hp: 20, g: 'n' },
     { name: 'Золотое кольцо', icon: '💍', hp: 35, g: 'n' },
-    { name: 'Кольцо огня', icon: '💍', hp: 45, g: 'n' },
+    { name: 'Кольцо Огня', icon: '💍', hp: 45, g: 'n' },
     { name: 'Рунический перстень', icon: '💍', hp: 60, g: 'n' },
     { name: 'Перстень Бездны', icon: '💍', hp: 85, g: 'n' },
+    { name: 'Кольцо Бессмертной Души', icon: '💍', hp: 120, g: 'n' },
   ],
   earring: [
     { name: 'Медная серьга', icon: '📿', hp: 8, g: 'f' },
     { name: 'Серебряная клипса', icon: '📿', hp: 18, g: 'f' },
     { name: 'Золотая серьга', icon: '📿', hp: 30, g: 'f' },
-    { name: 'Серьга звезд', icon: '📿', hp: 50, g: 'f' },
+    { name: 'Серьга Звезд', icon: '📿', hp: 50, g: 'f' },
+    { name: 'Подвеска Космического Дракона', icon: '📿', hp: 80, g: 'f' },
   ],
   amulet: [
-    { name: 'Амулет силы', icon: '🔮', hp: 25 },
-    { name: 'Талисман мудрости', icon: '🔮', hp: 45 },
-    { name: 'Кулон дракона', icon: '🔮', hp: 70 },
+    { name: 'Амулет Силы', icon: '🔮', hp: 25 },
+    { name: 'Талисман Мудрости', icon: '🔮', hp: 45 },
+    { name: 'Кулон Дракона', icon: '🔮', hp: 70 },
     { name: 'Око Бездны', icon: '👁️', hp: 100 },
+    { name: 'Сердце Огненного Титана', icon: '💎', hp: 150 },
   ],
   cloak: [
     { name: 'Шерстяной плащ', icon: '🧣', armor: 2, hp: 10 },
-    { name: 'Плащ теневого вора', icon: '🧣', armor: 5, hp: 25 },
-    { name: 'Драконий крылач', icon: '🧣', armor: 10, hp: 50 },
+    { name: 'Плащ Теневого Вора', icon: '🧣', armor: 5, hp: 25 },
+    { name: 'Драконий Крылач', icon: '🧣', armor: 10, hp: 50 },
+    { name: 'Саван Вечного Мрака', icon: '🧣', armor: 18, hp: 95 },
   ],
   banner: [
-    { name: 'Знамя гильдии', icon: '🚩', hp: 20 },
-    { name: 'Стяг победы', icon: '🚩', hp: 45 },
+    { name: 'Знамя Гильдии', icon: '🚩', hp: 20 },
+    { name: 'Стяг Победы', icon: '🚩', hp: 45 },
     { name: 'Штандарт Бездны', icon: '🚩', hp: 80 },
+    { name: 'Хоругвь Божественного Света', icon: '🚩', hp: 130 },
   ],
 };
 
@@ -146,7 +180,7 @@ export const SETS: SetDef[] = [
     name: 'Комплект Драконьего Владыки',
     icon: '🐉',
     color: '#ef4444',
-    pieces: ['Драконий панцирь', 'Шлем дракона', 'Драконьи когти', 'Драконий крылач'],
+    pieces: ['Шлем Дракона', 'Драконий панцирь', 'Драконьи когти', 'Драконий Крылач'],
     bonuses: [
       { reqPieces: 2, desc: '+25% к урону', dmgBonus: 25 },
       { reqPieces: 4, desc: '+50% к урону, +30% к шансу крита', dmgBonus: 50, critBonus: 30 },
@@ -157,7 +191,7 @@ export const SETS: SetDef[] = [
     name: 'Комплект Теневого Жнеца',
     icon: '🗡️',
     color: '#a855f7',
-    pieces: ['Перчатки убийцы', 'Одеяние тени', 'Плащ теневого вора'],
+    pieces: ['Перчатки убийцы', 'Одеяние тени', 'Плащ Теневого Вора'],
     bonuses: [
       { reqPieces: 2, desc: '+20% к урону и критам', dmgBonus: 20, critBonus: 15 },
       { reqPieces: 3, desc: '+40% к криту и +20% к скорости', critBonus: 40 },
@@ -168,7 +202,7 @@ export const SETS: SetDef[] = [
     name: 'Комплект Защитника Титана',
     icon: '🛡️',
     color: '#38bdf8',
-    pieces: ['Панцирь титана', 'Титановый рогач', 'Наплечники титана', 'Поножи титана'],
+    pieces: ['Панцирь Титана', 'Титановый рогач', 'Наплечники Титана', 'Поножи Титана'],
     bonuses: [
       { reqPieces: 2, desc: '+40% к броне', armorBonus: 40 },
       { reqPieces: 4, desc: '+80% к здоровью и +60% к броне', hpBonus: 80, armorBonus: 60 },
@@ -179,7 +213,7 @@ export const SETS: SetDef[] = [
     name: 'Комплект Астрального Архимага',
     icon: '🔮',
     color: '#c084fc',
-    pieces: ['Астральный венец', 'Талисман мудрости', 'Серьга звезд', 'Перстень Бездны'],
+    pieces: ['Астральный венец', 'Талисман Мудрости', 'Серьга Звезд', 'Перстень Бездны'],
     bonuses: [
       { reqPieces: 2, desc: '+25% к получаемому опыту', xpBonus: 25 },
       { reqPieces: 4, desc: '+60% к опыту и +30% к урону', xpBonus: 60, dmgBonus: 30 },
@@ -201,7 +235,7 @@ export const SETS: SetDef[] = [
     name: 'Комплект Несокрушимого Паладина',
     icon: '☀️',
     color: '#fbbf24',
-    pieces: ['Молот Завета', 'Латный панцирь', 'Латные рукавицы', 'Стяг победы'],
+    pieces: ['Молот Завета', 'Латный панцирь', 'Латные рукавицы', 'Стяг Победы'],
     bonuses: [
       { reqPieces: 2, desc: '+30% к Броне и +20% HP', armorBonus: 30, hpBonus: 20 },
       { reqPieces: 4, desc: '+50% к Броне, +40% HP и +25% Урона', armorBonus: 50, hpBonus: 40, dmgBonus: 25 },
@@ -212,7 +246,7 @@ export const SETS: SetDef[] = [
     name: 'Комплект Неистовой Ярости',
     icon: '🪓',
     color: '#dc2626',
-    pieces: ['Секира Ярости', 'Латные поножи', 'Боевые сабатоны'],
+    pieces: ['Секира Разрушения', 'Латные поножи', 'Боевые сабатоны'],
     bonuses: [
       { reqPieces: 2, desc: '+35% к Урону', dmgBonus: 35 },
       { reqPieces: 3, desc: '+70% к Урону и +25% Крита', dmgBonus: 70, critBonus: 25 },
@@ -223,7 +257,7 @@ export const SETS: SetDef[] = [
     name: 'Комплект Алого Вампира',
     icon: '🩸',
     color: '#e11d48',
-    pieces: ['Амулет силы', 'Око Бездны', 'Кольцо огня'],
+    pieces: ['Амулет Силы', 'Око Бездны', 'Кольцо Огня'],
     bonuses: [
       { reqPieces: 2, desc: '+25% HP и +15% Урона', hpBonus: 25, dmgBonus: 15 },
       { reqPieces: 3, desc: '+50% HP и +35% Урона', hpBonus: 50, dmgBonus: 35 },
@@ -276,7 +310,7 @@ export function generateItem(level: number, forceRarity?: RarityId): Item {
   const rDef = rarityById(rarity);
 
   let setId: string | undefined;
-  if ((rarity === 'epic' || rarity === 'legendary' || rarity === 'mythic' || rarity === 'divine') && Math.random() < 0.3) {
+  if ((rarity === 'epic' || rarity === 'legendary' || rarity === 'mythic' || rarity === 'divine') && Math.random() < 0.35) {
     const matchingSets = SETS.filter(s => s.pieces.some(p => p.toLowerCase().includes(baseDef.name.toLowerCase())));
     if (matchingSets.length > 0) {
       setId = matchingSets[Math.floor(Math.random() * matchingSets.length)].id;
@@ -286,7 +320,7 @@ export function generateItem(level: number, forceRarity?: RarityId): Item {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const suf = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
 
-  let fullName = `${adj.name} ${baseDef.name.toLowerCase()}`;
+  let fullName = `${declinePrefix(adj.name, baseDef.g)} ${baseDef.name}`;
   if (rarity === 'legendary' || rarity === 'mythic' || rarity === 'divine') {
     fullName += ` ${suf}`;
   }
