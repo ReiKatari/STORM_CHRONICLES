@@ -15,6 +15,16 @@ export function fmt(num: number): string {
   return Math.floor(num).toLocaleString('ru-RU');
 }
 
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'divine'];
+
+export function rarityAtLeast(rarity: string, minRarity: string): boolean {
+  const rIdx = RARITY_ORDER.indexOf(rarity);
+  const minIdx = RARITY_ORDER.indexOf(minRarity);
+  if (rIdx === -1) return false;
+  if (minIdx === -1) return true;
+  return rIdx >= minIdx;
+}
+
 export function computeDerived(
   level: number,
   stats: BaseStats,
