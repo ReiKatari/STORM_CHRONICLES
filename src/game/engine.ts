@@ -20,15 +20,18 @@ export function xpForLevel(level: number): number {
   return Math.floor(60 * Math.pow(level, 1.6) + level * 20);
 }
 
+/**
+ * Format numbers with thousand space separators (e.g. 221 212 or 2 122).
+ */
 export function fmt(num: number): string {
-  if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
-  if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-  if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-  if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-  return Math.floor(num).toLocaleString('ru-RU');
+  if (num >= 1e12) return (num / 1e12).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' T';
+  if (num >= 1e9) return (num / 1e9).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' B';
+  if (num >= 1e6) return (num / 1e6).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' M';
+  if (num >= 1e3) return (num / 1e3).toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' K';
+  return Math.floor(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
-const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'divine'];
+export const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'divine'];
 
 export function rarityAtLeast(rarity: string, minRarity: string): boolean {
   const rIdx = RARITY_ORDER.indexOf(rarity);

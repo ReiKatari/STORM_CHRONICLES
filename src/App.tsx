@@ -137,11 +137,7 @@ function SkillBar() {
 
   const learned = (heroClass?.skills || []).filter(sk => (skillRanks[sk.id] ?? 0) > 0);
 
-  if (learned.length === 0) return (
-    <div className="bg-slate-900/80 rounded-xl border border-slate-700/60 px-3 py-1.5 text-center text-[10px] text-slate-400">
-      ✨ Изучите первый скилл во вкладке «Скиллы» (очки даются каждые 3 уровня)
-    </div>
-  );
+  if (learned.length === 0) return null;
 
   return (
     <div className="bg-slate-900/90 rounded-xl border border-slate-700/60 px-3 py-1.5 flex items-center gap-2 flex-wrap">
