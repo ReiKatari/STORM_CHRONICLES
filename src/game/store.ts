@@ -125,7 +125,7 @@ function spawnFor(zoneId: string, stage: number, mastery: number, dungeon: Dunge
   return { def, hp, maxHp: hp, level: lvl, dmg, xp: rew.xp, gold: rew.gold, attackTimer: 0, dotTimer: 0, dots: [] };
 }
 
-const SAVE_KEY = 'rogalik_save_v1';
+const SAVE_KEY = 'rogalik_save_v3';
 
 function pushFx(fx: FxEvent[], e: Omit<FxEvent, 'id'>) {
   fx.push({ ...e, id: fxId++ });
@@ -665,16 +665,18 @@ export function loadSave() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return;
     const d = JSON.parse(raw);
+    if (!d || typeof d !== 'object') return;
     const s = useGame.getState();
     const quests = { ...s.quests };
     Object.entries(d.quests ?? {}).forEach(([k, v]) => { if (quests[k]) quests[k] = v as never; });
+    const targetZoneId = d.zoneId && ZONES.some(z => z.id === d.zoneId) ? d.zoneId : 'hills';
     useGame.setState({
       level: d.level ?? 1, xp: d.xp ?? 0, gold: d.gold ?? 0, totalGoldEarned: d.totalGoldEarned ?? 0,
       stats: { ...s.stats, ...(d.stats ?? {}) }, statPoints: d.statPoints ?? 0,
       skillPoints: d.skillPoints ?? 0, talentPoints: d.talentPoints ?? 0,
       equipment: d.equipment ?? {}, inventory: d.inventory ?? [],
       skillRanks: d.skillRanks ?? {}, autoCast: d.autoCast ?? {}, talents: d.talents ?? {},
-      zoneId: d.zoneId ?? 'hills', stage: d.stage ?? 1, stageKills: d.stageKills ?? 0,
+      zoneId: targetZoneId, stage: d.stage ?? 1, stageKills: d.stageKills ?? 0,
       mastery: d.mastery ?? {}, unlockedZones: d.unlockedZones ?? ['hills'],
       unlockedSecrets: d.unlockedSecrets ?? [],
       quests, kills: d.kills ?? 0, bossKills: d.bossKills ?? 0, dungeonsCleared: d.dungeonsCleared ?? 0,
@@ -686,7 +688,7 @@ export function loadSave() {
       const minutes = away / 60000;
       const zone = zoneById(st.zoneId);
       const lvl = zone.minLevel + st.stage;
-      const kpm = 8; // assumed kills per minute
+      const kpm = 8;
       const kills = Math.floor(minutes * kpm * 0.5);
       const gold = Math.floor(kills * monsterReward(lvl, 1, 1).gold * 0.5);
       const xp = Math.floor(kills * monsterReward(lvl, 1, 1).xp * 0.4);
@@ -702,5 +704,8 @@ export function loadSave() {
       hp: derived.maxHp, mana: derived.maxMana,
       monster: spawnFor(st2.zoneId, st2.stage, st2.mastery[st2.zoneId] ?? 0, null),
     });
-  } catch { /* corrupted save → ignore */ }
+  } catch (err) {
+    console.error('Failed to load save:', err);
+    try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
+  }
 }
