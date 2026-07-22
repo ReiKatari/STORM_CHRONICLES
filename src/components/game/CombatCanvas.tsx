@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from '@/game/store';
-import { zoneById } from '@/game/monsters';
+import { zoneById, FAMILIES } from '@/game/monsters';
 import type { FxEvent } from '@/game/types';
 
 interface Particle {
   x: number; y: number; vx: number; vy: number;
   life: number; maxLife: number; size: number;
-  color: string; gravity: number; kind: 'spark' | 'ember' | 'snow' | 'text' | 'emoji' | 'ring' | 'bolt';
+  color: string; gravity: number; kind: 'spark' | 'ember' | 'snow' | 'text' | 'emoji' | 'ring' | 'bolt' | 'slash';
   text?: string; angle?: number;
 }
 
@@ -36,10 +36,14 @@ export default function CombatCanvas() {
   const time = useRef(0);
 
   useEffect(() => {
-    // Preload monster assets
+    // Preload monster art assets
     getMonsterImage('/monsters/dragon.jpg');
     getMonsterImage('/monsters/demon.jpg');
     getMonsterImage('/monsters/golem.jpg');
+    getMonsterImage('/monsters/vampire.jpg');
+    getMonsterImage('/monsters/lich.jpg');
+    getMonsterImage('/monsters/spider.jpg');
+    getMonsterImage('/monsters/abyss.jpg');
 
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext('2d')!;
@@ -61,6 +65,7 @@ export default function CombatCanvas() {
       const px = W * 0.25, py = H * 0.70;
       const mx = W * 0.75, my = H * 0.70;
       const P = particles.current;
+
       const burst = (x: number, y: number, n: number, color: string, speed: number, size = 3, grav = 300) => {
         for (let i = 0; i < n; i++) {
           const a = Math.random() * Math.PI * 2;
@@ -68,19 +73,23 @@ export default function CombatCanvas() {
           P.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - speed * 0.3, life: 0, maxLife: 0.4 + Math.random() * 0.5, size: size * (0.5 + Math.random()), color, gravity: grav, kind: 'spark' });
         }
       };
+
       const floatText = (x: number, y: number, text: string, color: string, size: number) => {
         P.push({ x: x + (Math.random() - 0.5) * 30, y, vx: (Math.random() - 0.5) * 20, vy: -70, life: 0, maxLife: 1.1, size, color, gravity: 0, kind: 'text', text });
       };
+
       switch (fx.type) {
         case 'playerHit':
-          burst(mx, my - 30, 10, fx.color ?? '#e2e8f0', 170);
+          burst(mx, my - 30, 12, fx.color ?? '#e2e8f0', 180);
+          P.push({ x: mx - 20, y: my - 30, vx: 0, vy: 0, life: 0, maxLife: 0.25, size: 40, color: '#e2e8f0', gravity: 0, kind: 'slash' });
           floatText(mx, my - 80, `-${fx.value}`, fx.color ?? '#fff', 20);
           monsterHit.current = 0.15; playerLunge.current = 0.18;
           break;
         case 'crit':
-          burst(mx, my - 30, 26, '#facc15', 280, 4);
+          burst(mx, my - 30, 30, '#facc15', 300, 4);
+          P.push({ x: mx - 30, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 60, color: '#facc15', gravity: 0, kind: 'slash' });
           floatText(mx, my - 90, `💥 ${fx.value}`, '#facc15', 32);
-          shake.current = Math.max(shake.current, 7);
+          shake.current = Math.max(shake.current, 8);
           monsterHit.current = 0.22; playerLunge.current = 0.22;
           break;
         case 'monsterHit':
@@ -92,56 +101,56 @@ export default function CombatCanvas() {
           floatText(px, py - 80, '💨 Уворот!', '#4ade80', 18);
           break;
         case 'heal':
-          for (let i = 0; i < 14; i++) P.push({ x: px + (Math.random() - 0.5) * 60, y: py - Math.random() * 40, vx: 0, vy: -50 - Math.random() * 40, life: 0, maxLife: 0.9, size: 14, color: '#4ade80', gravity: 0, kind: 'emoji', text: fx.skillFx === 'shield' ? '🛡️' : '✚' });
+          for (let i = 0; i < 16; i++) P.push({ x: px + (Math.random() - 0.5) * 60, y: py - Math.random() * 40, vx: 0, vy: -50 - Math.random() * 40, life: 0, maxLife: 0.9, size: 14, color: '#4ade80', gravity: 0, kind: 'emoji', text: fx.skillFx === 'shield' ? '🛡️' : '✚' });
           if (fx.value) floatText(px, py - 90, `+${fx.value}`, '#4ade80', 22);
           if (fx.skillFx === 'shield') P.push({ x: px, y: py - 30, vx: 0, vy: 0, life: 0, maxLife: 0.8, size: 10, color: '#fde68a', gravity: 0, kind: 'ring' });
           break;
         case 'skill': {
           const c = fx.color ?? '#fff';
           floatText(mx, my - 90, `-${fx.value}`, c, 24);
-          shake.current = Math.max(shake.current, 6);
+          shake.current = Math.max(shake.current, 7);
           monsterHit.current = 0.25;
           const kind = fx.skillFx;
           if (kind === 'fire' || kind === 'meteor') {
             if (kind === 'meteor') {
-              for (let i = 0; i < 26; i++) P.push({ x: mx + 120 + Math.random() * 60, y: -20, vx: -260 - Math.random() * 120, vy: 320 + Math.random() * 120, life: 0, maxLife: 0.6, size: 5, color: '#fb923c', gravity: 0, kind: 'ember' });
+              for (let i = 0; i < 30; i++) P.push({ x: mx + 120 + Math.random() * 60, y: -20, vx: -260 - Math.random() * 120, vy: 320 + Math.random() * 120, life: 0, maxLife: 0.6, size: 5, color: '#fb923c', gravity: 0, kind: 'ember' });
             }
-            burst(mx, my - 30, 30, '#f97316', 240, 5, 150);
-            burst(mx, my - 30, 14, '#facc15', 180, 4, 100);
+            burst(mx, my - 30, 32, '#f97316', 250, 5, 150);
+            burst(mx, my - 30, 16, '#facc15', 190, 4, 100);
           } else if (kind === 'ice') {
-            for (let i = 0; i < 22; i++) { const a = Math.random() * Math.PI * 2; P.push({ x: mx, y: my - 30, vx: Math.cos(a) * 200, vy: Math.sin(a) * 200, life: 0, maxLife: 0.5, size: 4, color: '#7dd3fc', gravity: 0, kind: 'snow' }); }
+            for (let i = 0; i < 26; i++) { const a = Math.random() * Math.PI * 2; P.push({ x: mx, y: my - 30, vx: Math.cos(a) * 220, vy: Math.sin(a) * 220, life: 0, maxLife: 0.5, size: 4, color: '#7dd3fc', gravity: 0, kind: 'snow' }); }
           } else if (kind === 'lightning') {
-            for (let i = 0; i < 3; i++) P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.28, size: my - 30, color: '#facc15', gravity: 0, kind: 'bolt' });
-            burst(mx, my - 30, 16, '#fde047', 220, 4, 80);
+            for (let i = 0; i < 4; i++) P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.28, size: my - 30, color: '#facc15', gravity: 0, kind: 'bolt' });
+            burst(mx, my - 30, 18, '#fde047', 240, 4, 80);
           } else if (kind === 'poison') {
-            for (let i = 0; i < 16; i++) P.push({ x: mx + (Math.random() - 0.5) * 50, y: my - Math.random() * 50, vx: 0, vy: -40, life: 0, maxLife: 1, size: 5, color: '#84cc16', gravity: -30, kind: 'ember' });
+            for (let i = 0; i < 20; i++) P.push({ x: mx + (Math.random() - 0.5) * 60, y: my - Math.random() * 50, vx: 0, vy: -45, life: 0, maxLife: 1, size: 6, color: '#84cc16', gravity: -30, kind: 'ember' });
           } else if (kind === 'blood') {
-            burst(px, py - 30, 10, '#dc2626', 160, 4, 200);
-            burst(mx, my - 30, 30, '#dc2626', 300, 6, 250);
+            burst(px, py - 30, 12, '#dc2626', 170, 4, 200);
+            burst(mx, my - 30, 34, '#dc2626', 320, 6, 250);
           } else if (kind === 'summon') {
-            for (let i = 0; i < 3; i++) P.push({ x: px - 80, y: py - 10 - i * 14, vx: 300 + i * 60, vy: 0, life: 0, maxLife: 0.8, size: 26, color: '#94a3b8', gravity: 0, kind: 'emoji', text: '🐺' });
-            burst(mx, my - 30, 20, c, 220, 4, 150);
+            for (let i = 0; i < 3; i++) P.push({ x: px - 80, y: py - 10 - i * 14, vx: 320 + i * 60, vy: 0, life: 0, maxLife: 0.8, size: 28, color: '#94a3b8', gravity: 0, kind: 'emoji', text: '🐺' });
+            burst(mx, my - 30, 24, c, 230, 4, 150);
           } else {
-            burst(mx, my - 30, 18, c, 240, 4, 120);
-            P.push({ x: mx, y: my - 30, vx: 0, vy: 0, life: 0, maxLife: 0.3, size: 46, color: c, gravity: 0, kind: 'ring' });
+            burst(mx, my - 30, 20, c, 250, 4, 120);
+            P.push({ x: mx, y: my - 30, vx: 0, vy: 0, life: 0, maxLife: 0.3, size: 50, color: c, gravity: 0, kind: 'ring' });
           }
           break;
         }
         case 'death': {
           if (fx.value === -1) {
-            burst(px, py - 30, 30, '#f87171', 260, 5, 250);
+            burst(px, py - 30, 35, '#f87171', 280, 5, 250);
             shake.current = 10;
           } else {
-            const n = fx.value === 2 ? 60 : fx.value === 1 ? 36 : 20;
-            burst(mx, my - 30, n, '#facc15', fx.value === 2 ? 380 : 260, 5, 200);
-            burst(mx, my - 30, Math.floor(n / 2), '#fff', 200, 3, 150);
+            const n = fx.value === 2 ? 70 : fx.value === 1 ? 40 : 24;
+            burst(mx, my - 30, n, '#facc15', fx.value === 2 ? 400 : 280, 5, 200);
+            burst(mx, my - 30, Math.floor(n / 2), '#fff', 220, 3, 150);
             if (fx.value === 2) shake.current = 12;
             monsterDeath.current = 0.5;
           }
           break;
         }
         case 'levelup':
-          for (let i = 0; i < 40; i++) P.push({ x: px + (Math.random() - 0.5) * 100, y: py, vx: (Math.random() - 0.5) * 80, vy: -200 - Math.random() * 260, life: 0, maxLife: 1.4, size: 4, color: '#facc15', gravity: 160, kind: 'spark' });
+          for (let i = 0; i < 45; i++) P.push({ x: px + (Math.random() - 0.5) * 100, y: py, vx: (Math.random() - 0.5) * 80, vy: -200 - Math.random() * 260, life: 0, maxLife: 1.4, size: 4, color: '#facc15', gravity: 160, kind: 'spark' });
           floatText(px, py - 110, `⬆️ ${fx.text}`, '#facc15', 28);
           break;
         case 'loot':
@@ -229,7 +238,7 @@ export default function CombatCanvas() {
       // floor tiles
       tiles.current.forEach(t => {
         const bob = Math.sin(time.current * 1.5 + t.phase) * 2;
-        ctx.font = `${t.size}px serif`;
+        ctx.font = `${t.size}px 'Century Gothic', CenturyGothic, sans-serif`;
         ctx.globalAlpha = 0.8;
         ctx.fillText(t.icon, t.x, gy + 12 + bob + (t.phase % 1) * (H - gy - 20));
       });
@@ -278,25 +287,25 @@ export default function CombatCanvas() {
       }
 
       // Character Sprite
-      ctx.font = '58px serif';
+      ctx.font = "58px 'Century Gothic', CenturyGothic, sans-serif";
       ctx.fillText('🧝', 0, 0);
 
       // Weapon Floating Beside Hero
       const wBob = Math.cos(time.current * 4) * 3;
-      ctx.font = '24px serif';
+      ctx.font = "24px 'Century Gothic', CenturyGothic, sans-serif";
       ctx.fillText(weaponIcon, 32, -18 + wBob);
 
       ctx.restore();
 
       // Player Name & Level Badge
       ctx.fillStyle = '#fef08a';
-      ctx.font = 'bold 11px sans-serif';
+      ctx.font = "bold 11px 'Century Gothic', CenturyGothic, sans-serif";
       ctx.textAlign = 'center';
       ctx.fillText(`Герой · Ур. ${s.level}`, px, py - 60);
 
       // Player HP/Mana Bar
       const barW = 110;
-      ctx.fillStyle = 'rgba(15,23,42,0.8)';
+      ctx.fillStyle = 'rgba(15,23,42,0.85)';
       ctx.fillRect(px - barW / 2 - 2, py + 38, barW + 4, 16);
       ctx.strokeStyle = 'rgba(51,65,85,0.8)';
       ctx.strokeRect(px - barW / 2 - 2, py + 38, barW + 4, 16);
@@ -309,7 +318,7 @@ export default function CombatCanvas() {
       ctx.fillRect(px - barW / 2, py + 48, barW * Math.max(0, s.mana / s.derived.maxMana), 4);
 
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 9px sans-serif';
+      ctx.font = "bold 9px 'Century Gothic', CenturyGothic, sans-serif";
       ctx.fillText(`${Math.ceil(s.hp)} / ${s.derived.maxHp}`, px, py + 46);
 
       // ===== MONSTER PEDESTAL & VISUALS =====
@@ -321,10 +330,13 @@ export default function CombatCanvas() {
       const hitOffset = monsterHit.current > 0 ? (Math.random() - 0.5) * 10 : 0;
       const deathScale = monsterDeath.current > 0 ? monsterDeath.current / 0.5 : 1;
 
-      // Select generated artwork for boss / mini / golem
-      let mImgSrc = null;
-      if (isBoss) mImgSrc = Math.floor(m.level / 5) % 2 === 0 ? '/monsters/dragon.jpg' : '/monsters/demon.jpg';
-      else if (isMini || m.def.family === 'golem' || m.level > 20) mImgSrc = '/monsters/golem.jpg';
+      // Select generated artwork or family art mapping
+      const famDef = FAMILIES.find(f => f.id === m.def.family);
+      let mImgSrc = famDef?.artSrc ?? null;
+      if (!mImgSrc) {
+        if (isBoss) mImgSrc = Math.floor(m.level / 5) % 2 === 0 ? '/monsters/dragon.jpg' : '/monsters/demon.jpg';
+        else if (isMini || m.def.family === 'golem' || m.level > 20) mImgSrc = '/monsters/golem.jpg';
+      }
 
       const mImg = mImgSrc ? getMonsterImage(mImgSrc) : null;
 
@@ -374,17 +386,17 @@ export default function CombatCanvas() {
       } else {
         // Fallback Emoji Monster Sprite
         ctx.textAlign = 'center';
-        ctx.font = `${mSize}px serif`;
+        ctx.font = `${mSize}px 'Century Gothic', CenturyGothic, sans-serif`;
         ctx.fillText(m.def.icon, 0, 0);
       }
 
       // Boss / MiniBoss Crown/Star Badge Above Head
       ctx.textAlign = 'center';
       if (isBoss) {
-        ctx.font = '26px serif';
+        ctx.font = "26px 'Century Gothic', CenturyGothic, sans-serif";
         ctx.fillText('👑', 0, -mSize * 0.95);
       } else if (isMini) {
-        ctx.font = '22px serif';
+        ctx.font = "22px 'Century Gothic', CenturyGothic, sans-serif";
         ctx.fillText('⭐', 0, -mSize * 0.9);
       }
 
@@ -407,15 +419,15 @@ export default function CombatCanvas() {
       ctx.fillRect(mx - mBarW / 2, barTop + 2, mBarW * hpp, 10);
 
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 9px sans-serif';
+      ctx.font = "bold 9px 'Century Gothic', CenturyGothic, sans-serif";
       ctx.fillText(`${Math.ceil(Math.max(0, m.hp))} / ${m.maxHp}`, mx, barTop + 10);
 
       // Monster Title Tag
       ctx.fillStyle = isBoss ? '#fca5a5' : isMini ? '#e9d5ff' : '#e2e8f0';
-      ctx.font = `bold ${isBig ? 12 : 10}px sans-serif`;
+      ctx.font = `bold ${isBig ? 12 : 10}px 'Century Gothic', CenturyGothic, sans-serif`;
       ctx.fillText(`${m.def.name} (Ур.${m.level})`, mx, barTop - 6);
 
-      // ===== PARTICLES =====
+      // ===== PARTICLES & SPELL FX =====
       const P = particles.current;
       for (let i = P.length - 1; i >= 0; i--) {
         const p = P[i];
@@ -426,15 +438,22 @@ export default function CombatCanvas() {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
         ctx.globalAlpha = 1 - t;
+
         if (p.kind === 'text') {
-          ctx.font = `bold ${p.size}px sans-serif`;
+          ctx.font = `bold ${p.size}px 'Century Gothic', CenturyGothic, sans-serif`;
           ctx.strokeStyle = 'rgba(0,0,0,0.8)';
           ctx.lineWidth = 4;
           ctx.strokeText(p.text!, p.x, p.y);
           ctx.fillStyle = p.color;
           ctx.fillText(p.text!, p.x, p.y);
+        } else if (p.kind === 'slash') {
+          ctx.strokeStyle = p.color;
+          ctx.lineWidth = 4 * (1 - t);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * t, -Math.PI / 4, Math.PI / 4);
+          ctx.stroke();
         } else if (p.kind === 'emoji') {
-          ctx.font = `${p.size}px serif`;
+          ctx.font = `${p.size}px 'Century Gothic', CenturyGothic, sans-serif`;
           ctx.fillText(p.text!, p.x, p.y);
         } else if (p.kind === 'ring') {
           ctx.strokeStyle = p.color;
