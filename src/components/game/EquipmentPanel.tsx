@@ -53,10 +53,17 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
   const [hoverSlot, setHoverSlot] = useState<{ id: SlotId; rect: DOMRect } | null>(null);
 
   const totalScore = Object.values(equipment).reduce((sum, i) => sum + (i?.score ?? 0), 0);
+  const totalDmg = Object.values(equipment).reduce((sum, i) => sum + (i?.base.dmg ?? 0), 0);
+  const totalArmor = Object.values(equipment).reduce((sum, i) => sum + (i?.base.armor ?? 0), 0);
+  const totalHp = Object.values(equipment).reduce((sum, i) => sum + (i?.base.hp ?? 0), 0);
 
   const handleSlotClick = (slot: SlotConfig) => {
     setSlotFilter(slot.kind);
     if (onSelectSlot) onSelectSlot(slot.kind);
+  };
+
+  const handleUnequipAll = () => {
+    Object.keys(equipment).forEach(slotId => unequip(slotId as SlotId));
   };
 
   const renderSlotBtn = (slot: SlotConfig) => {
@@ -108,14 +115,30 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
   return (
     <div className="bg-slate-900/90 rounded-xl border border-slate-700/60 p-3 shadow-2xl backdrop-blur-md">
       {/* Panel Header */}
-      <div className="flex items-center justify-between mb-2.5 border-b border-slate-800 pb-1.5">
+      <div className="flex items-center justify-between mb-2 border-b border-slate-800 pb-1.5">
         <div className="flex items-center gap-1.5">
           <span className="text-base">🛡️</span>
           <h3 className="font-extrabold text-sm text-slate-100">Кукла Снаряжения</h3>
         </div>
-        <span className="text-[10px] text-slate-400 font-mono">
-          Мощь: <b className="text-amber-300 font-extrabold text-xs">⚡{totalScore}</b>
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleUnequipAll}
+            className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-200 border border-slate-700 transition-colors"
+            title="Снять все надетые предметы в инвентарь"
+          >
+            Снять всё
+          </button>
+          <span className="text-[10px] text-slate-400 font-mono">
+            Мощь: <b className="text-amber-300 font-extrabold text-xs">⚡{totalScore}</b>
+          </span>
+        </div>
+      </div>
+
+      {/* Stats Summary Bar */}
+      <div className="grid grid-cols-3 gap-1 mb-2 bg-slate-950/70 p-1.5 rounded-lg border border-slate-800 text-[10px] text-center font-bold">
+        <div className="text-red-400">⚔️ +{totalDmg} <span className="text-[8px] text-slate-400">Урон</span></div>
+        <div className="text-sky-400">🛡️ +{totalArmor} <span className="text-[8px] text-slate-400">Броня</span></div>
+        <div className="text-emerald-400">❤️ +{totalHp} <span className="text-[8px] text-slate-400">HP</span></div>
       </div>
 
       {/* Paperdoll Layout Grid */}

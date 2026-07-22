@@ -12,19 +12,47 @@ export default function SkillsPanel() {
   const upgradeSkill = useGame(s => s.upgradeSkill);
   const toggleAutoCast = useGame(s => s.toggleAutoCast);
 
+  const learnedSkills = SKILLS.filter(sk => (skillRanks[sk.id] ?? 0) > 0);
+  const allAutoActive = learnedSkills.length > 0 && learnedSkills.every(sk => autoCast[sk.id]);
+
+  const handleToggleAllAuto = () => {
+    const targetState = !allAutoActive;
+    learnedSkills.forEach(sk => {
+      if (autoCast[sk.id] !== targetState) {
+        toggleAutoCast(sk.id);
+      }
+    });
+  };
+
   return (
     <div className="bg-slate-900/90 rounded-xl border border-slate-700/60 p-3 flex flex-col h-full min-h-0 shadow-2xl backdrop-blur-md">
+      {/* Header */}
       <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-800 shrink-0">
         <h3 className="font-extrabold text-sm text-slate-100 flex items-center gap-1.5">
           <span>✨ Боевые Скиллы</span>
         </h3>
-        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border transition-all ${
-          skillPoints > 0 ? 'bg-sky-500/20 text-sky-300 border-sky-500/40 animate-pulse' : 'bg-slate-800 text-slate-400 border-slate-700'
-        }`}>
-          {skillPoints} очков
-        </span>
+        <div className="flex items-center gap-2">
+          {learnedSkills.length > 0 && (
+            <button
+              onClick={handleToggleAllAuto}
+              className={`text-[10px] font-extrabold px-2 py-1 rounded-lg border transition-all ${
+                allAutoActive
+                  ? 'bg-emerald-600 border-emerald-500 text-white shadow-[0_0_8px_rgba(16,185,129,0.3)]'
+                  : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              ⚡ {allAutoActive ? 'Отключить авто' : 'Включить все авто'}
+            </button>
+          )}
+          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border transition-all ${
+            skillPoints > 0 ? 'bg-sky-500/20 text-sky-300 border-sky-500/40 animate-pulse' : 'bg-slate-800 text-slate-400 border-slate-700'
+          }`}>
+            {skillPoints} очков
+          </span>
+        </div>
       </div>
 
+      {/* Skills List */}
       <div className="space-y-1.5 overflow-y-auto flex-1 min-h-0 pr-1">
         {SKILLS.map(sk => {
           const rank = skillRanks[sk.id] ?? 0;
@@ -100,7 +128,7 @@ export default function SkillsPanel() {
       </div>
 
       <div className="mt-2 text-[10px] text-slate-400 shrink-0 text-center border-t border-slate-800 pt-1.5">
-        🔷 Мана: <b className="text-sky-300">{Math.floor(mana)}</b> · Включите ⚡АВТО для автоматического использования
+        🔷 Мана: <b className="text-sky-300">{Math.floor(mana)}</b> · Нажмите ⚡Включить все авто для автокаста заклинаний
       </div>
     </div>
   );

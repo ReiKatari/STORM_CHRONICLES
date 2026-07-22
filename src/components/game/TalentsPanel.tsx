@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useGame } from '@/game/store';
 import { BRANCHES, TALENTS } from '@/game/skills';
-import type { TalentDef } from '@/game/types';
 
 export default function TalentsPanel() {
   const talents = useGame(s => s.talents);
@@ -12,18 +11,17 @@ export default function TalentsPanel() {
   const [selectedTalentId, setSelectedTalentId] = useState<string | null>(null);
 
   const visibleBranches = BRANCHES.filter(b => activeBranch === 'all' || b.id === activeBranch);
-
   const selectedTalent = selectedTalentId ? TALENTS.find(t => t.id === selectedTalentId) : null;
 
   return (
-    <div className="bg-slate-900/90 rounded-xl border border-slate-700/60 p-3.5 flex flex-col h-full shadow-2xl backdrop-blur-md">
+    <div className="bg-slate-900/90 rounded-xl border border-slate-700/60 p-3.5 flex flex-col h-full min-h-0 shadow-2xl backdrop-blur-md">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap border-b border-slate-800 pb-2.5">
+      <div className="flex items-center justify-between gap-2 mb-2 border-b border-slate-800 pb-2 shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-xl">🌟</span>
           <div>
             <h3 className="font-extrabold text-sm text-slate-100 leading-tight">Древо Талантов</h3>
-            <span className="text-[10px] text-slate-400">Усиливайте персонажа уникальными перками</span>
+            <span className="text-[10px] text-slate-400">Усиливайте персонажа пассивными навыками</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -32,16 +30,16 @@ export default function TalentsPanel() {
               ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 animate-pulse shadow-[0_0_12px_rgba(168,85,247,0.3)]'
               : 'bg-slate-800 text-slate-400 border-slate-700'
           }`}>
-            {points} {points === 1 ? 'очко' : points > 1 && points < 5 ? 'очка' : 'очков'}
+            {points} очков
           </span>
         </div>
       </div>
 
       {/* Branch Tabs */}
-      <div className="flex gap-1.5 mb-3 bg-slate-950/60 p-1 rounded-lg border border-slate-800 shrink-0">
+      <div className="flex gap-1.5 mb-2.5 bg-slate-950/70 p-1 rounded-xl border border-slate-800 shrink-0">
         <button
           onClick={() => setActiveBranch('all')}
-          className={`flex-1 text-[11px] py-1 px-2 rounded-md font-bold transition-all ${
+          className={`flex-1 text-[11px] py-1 px-2 rounded-lg font-bold transition-all ${
             activeBranch === 'all' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -55,7 +53,7 @@ export default function TalentsPanel() {
             <button
               key={b.id}
               onClick={() => setActiveBranch(b.id)}
-              className={`flex-1 text-[11px] py-1 px-2 rounded-md font-bold flex items-center justify-center gap-1 transition-all ${
+              className={`flex-1 text-[11px] py-1 px-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-all ${
                 isActive ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'
               }`}
               style={{ color: isActive ? b.color : undefined }}
@@ -68,14 +66,14 @@ export default function TalentsPanel() {
         })}
       </div>
 
-      {/* Branches Container */}
-      <div className="space-y-4 overflow-y-auto flex-1 pr-1" style={{ maxHeight: 420 }}>
+      {/* Visual Tree Branches Container */}
+      <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1">
         {visibleBranches.map(b => {
           const branchTalents = TALENTS.filter(t => t.branch === b.id);
           const branchPoints = branchTalents.reduce((sum, t) => sum + (talents[t.id] ?? 0), 0);
 
           return (
-            <div key={b.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-2.5 space-y-2">
+            <div key={b.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-2.5 space-y-2 relative overflow-hidden">
               {/* Branch Header */}
               <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5 px-1">
                 <div className="flex items-center gap-2">
@@ -88,7 +86,7 @@ export default function TalentsPanel() {
               </div>
 
               {/* Rows */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[0, 1, 2, 3, 4].map(row => {
                   const reqPoints = row * 3;
                   const isRowUnlocked = row === 0 || branchPoints >= reqPoints;
@@ -97,19 +95,19 @@ export default function TalentsPanel() {
                   return (
                     <div key={row} className="relative">
                       {/* Row Requirement Badge */}
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-[9px] font-semibold px-2 py-0.5 rounded border ${
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border ${
                           isRowUnlocked
                             ? 'bg-slate-800/70 text-slate-300 border-slate-700/60'
                             : 'bg-red-950/40 text-red-400 border-red-900/50'
                         }`}>
-                          {row === 0 ? 'Старт' : isRowUnlocked ? `Ряд ${row + 1}` : `🔒 Ряд ${row + 1} (нужно ${reqPoints} очк. в ветке)`}
+                          {row === 0 ? 'Старт' : isRowUnlocked ? `Ряд ${row + 1}` : `🔒 Ряд ${row + 1} (нужно ${reqPoints} очк.)`}
                         </span>
                         <div className="flex-1 h-[1px] bg-slate-800/60" />
                       </div>
 
-                      {/* Talent Cards Grid */}
-                      <div className={`grid gap-2 ${activeBranch === 'all' ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-2'}`}>
+                      {/* Talent Nodes Grid */}
+                      <div className="grid grid-cols-2 gap-2">
                         {rowTalents.map(t => {
                           const rank = talents[t.id] ?? 0;
                           const unlocked = isRowUnlocked;
@@ -121,17 +119,17 @@ export default function TalentsPanel() {
                             <div
                               key={t.id}
                               onClick={() => setSelectedTalentId(t.id)}
-                              className={`group relative rounded-lg border p-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
+                              className={`group relative rounded-xl border p-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
                                 !unlocked
                                   ? 'border-slate-800/80 bg-slate-900/20 opacity-50 grayscale'
                                   : isMax
-                                  ? 'border-amber-500/50 bg-slate-850/80 shadow-[0_0_10px_rgba(245,158,11,0.15)]'
+                                  ? 'border-amber-500/60 bg-amber-950/20 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
                                   : rank > 0
-                                  ? 'border-emerald-500/40 bg-slate-800/80'
+                                  ? 'border-emerald-500/50 bg-slate-850/80'
                                   : 'border-slate-700/60 bg-slate-900/60 hover:border-slate-600'
-                              } ${isSelected ? 'ring-2 ring-purple-500 shadow-lg' : ''}`}
+                              } ${isSelected ? 'ring-2 ring-purple-500 shadow-xl' : ''}`}
                             >
-                              <div className="flex items-start gap-2 mb-1.5">
+                              <div className="flex items-start gap-2 mb-1">
                                 <div
                                   className={`w-9 h-9 rounded-lg border flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105 ${
                                     rank > 0 ? 'bg-slate-800' : 'bg-slate-900'
@@ -160,7 +158,7 @@ export default function TalentsPanel() {
                                 </div>
                               </div>
 
-                              {/* Progress bar & Effect */}
+                              {/* Progress bar & Upgrade Button */}
                               <div className="mt-1 space-y-1">
                                 <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800">
                                   <div
@@ -183,7 +181,7 @@ export default function TalentsPanel() {
                                         e.stopPropagation();
                                         learn(t.id);
                                       }}
-                                      className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all animate-bounce active:scale-95 shrink-0"
+                                      className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all animate-bounce shrink-0"
                                     >
                                       +1 Изучить
                                     </button>
@@ -203,9 +201,9 @@ export default function TalentsPanel() {
         })}
       </div>
 
-      {/* Selected Talent Detailed Card / Quick Inspector */}
+      {/* Selected Talent Detailed Card */}
       {selectedTalent && (
-        <div className="mt-2 p-2.5 rounded-lg border border-purple-500/40 bg-purple-950/30 text-xs shrink-0 flex items-center justify-between gap-3 animate-fadeIn">
+        <div className="mt-2 p-2.5 rounded-xl border border-purple-500/40 bg-purple-950/40 text-xs shrink-0 flex items-center justify-between gap-3 animate-fadeIn">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-2xl p-1.5 bg-slate-900 rounded-lg border border-purple-500/30">{selectedTalent.icon}</span>
             <div className="min-w-0">
@@ -226,8 +224,8 @@ export default function TalentsPanel() {
       )}
 
       {/* Footer Info */}
-      <div className="mt-2 text-[10px] text-slate-500 text-center shrink-0">
-        🌟 Очки талантов выдаются каждые 5 уровней · Новые ряды открываются за каждые 3 очка в ветке
+      <div className="mt-2 text-[10px] text-slate-400 text-center shrink-0 border-t border-slate-800 pt-1.5">
+        🌟 Очки выдаются каждые 5 уровней · Новые ряды за каждые 3 очка в ветке
       </div>
     </div>
   );
