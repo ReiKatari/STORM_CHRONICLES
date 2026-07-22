@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGame } from '@/game/store';
 import { generateItem, rarityById } from '@/game/items';
 import type { Item } from '@/game/types';
@@ -11,6 +11,15 @@ export default function MerchantModal({ onClose }: { onClose: () => void }) {
   const inventory = useGame(s => s.inventory);
   const sellItem = useGame(s => s.sellItem);
   const sellJunk = useGame(s => s.sellJunk);
+
+  // ESC key listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const [shopStock] = useState<Item[]>(() => [
     generateItem(level, 'rare'),
@@ -52,12 +61,15 @@ export default function MerchantModal({ onClose }: { onClose: () => void }) {
               <span className="text-[10px] text-amber-300 font-bold">💰 Ваше золото: {gold} gold</span>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 font-bold text-sm flex items-center justify-center transition-colors"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-slate-400 font-mono">Закрыть: [ESC]</span>
+            <button
+              onClick={onClose}
+              className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 font-bold text-sm flex items-center justify-center transition-colors"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Merchant NPC Tabs */}

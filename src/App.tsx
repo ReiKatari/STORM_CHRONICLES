@@ -5,7 +5,6 @@ import { zoneById } from '@/game/monsters';
 import { getClassById } from '@/game/classes';
 import CombatCanvas from '@/components/game/CombatCanvas';
 import StatsPanel from '@/components/game/StatsPanel';
-import EquipmentPanel from '@/components/game/EquipmentPanel';
 import InventoryPanel from '@/components/game/InventoryPanel';
 import SkillsPanel from '@/components/game/SkillsPanel';
 import TalentsPanel from '@/components/game/TalentsPanel';
@@ -223,6 +222,11 @@ export default function App() {
     }
   }, [loaded, characterName, classId]);
 
+  const handleOpenPaperdoll = () => {
+    setShowPaperdollModal(true);
+    setTab('inventory');
+  };
+
   const handleSelectEquipmentSlot = () => {
     setTab('inventory');
   };
@@ -246,14 +250,13 @@ export default function App() {
 
       <div id="app-root" className="w-full max-w-[1600px] mx-auto min-h-screen relative flex flex-col">
         <Header
-          onOpenPaperdoll={() => setShowPaperdollModal(true)}
+          onOpenPaperdoll={handleOpenPaperdoll}
           onOpenMerchant={() => setShowMerchantModal(true)}
         />
         <main className="p-2.5 grid gap-2.5 xl:grid-cols-[300px_1fr_370px] lg:grid-cols-[280px_1fr] flex-1 min-h-0 items-start">
           {/* LEFT COLUMN */}
           <div className="space-y-2.5 order-2 lg:order-1">
-            <StatsPanel />
-            <EquipmentPanel onSelectSlot={handleSelectEquipmentSlot} />
+            <StatsPanel onOpenPaperdoll={handleOpenPaperdoll} />
           </div>
 
           {/* CENTER */}
