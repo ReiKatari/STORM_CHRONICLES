@@ -7,6 +7,7 @@ import { SKILLS, TALENTS } from './skills';
 import { computeDerived, MAX_LEVEL, mitigate, monsterReward, monsterStats, rarityAtLeast, xpForLevel } from './engine';
 import type { DerivedStats } from './engine';
 import { getClassById, HERO_CLASSES } from './classes';
+import { sound } from './sound';
 
 let fxId = 1;
 let logId = 1;
@@ -203,6 +204,7 @@ export const useGame = create<GameState>((set, get) => {
     }
     if (leveled > 0) {
       const d = recalc();
+      sound.playLevelUp();
       pushFx(s.fxQueue, { type: 'levelup', text: `Уровень ${level}!`, color: '#facc15' });
       pushLog(s.log, `⬆️ Уровень ${level}! +${(5 + tBonus) * leveled} очков статов`, '#facc15');
       set({ xp, level, statPoints, skillPoints, talentPoints, hp: d.maxHp, mana: d.maxMana, derived: d });
@@ -234,6 +236,7 @@ export const useGame = create<GameState>((set, get) => {
       const drop = generateItem(m.level, m.def.isBoss ? 'rare' : undefined);
       newInventory.push(drop);
       const r = rarityById(drop.rarity);
+      sound.playLoot();
       pushLog(s.log, `✨ Выпал предмет: ${drop.name}`, r.color);
       pushFx(s.fxQueue, { type: 'loot', text: drop.name, color: r.color });
       addQuestProgress('loot', drop.rarity, 1);
@@ -452,6 +455,7 @@ export const useGame = create<GameState>((set, get) => {
         const rawDmg = Math.floor(d.dmgMin + Math.random() * (d.dmgMax - d.dmgMin + 1));
         const dealt = Math.round(rawDmg * (isCrit ? d.critMult : 1.0));
 
+        if (isCrit) sound.playCrit(); else sound.playHit();
         monster.hp -= dealt;
         pushFx(s.fxQueue, { type: isCrit ? 'crit' : 'monsterHit', value: dealt, text: isCrit ? `💥 КРИТ ${dealt}` : `${dealt}`, color: isCrit ? '#facc15' : '#f87171' });
 

@@ -10,25 +10,30 @@ import SkillsPanel from '@/components/game/SkillsPanel';
 import TalentsPanel from '@/components/game/TalentsPanel';
 import QuestsPanel from '@/components/game/QuestsPanel';
 import WorldPanel from '@/components/game/WorldPanel';
+import PetsPanel from '@/components/game/PetsPanel';
 import EventsPanel from '@/components/game/EventsPanel';
 import HotbarPanel from '@/components/game/HotbarPanel';
 import CharacterCreationModal from '@/components/game/CharacterCreationModal';
 import EquipmentModal from '@/components/game/EquipmentModal';
 import MerchantModal from '@/components/game/MerchantModal';
+import CraftingModal from '@/components/game/CraftingModal';
 
-type Tab = 'inventory' | 'skills' | 'talents' | 'quests' | 'world';
+type Tab = 'inventory' | 'skills' | 'talents' | 'quests' | 'pets' | 'world';
 const TABS: { id: Tab; name: string; icon: string }[] = [
   { id: 'inventory', name: 'Инвентарь', icon: '🎒' },
   { id: 'skills', name: 'Скиллы', icon: '✨' },
   { id: 'talents', name: 'Таланты', icon: '🌟' },
   { id: 'quests', name: 'Квесты', icon: '📜' },
+  { id: 'pets', name: 'Питомцы', icon: '🐾' },
   { id: 'world', name: 'Мир', icon: '🗺️' },
 ];
 
 function Header({
   onOpenMerchant,
+  onOpenCrafting,
 }: {
   onOpenMerchant: () => void;
+  onOpenCrafting: () => void;
 }) {
   const name = useGame(s => s.characterName);
   const classId = useGame(s => s.classId);
@@ -74,8 +79,16 @@ function Header({
         <span className="text-[9px] text-slate-500 font-mono">{MAX_LEVEL}</span>
       </div>
 
-      {/* Meta Stats & Merchant Button */}
+      {/* Meta Stats, Merchant & Crafting Buttons */}
       <div className="flex items-center gap-2 ml-auto text-xs font-semibold">
+        <button
+          onClick={onOpenCrafting}
+          className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-orange-950/80 hover:bg-orange-900 border border-orange-500/40 text-orange-200 transition-all shadow-md active:scale-95 flex items-center gap-1"
+        >
+          <span>🔨</span>
+          <span>Кузница & Крафт</span>
+        </button>
+
         <button
           onClick={onOpenMerchant}
           className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-950/80 hover:bg-amber-900 border border-amber-500/40 text-amber-200 transition-all shadow-md active:scale-95 flex items-center gap-1"
@@ -185,6 +198,7 @@ export default function App() {
   const [showCreationModal, setShowCreationModal] = useState(false);
   const [showPaperdollModal, setShowPaperdollModal] = useState(false);
   const [showMerchantModal, setShowMerchantModal] = useState(false);
+  const [showCraftingModal, setShowCraftingModal] = useState(false);
 
   const characterName = useGame(s => s.characterName);
   const classId = useGame(s => s.classId);
@@ -234,9 +248,14 @@ export default function App() {
         <MerchantModal onClose={() => setShowMerchantModal(false)} />
       )}
 
+      {showCraftingModal && (
+        <CraftingModal onClose={() => setShowCraftingModal(false)} />
+      )}
+
       <div id="app-root" className="w-full max-w-[1600px] mx-auto min-h-screen relative flex flex-col">
         <Header
           onOpenMerchant={() => setShowMerchantModal(true)}
+          onOpenCrafting={() => setShowCraftingModal(true)}
         />
         <main className="p-2.5 grid gap-2.5 xl:grid-cols-[300px_1fr_370px] lg:grid-cols-[280px_1fr] flex-1 min-h-0 items-start">
           {/* LEFT COLUMN */}
@@ -288,19 +307,19 @@ function TabButtons({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const badges: Partial<Record<Tab, number>> = { skills: skillPoints, talents: talentPoints, quests: readyQuests };
 
   return (
-    <div className="flex gap-1.5 bg-slate-900/90 rounded-xl border border-slate-700/60 p-1.5 shadow-md shrink-0">
+    <div className="flex gap-1 bg-slate-900/90 rounded-xl border border-slate-700/60 p-1.5 shadow-md shrink-0 overflow-x-auto">
       {TABS.map(t => (
         <button
           key={t.id}
           onClick={() => setTab(t.id)}
-          className={`relative flex-1 py-2 px-1 rounded-xl font-bold transition-all flex flex-col items-center justify-center gap-0.5 text-center ${
+          className={`relative flex-1 py-2 px-1 rounded-xl font-bold transition-all flex flex-col items-center justify-center gap-0.5 text-center min-w-[50px] ${
             tab === t.id
               ? 'bg-slate-700/90 text-white shadow-lg border border-slate-600 scale-[1.02]'
               : 'text-slate-400 hover:text-slate-200 bg-slate-950/40 hover:bg-slate-800/50'
           }`}
         >
-          <span className="text-xl leading-none">{t.icon}</span>
-          <span className="text-[10px] font-extrabold leading-tight">{t.name}</span>
+          <span className="text-lg leading-none">{t.icon}</span>
+          <span className="text-[9px] font-extrabold leading-tight truncate w-full">{t.name}</span>
           {(badges[t.id] ?? 0) > 0 && (
             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center animate-pulse shadow-md font-mono">
               {badges[t.id]}
@@ -318,6 +337,7 @@ function TabContent({ tab }: { tab: Tab }) {
     case 'skills': return <SkillsPanel />;
     case 'talents': return <TalentsPanel />;
     case 'quests': return <QuestsPanel />;
+    case 'pets': return <PetsPanel />;
     case 'world': return <WorldPanel />;
   }
 }
