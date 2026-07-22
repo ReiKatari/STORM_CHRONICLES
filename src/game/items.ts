@@ -14,6 +14,29 @@ export function rarityById(id: RarityId): RarityDef {
   return RARITIES.find(r => r.id === id) ?? RARITIES[0];
 }
 
+export interface SlotDefItem {
+  id: SlotKind;
+  kind: SlotKind;
+  name: string;
+  icon: string;
+}
+
+export const SLOT_DEFS: SlotDefItem[] = [
+  { id: 'weapon', kind: 'weapon', name: 'Оружие', icon: '⚔️' },
+  { id: 'helmet', kind: 'helmet', name: 'Шлем', icon: '🪖' },
+  { id: 'armor', kind: 'armor', name: 'Броня', icon: '🛡️' },
+  { id: 'gloves', kind: 'gloves', name: 'Перчатки', icon: '🧤' },
+  { id: 'kneepads', kind: 'kneepads', name: 'Наколенники', icon: '🦵' },
+  { id: 'shoulders', kind: 'shoulders', name: 'Наплечники', icon: '🎽' },
+  { id: 'boots', kind: 'boots', name: 'Сапоги', icon: '🥾' },
+  { id: 'pants', kind: 'pants', name: 'Штаны', icon: '👖' },
+  { id: 'ring', kind: 'ring', name: 'Кольца', icon: '💍' },
+  { id: 'earring', kind: 'earring', name: 'Серьги', icon: '📿' },
+  { id: 'amulet', kind: 'amulet', name: 'Амулет', icon: '🔮' },
+  { id: 'cloak', kind: 'cloak', name: 'Плащ', icon: '🧣' },
+  { id: 'banner', kind: 'banner', name: 'Знамя', icon: '🚩' },
+];
+
 export type Gender = 'm' | 'f' | 'n' | 'p';
 
 export interface BaseItem {
