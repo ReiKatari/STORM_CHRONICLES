@@ -1,17 +1,20 @@
 import { create } from 'zustand';
-import type { ActiveMonster, BaseStats, DungeonRun, FxEvent, Item, LogEntry, QuestState, SlotId, StatId } from './types';
+import type { ActiveMonster, BaseStats, DungeonRun, FxEvent, Item, LogEntry, QuestState, SlotId, StatId, SlotKind } from './types';
 import { generateItem, rarityById } from './items';
 import { DUNGEONS, makeMonster, ZONES, zoneById, dungeonById } from './monsters';
 import { QUESTS } from './quests';
 import { SKILLS, TALENTS } from './skills';
 import { computeDerived, MAX_LEVEL, mitigate, monsterReward, monsterStats, rarityAtLeast, xpForLevel } from './engine';
 import type { DerivedStats } from './engine';
+import { getClassById, HERO_CLASSES } from './classes';
 
 let fxId = 1;
 let logId = 1;
 
 export interface GameState {
   // character
+  characterName: string;
+  classId: string;
   level: number;
   xp: number;
   gold: number;
@@ -64,6 +67,7 @@ export interface GameState {
   derived: DerivedStats;
 
   // actions
+  initCharacter: (name: string, classId: string) => void;
   tick: (dt: number) => void;
   allocateStat: (s: StatId) => void;
   allocateStat10: (s: StatId) => void;
@@ -85,7 +89,7 @@ export interface GameState {
   setSlotFilter: (slot: SlotKind | 'all') => void;
 }
 
-const baseStats = (): BaseStats => ({ str: 5, agi: 5, vit: 5, int: 5, end: 5, luk: 5, wis: 5, per: 5, cha: 5, wil: 5 });
+const defaultStats = (): BaseStats => HERO_CLASSES[0].baseStats;
 
 function zoneBaseLevel(zoneIndex: number): number {
   return 1 + zoneIndex * 15;
@@ -93,7 +97,9 @@ function zoneBaseLevel(zoneIndex: number): number {
 
 function makeQuestState(): Record<string, QuestState> {
   const q: Record<string, QuestState> = {};
-  QUESTS.forEach(def => { q[def.id] = { id: def.id, progress: 0, done: false, claimed: false }; });
+  QUESTS.forEach(def => {
+    q[def.id] = { progress: 0, done: false, claimed: false };
+  });
   return q;
 }
 
@@ -125,7 +131,7 @@ function spawnFor(zoneId: string, stage: number, mastery: number, dungeon: Dunge
   return { def, hp, maxHp: hp, level: lvl, dmg, xp: rew.xp, gold: rew.gold, attackTimer: 0, dotTimer: 0, dots: [] };
 }
 
-const SAVE_KEY = 'rogalik_save_v3';
+const SAVE_KEY = 'rogalik_save_v4';
 
 function pushFx(fx: FxEvent[], e: Omit<FxEvent, 'id'>) {
   fx.push({ ...e, id: fxId++ });
@@ -136,7 +142,7 @@ function pushLog(log: LogEntry[], text: string, color = '#e2e8f0') {
   if (log.length > 80) log.splice(0, log.length - 80);
 }
 
-const initialDerived = computeDerived(1, baseStats(), {}, {});
+const initialDerived = computeDerived(1, defaultStats(), {}, {});
 
 export const useGame = create<GameState>((set, get) => {
   const initialMonster = spawnFor('hills', 1, 0, null);
@@ -209,427 +215,424 @@ export const useGame = create<GameState>((set, get) => {
   function onKill(m: ActiveMonster) {
     const s = get();
     const d = s.derived;
-    const goldGain = Math.floor(m.gold * (1 + d.goldBonus / 100));
-    const xpGain = Math.floor(m.xp * (1 + d.xpBonus / 100));
-    const totalGold = s.totalGoldEarned + goldGain;
-    pushFx(s.fxQueue, { type: 'death', value: m.def.isBoss ? 2 : m.def.isMiniBoss ? 1 : 0 });
-    pushLog(s.log, `☠️ ${m.def.name} (ур.${m.level}) — +${xpGain} опыта, +${goldGain} золота`, m.def.isBoss ? '#fb923c' : '#94a3b8');
-    set({ gold: s.gold + goldGain, totalGoldEarned: totalGold, kills: s.kills + 1 });
-    addQuestProgress('kill', m.def.family, 1);
-    addQuestProgress('gold', '', totalGold);
 
-    // loot
-    const dropChance = (m.def.isBoss ? 1 : m.def.isMiniBoss ? 0.75 : 0.26) + d.dropBonus / 200;
-    const loot: Item[] = [];
-    if (Math.random() < dropChance) {
-      const bonus = s.dungeon ? dungeonById(s.dungeon.dungeonId).lootBonus : 0;
-      loot.push(generateItem(m.level, s.stats.luk + d.dropBonus * 0.3, bonus));
-    }
-    if (m.def.isBoss) {
-      const bonus = s.dungeon ? dungeonById(s.dungeon.dungeonId).lootBonus : 2;
-      loot.push(generateItem(m.level, s.stats.luk, bonus + 2));
-      if (Math.random() < 0.35) loot.push(generateItem(m.level, s.stats.luk, bonus));
-      set({ bossKills: s.bossKills + 1 });
-      addQuestProgress('boss', '', 1);
-    }
-    if (loot.length > 0) {
-      const inv = [...s.inventory, ...loot].slice(-72);
-      set({ inventory: inv });
-      loot.forEach(it => {
-        const r = rarityById(it.rarity);
-        pushFx(s.fxQueue, { type: 'loot', text: it.icon, color: r.color });
-        pushLog(s.log, `🎁 Дроп: ${it.name} [${r.name}]`, r.color);
-        addQuestProgress('loot', it.rarity, 1);
-      });
-    }
+    const goldGain = Math.round(m.gold * (1 + d.goldBonus / 100));
+    const xpGain = Math.round(m.xp * (1 + d.xpBonus / 100));
+
+    pushLog(s.log, `☠️ Убит ${m.def.name} (Ур.${m.level}): +${goldGain}g, +${xpGain}xp`, m.def.color);
     grantXp(xpGain);
+    addQuestProgress('kill', m.def.family, 1);
+    if (m.def.isBoss || m.def.isMiniBoss) addQuestProgress('boss', '', 1);
 
-    // progression
-    const s2 = get();
-    if (s2.dungeon) {
-      const dun = dungeonById(s2.dungeon.dungeonId);
-      if (s2.dungeon.wave >= dun.waves) {
+    let kills = s.kills + 1;
+    let bossKills = s.bossKills + (m.def.isBoss ? 1 : 0);
+
+    // loot chance
+    const dropChance = 0.35 * (1 + d.dropBonus / 100) * (m.def.isBoss ? 2.5 : m.def.isMiniBoss ? 1.5 : 1);
+    const newInventory = [...s.inventory];
+    if (Math.random() < dropChance && newInventory.length < 72) {
+      const drop = generateItem(m.level, m.def.isBoss ? 'rare' : undefined);
+      newInventory.push(drop);
+      const r = rarityById(drop.rarity);
+      pushLog(s.log, `✨ Выпал предмет: ${drop.name}`, r.color);
+      pushFx(s.fxQueue, { type: 'loot', text: drop.name, color: r.color });
+      addQuestProgress('loot', drop.rarity, 1);
+    }
+
+    // secret zone drop chance
+    const unlockedSecrets = [...s.unlockedSecrets];
+    if (Math.random() < 0.04) {
+      const hZones = ZONES.filter(z => z.hidden && !unlockedSecrets.includes(z.id));
+      if (hZones.length > 0) {
+        const pick = hZones[Math.floor(Math.random() * hZones.length)];
+        unlockedSecrets.push(pick.id);
+        pushLog(s.log, `🔮 Найдена скрытая локация: ${pick.name}!`, '#e0a5e9');
+        pushFx(s.fxQueue, { type: 'quest', text: `Скрытая зона!`, color: '#e0a5e9' });
+      }
+    }
+
+    if (s.dungeon) {
+      const dun = dungeonById(s.dungeon.dungeonId);
+      const nextWave = s.dungeon.wave + 1;
+      if (nextWave > dun.waves) {
         // dungeon cleared!
-        pushLog(s2.log, `🏆 Подземелье «${dun.name}» пройдено!`, '#4ade80');
-        pushFx(s2.fxQueue, { type: 'levelup', text: '🏆 Подземелье пройдено!', color: '#4ade80' });
-        const bonusItems = [generateItem(dun.minLevel + 10, s2.stats.luk, dun.lootBonus), generateItem(dun.minLevel + 10, s2.stats.luk, dun.lootBonus)];
+        const rewardItem = generateItem(dun.minLevel + 10, dun.rewardRarity as never);
+        if (newInventory.length < 72) newInventory.push(rewardItem);
+        pushLog(s.log, `🏆 ПОДЗЕМЕЛЬЕ ПРОЙДЕНО! Награда: ${rewardItem.name}`, '#facc15');
+        pushFx(s.fxQueue, { type: 'quest', text: '🏆 Победа!', color: '#facc15' });
+        addQuestProgress('dungeon', s.dungeon.dungeonId, 1);
         set({
           dungeon: null,
-          dungeonsCleared: s2.dungeonsCleared + 1,
-          inventory: [...get().inventory, ...bonusItems].slice(-72),
+          kills, bossKills, dungeonsCleared: s.dungeonsCleared + 1,
+          gold: s.gold + goldGain, totalGoldEarned: s.totalGoldEarned + goldGain,
+          inventory: newInventory, unlockedSecrets,
+          monster: spawnFor(s.zoneId, s.stage, s.mastery[s.zoneId] ?? 0, null),
         });
-        addQuestProgress('dungeon', '', 1);
-        bonusItems.forEach(it => { pushLog(get().log, `🎁 Награда: ${it.name}`, rarityById(it.rarity).color); addQuestProgress('loot', it.rarity, 1); });
+        return;
       } else {
-        set({ dungeon: { ...s2.dungeon, wave: s2.dungeon.wave + 1 } });
+        const nextDungeonRun: DungeonRun = { ...s.dungeon, wave: nextWave };
+        set({
+          dungeon: nextDungeonRun,
+          kills, bossKills,
+          gold: s.gold + goldGain, totalGoldEarned: s.totalGoldEarned + goldGain,
+          inventory: newInventory, unlockedSecrets,
+          monster: spawnFor(s.zoneId, s.stage, s.mastery[s.zoneId] ?? 0, nextDungeonRun),
+        });
+        return;
       }
-    } else {
-      const zone = zoneById(s2.zoneId);
-      if (m.def.isBoss) {
-        const mastery = { ...s2.mastery, [zone.id]: (s2.mastery[zone.id] ?? 0) + 1 };
+    }
+
+    // normal stage progression
+    let stage = s.stage;
+    let stageKills = s.stageKills + 1;
+    const currentZone = zoneById(s.zoneId);
+    const mastery = { ...s.mastery };
+    const unlockedZones = [...s.unlockedZones];
+
+    if (stageKills >= currentZone.killsPerStage) {
+      stageKills = 0;
+      if (stage >= currentZone.stages) {
+        // zone cleared!
+        stage = 1;
+        mastery[s.zoneId] = (mastery[s.zoneId] ?? 0) + 1;
+        pushLog(s.log, `🌟 Зона «${currentZone.name}» зачищена! Запущен ★ цикл ${mastery[s.zoneId]}`, '#facc15');
+
         // unlock next zone
-        const zi = ZONES.findIndex(z => z.id === zone.id);
-        const next = ZONES[zi + 1];
-        const unlockedZones = [...s2.unlockedZones];
-        if (next && !next.hidden && !unlockedZones.includes(next.id)) {
-          unlockedZones.push(next.id);
-          pushLog(s2.log, `🗺️ Открыта новая территория: ${next.name}!`, '#4ade80');
+        const zi = ZONES.findIndex(z => z.id === s.zoneId);
+        if (zi >= 0 && zi + 1 < ZONES.length && !ZONES[zi + 1].hidden) {
+          const nextZ = ZONES[zi + 1];
+          if (!unlockedZones.includes(nextZ.id)) {
+            unlockedZones.push(nextZ.id);
+            pushLog(s.log, `🔓 Открыта новая зона: ${nextZ.name}!`, '#38bdf8');
+          }
         }
-        pushLog(s2.log, `👑 Босс «${zone.name}» повержен! Цикл усиления +1`, '#fb923c');
-        set({ mastery, unlockedZones, stage: 1, stageKills: 0 });
       } else {
-        const kills = s2.stageKills + 1;
-        if (kills >= zone.killsPerStage) {
-          const ns = Math.min(zone.stages, s2.stage + 1);
-          const zone2 = zoneById(s2.zoneId);
-          if (ns === Math.ceil(zone2.stages / 2)) pushLog(s2.log, `⚠️ Мини-босс приближается...`, '#c084fc');
-          if (ns === zone2.stages) pushLog(s2.log, `💀 Босс ждёт впереди: ${zone2.bossName}!`, '#f87171');
-          set({ stage: ns, stageKills: 0 });
-          pushFx(s2.fxQueue, { type: 'quest', text: `Этап ${ns}/${zone2.stages}`, color: '#93c5fd' });
-        } else {
-          set({ stageKills: kills });
-        }
+        stage++;
       }
     }
 
-    // respawn
-    const s3 = get();
-    const newM = spawnFor(s3.zoneId, s3.stage, s3.mastery[s3.zoneId] ?? 0, s3.dungeon);
-    if (newM.def.isBoss) pushFx(s3.fxQueue, { type: 'bossSpawn', text: newM.def.name, color: '#f87171' });
-    set({ monster: newM });
-  }
+    set({
+      kills, bossKills, stage, stageKills, mastery, unlockedZones, unlockedSecrets,
+      gold: s.gold + goldGain, totalGoldEarned: s.totalGoldEarned + goldGain,
+      inventory: newInventory,
+      monster: spawnFor(s.zoneId, stage, mastery[s.zoneId] ?? 0, null),
+    });
 
-  function playerAttack() {
-    const s = get();
-    const d = s.derived;
-    const m = s.monster;
-    let dmg = Math.floor(d.dmgMin + Math.random() * (d.dmgMax - d.dmgMin));
-    if (m.def.isBoss) dmg = Math.floor(dmg * (1 + d.bossDmg / 100));
-    const crit = Math.random() * 100 < d.critChance;
-    if (crit) dmg = Math.floor(dmg * d.critMult);
-    dmg = mitigate(dmg, 0);
-    let healFromLs = 0;
-    if (d.lifesteal > 0) healFromLs = Math.floor(dmg * d.lifesteal / 100);
-    const newHp = m.hp - dmg;
-    pushFx(s.fxQueue, { type: crit ? 'crit' : 'playerHit', value: dmg, color: crit ? '#facc15' : '#e2e8f0' });
-    if (healFromLs > 0) set({ hp: Math.min(d.maxHp, s.hp + healFromLs) });
-    if (newHp <= 0) {
-      set({ monster: { ...m, hp: 0 } });
-      onKill({ ...m, hp: 0 });
-    } else {
-      set({ monster: { ...m, hp: newHp } });
-    }
-  }
-
-  function monsterAttack() {
-    const s = get();
-    const d = s.derived;
-    const m = s.monster;
-    if (m.hp <= 0) return;
-    if (Math.random() * 100 < d.dodge) {
-      pushFx(s.fxQueue, { type: 'dodge', text: 'Уворот', color: '#4ade80' });
-      return;
-    }
-    let dmg = mitigate(Math.floor(m.dmg * (0.85 + Math.random() * 0.3)), d.armor);
-    if (s.shield > 0) {
-      const absorbed = Math.min(s.shield, dmg);
-      dmg -= absorbed;
-      set({ shield: s.shield - absorbed });
-    }
-    pushFx(s.fxQueue, { type: 'monsterHit', value: dmg, color: '#f87171' });
-    const hp = s.hp - dmg;
-    if (hp <= 0) {
-      // death
-      const lost = Math.floor(s.gold * 0.03);
-      pushLog(s.log, `💀 Вы погибли! Потеряно ${lost} золота. Воскрешение...`, '#f87171');
-      pushFx(s.fxQueue, { type: 'death', value: -1 });
-      const fresh = spawnFor(s.zoneId, s.stage, s.mastery[s.zoneId] ?? 0, s.dungeon);
-      set({ hp: Math.floor(d.maxHp * 0.6), mana: Math.floor(d.maxMana * 0.5), gold: s.gold - lost, monster: fresh, stageKills: 0, shield: 0 });
-    } else {
-      set({ hp });
-    }
-  }
-
-  function doCast(id: string, manual: boolean) {
-    const s = get();
-    const d = s.derived;
-    const skill = SKILLS.find(k => k.id === id)!;
-    const rank = s.skillRanks[id] ?? 0;
-    if (rank <= 0 || s.level < skill.unlockLevel) return;
-    if ((s.skillCds[id] ?? 0) > 0) return;
-    const cost = Math.floor(skill.manaCost * (1 - Math.min(0.5, (s.talents['m_mana'] ?? 0) * 0.04)));
-    if (s.mana < cost) { if (manual) pushLog(s.log, '🔷 Не хватает маны!', '#60a5fa'); return; }
-
-    const m = s.monster;
-    const power = skill.basePower * (1 + (rank - 1) * 0.25);
-    const fxEvents = s.fxQueue;
-    let mana = s.mana - cost;
-    let hp = s.hp;
-    let shield = s.shield;
-
-    if (skill.kind === 'damage' || skill.kind === 'dot') {
-      const scaleStat = skill.scaling === 'str' ? d.dmgMax : d.skillPower;
-      let dmg = Math.floor(scaleStat * power / 100 * (0.9 + Math.random() * 0.2));
-      if (skill.id === 'blood_ritual') hp = Math.max(1, hp - Math.floor(d.maxHp * 0.05));
-      if (m.def.isBoss) dmg = Math.floor(dmg * (1 + d.bossDmg / 100));
-      pushFx(fxEvents, { type: 'skill', skillFx: skill.fx, value: dmg, color: skill.color, text: skill.icon });
-      if (skill.kind === 'dot') {
-        const dotDmg = Math.floor(dmg * (1 + (s.talents['m_dot'] ?? 0) * 0.10) / 3);
-        m.dots.push({ dmg: dotDmg, ticks: 3 });
-      } else {
-        m.hp -= dmg;
-      }
-      if (skill.id === 'frost_nova') set({ frostSlow: 4 });
-    } else if (skill.kind === 'heal') {
-      const amount = Math.floor(d.maxHp * power / 100 * (1 + (s.talents['m_heal'] ?? 0) * 0.12));
-      hp = Math.min(d.maxHp, hp + amount);
-      pushFx(fxEvents, { type: 'heal', value: amount, color: skill.color, skillFx: 'heal' });
-    } else if (skill.kind === 'buff') {
-      shield = Math.floor(d.maxHp * power / 100);
-      pushFx(fxEvents, { type: 'heal', value: 0, color: skill.color, skillFx: 'shield', text: '🛡️' });
-    }
-
-    const cd = skill.cooldown * (1 - d.cdReduction / 100);
-    set({ mana, hp, shield, skillCds: { ...s.skillCds, [id]: cd }, monster: { ...m } });
-    if (m.hp <= 0) onKill({ ...m, hp: 0 });
+    addQuestProgress('gold', '', s.gold + goldGain);
   }
 
   return {
-    level: 1, xp: 0, gold: 0, totalGoldEarned: 0,
-    stats: baseStats(), statPoints: 0, skillPoints: 0, talentPoints: 0,
-    hp: initialDerived.maxHp, mana: initialDerived.maxMana, shield: 0,
-    equipment: {}, inventory: [], selectedSlotFilter: 'all',
-    skillRanks: {}, skillCds: {}, autoCast: {}, talents: {},
-    zoneId: 'hills', stage: 1, stageKills: 0, mastery: {},
-    unlockedZones: ['hills'], unlockedSecrets: [],
+    characterName: '',
+    classId: '',
+    level: 1,
+    xp: 0,
+    gold: 50,
+    totalGoldEarned: 50,
+    stats: defaultStats(),
+    statPoints: 0,
+    skillPoints: 1,
+    talentPoints: 1,
+    hp: initialDerived.maxHp,
+    mana: initialDerived.maxMana,
+    shield: 0,
+
+    equipment: {},
+    inventory: [],
+    selectedSlotFilter: 'all',
+
+    skillRanks: {},
+    skillCds: {},
+    autoCast: {},
+    talents: {},
+
+    zoneId: 'hills',
+    stage: 1,
+    stageKills: 0,
+    mastery: {},
+    unlockedZones: ['hills'],
+    unlockedSecrets: [],
     dungeon: null,
-    monster: initialMonster, playerAtk: 0, frostSlow: 0,
+
+    monster: initialMonster,
+    playerAtk: 0,
+    frostSlow: 0,
+
     quests: makeQuestState(),
-    kills: 0, bossKills: 0, dungeonsCleared: 0,
-    fxQueue: [], log: [{ id: 0, text: '🗡️ Добро пожаловать в Хроники Бездны!', color: '#facc15', time: Date.now() }],
-    lastSave: 0,
+
+    kills: 0,
+    bossKills: 0,
+    dungeonsCleared: 0,
+    fxQueue: [],
+    log: [
+      { id: logId++, text: '⚔️ Добро пожаловать в Хроники Бездны!', color: '#facc15', time: Date.now() },
+    ],
+    lastSave: Date.now(),
     derived: initialDerived,
 
-    tick: (dt) => {
-      const s = get();
-      const d = s.derived;
-      // regen
-      let hp = Math.min(d.maxHp, s.hp + d.regen * dt * d.maxHp * 0.01 + d.regen * dt);
-      let mana = Math.min(d.maxMana, s.mana + d.manaRegen * dt);
-      // cooldowns
-      const cds: Record<string, number> = {};
-      let cdChanged = false;
-      Object.entries(s.skillCds).forEach(([k, v]) => {
-        if (v > 0) { cds[k] = Math.max(0, v - dt); cdChanged = true; }
+    initCharacter: (name: string, classId: string) => {
+      const cls = getClassById(classId);
+      const starterEquipment: Partial<Record<SlotId, Item>> = {};
+      cls.starterGear.forEach((g, idx) => {
+        const slotId: SlotId = g.slot === 'ring' ? 'ring1' : g.slot === 'earring' ? 'earring1' : (g.slot as SlotId);
+        starterEquipment[slotId] = {
+          id: `starter_${idx}_${Date.now()}`,
+          name: g.name,
+          slot: g.slot,
+          rarity: g.rarity,
+          ilvl: 1,
+          icon: g.icon,
+          base: { dmg: g.dmg, armor: g.armor, hp: g.hp },
+          affixes: [],
+          sellPrice: 15,
+          score: 25,
+        };
       });
-      const frostSlow = Math.max(0, s.frostSlow - dt);
-
-      // dots
-      const m = { ...s.monster, dots: [...s.monster.dots] };
-      m.dotTimer += dt;
-      if (m.dotTimer >= 1) {
-        m.dotTimer -= 1;
-        let dotTotal = 0;
-        m.dots = m.dots.map(dot => { dotTotal += dot.dmg; return { ...dot, ticks: dot.ticks - 1 }; }).filter(dot => dot.ticks > 0);
-        if (dotTotal > 0) {
-          m.hp -= dotTotal;
-          pushFx(s.fxQueue, { type: 'playerHit', value: dotTotal, color: '#84cc16' });
-        }
-      }
-
-      // player attack
-      let playerAtk = s.playerAtk + dt * d.attackSpeed;
-      if (playerAtk >= 1) {
-        playerAtk -= 1;
-        set({ hp, mana, frostSlow, ...(cdChanged ? { skillCds: cds } : {}), monster: m, playerAtk });
-        playerAttack();
-      } else {
-        // monster attack timer
-        m.attackTimer += dt * (frostSlow > 0 ? 0.5 : 1);
-        if (m.attackTimer >= 2.3 && m.hp > 0) {
-          m.attackTimer = 0;
-          set({ hp, mana, frostSlow, ...(cdChanged ? { skillCds: cds } : {}), monster: m, playerAtk });
-          monsterAttack();
-        } else {
-          set({ hp, mana, frostSlow, ...(cdChanged ? { skillCds: cds } : {}), monster: m, playerAtk });
-        }
-      }
-
-      // dot kill check
-      const s2 = get();
-      if (s2.monster.hp <= 0 && s2.monster.maxHp > 0) onKill(s2.monster);
-
-      // autocast
-      const s3 = get();
-      Object.entries(s3.autoCast).forEach(([id, on]) => {
-        if (on && (s3.skillRanks[id] ?? 0) > 0 && (s3.skillCds[id] ?? 0) <= 0) {
-          const skill = SKILLS.find(k => k.id === id)!;
-          if (skill.kind === 'heal' && s3.hp > s3.derived.maxHp * 0.55) return;
-          doCast(id, false);
-        }
+      const newStats = { ...cls.baseStats };
+      const derived = computeDerived(1, newStats, starterEquipment, {});
+      set({
+        characterName: name,
+        classId: classId,
+        stats: newStats,
+        equipment: starterEquipment,
+        hp: derived.maxHp,
+        mana: derived.maxMana,
+        derived,
       });
-
-      // autosave every 6s
-      if (Date.now() - get().lastSave > 6000) get().save();
+      get().save();
     },
 
-    allocateStat: (st) => {
+    tick: (dt: number) => {
+      const s = get();
+      const d = s.derived;
+
+      // regen & cooldowns
+      let hp = Math.min(d.maxHp, s.hp + d.regen * dt);
+      let mana = Math.min(d.maxMana, s.mana + d.manaRegen * dt);
+
+      // skill CDs decrease
+      const newCds: Record<string, number> = {};
+      Object.entries(s.skillCds).forEach(([k, v]) => {
+        if (v > 0) newCds[k] = Math.max(0, v - dt);
+      });
+
+      // autoCast skills execution
+      const cls = getClassById(s.classId);
+      cls.skills.forEach(sk => {
+        if (s.autoCast[sk.id] && (s.skillRanks[sk.id] ?? 0) > 0 && (newCds[sk.id] ?? 0) === 0) {
+          if (mana >= sk.manaCost) {
+            mana -= sk.manaCost;
+            newCds[sk.id] = sk.cooldown * (1 - d.cdReduction / 100);
+
+            // Execute Skill Damage/Heal
+            let skillDmg = Math.round(d.skillPower * 2.2);
+            if (sk.id.includes('heal') || sk.id.includes('meditate') || sk.id.includes('rejuvenation')) {
+              hp = Math.min(d.maxHp, hp + Math.round(d.maxHp * 0.35));
+              pushFx(s.fxQueue, { type: 'heal', text: `+${Math.round(d.maxHp * 0.35)} HP`, color: '#4ade80' });
+            } else {
+              let mHp = s.monster.hp - skillDmg;
+              pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${skillDmg}`, color: sk.color });
+              if (mHp <= 0) {
+                onKill(s.monster);
+                return;
+              } else {
+                set({ monster: { ...s.monster, hp: mHp } });
+              }
+            }
+          }
+        }
+      });
+
+      // player auto-attack
+      let atkTimer = s.playerAtk + dt * d.attackSpeed;
+      let monster = { ...s.monster };
+
+      if (atkTimer >= 1.0) {
+        atkTimer -= 1.0;
+        const isCrit = Math.random() * 100 < d.critChance;
+        const rawDmg = Math.floor(d.dmgMin + Math.random() * (d.dmgMax - d.dmgMin + 1));
+        const dealt = Math.round(rawDmg * (isCrit ? d.critMult : 1.0));
+
+        monster.hp -= dealt;
+        pushFx(s.fxQueue, { type: isCrit ? 'crit' : 'monsterHit', value: dealt, text: isCrit ? `💥 КРИТ ${dealt}` : `${dealt}`, color: isCrit ? '#facc15' : '#f87171' });
+
+        if (monster.hp <= 0) {
+          onKill(monster);
+          set({ playerAtk: 0, hp, mana, skillCds: newCds });
+          return;
+        }
+      }
+
+      // monster attack timer
+      let mTimer = monster.attackTimer + dt;
+      if (mTimer >= 1.8) {
+        mTimer = 0;
+        if (Math.random() * 100 >= d.dodge) {
+          const mDmg = mitigate(monster.dmg, d.armor);
+          hp -= mDmg;
+          pushFx(s.fxQueue, { type: 'playerHit', value: mDmg, text: `-${mDmg}`, color: '#ef4444' });
+          if (hp <= 0) {
+            // player death reset to stage start
+            hp = d.maxHp;
+            pushLog(s.log, `☠️ Вы погибли от рук ${monster.def.name}. Отступление на этап 1!`, '#ef4444');
+            set({ stage: 1, stageKills: 0, dungeon: null, monster: spawnFor(s.zoneId, 1, s.mastery[s.zoneId] ?? 0, null) });
+          }
+        } else {
+          pushFx(s.fxQueue, { type: 'dodge', text: '💨 Уворот!', color: '#38bdf8' });
+        }
+      }
+      monster.attackTimer = mTimer;
+
+      set({ hp, mana, playerAtk: atkTimer, monster, skillCds: newCds });
+    },
+
+    allocateStat: (st: StatId) => {
       const s = get();
       if (s.statPoints <= 0) return;
       const stats = { ...s.stats, [st]: s.stats[st] + 1 };
-      set({ stats, statPoints: s.statPoints - 1, derived: computeDerived(s.level, stats, s.equipment, s.talents) });
-    },
-    allocateStat10: (st) => {
-      const s = get();
-      const n = Math.min(10, s.statPoints);
-      if (n <= 0) return;
-      const stats = { ...s.stats, [st]: s.stats[st] + n };
-      set({ stats, statPoints: s.statPoints - n, derived: computeDerived(s.level, stats, s.equipment, s.talents) });
+      const derived = computeDerived(s.level, stats, s.equipment, s.talents);
+      set({ stats, statPoints: s.statPoints - 1, derived });
     },
 
-    equip: (itemId) => {
+    allocateStat10: (st: StatId) => {
+      const s = get();
+      const count = Math.min(10, s.statPoints);
+      if (count <= 0) return;
+      const stats = { ...s.stats, [st]: s.stats[st] + count };
+      const derived = computeDerived(s.level, stats, s.equipment, s.talents);
+      set({ stats, statPoints: s.statPoints - count, derived });
+    },
+
+    equip: (itemId: string) => {
       const s = get();
       const item = s.inventory.find(i => i.id === itemId);
       if (!item) return;
-      // find best slot for kind
-      const slotOf = (kind: string): SlotId[] =>
-        (['weapon','helmet','armor','gloves','kneepads','shoulders','boots','pants','amulet','cloak','banner'] as SlotId[])
-          .includes(kind as SlotId) ? [kind as SlotId]
-          : kind === 'ring' ? ['ring1', 'ring2'] : ['earring1', 'earring2'];
-      const slots = slotOf(item.slot);
-      let target = slots.find(sl => !s.equipment[sl]);
-      if (!target) {
-        // replace lowest score
-        target = slots.reduce((a, b) => ((s.equipment[a]?.score ?? 0) <= (s.equipment[b]?.score ?? 0) ? a : b));
-      }
-      const equipment = { ...s.equipment };
-      const old = equipment[target];
-      equipment[target] = item;
-      let inventory = s.inventory.filter(i => i.id !== itemId);
-      if (old) inventory = [...inventory, old];
-      set({ equipment, inventory, derived: computeDerived(s.level, s.stats, equipment, s.talents) });
-      pushLog(s.log, `⚔️ Экипировано: ${item.name}`, rarityById(item.rarity).color);
+
+      let targetSlot: SlotId = item.slot as SlotId;
+      if (item.slot === 'ring') targetSlot = s.equipment.ring1 ? 'ring2' : 'ring1';
+      if (item.slot === 'earring') targetSlot = s.equipment.earring1 ? 'earring2' : 'earring1';
+
+      const prev = s.equipment[targetSlot];
+      const equipment = { ...s.equipment, [targetSlot]: item };
+      const inventory = s.inventory.filter(i => i.id !== itemId);
+      if (prev) inventory.push(prev);
+
+      const derived = computeDerived(s.level, s.stats, equipment, s.talents);
+      set({ equipment, inventory, derived });
     },
 
-    unequip: (slot) => {
+    unequip: (slot: SlotId) => {
       const s = get();
-      const item = s.equipment[slot];
-      if (!item) return;
+      const prev = s.equipment[slot];
+      if (!prev || s.inventory.length >= 72) return;
+
       const equipment = { ...s.equipment };
       delete equipment[slot];
-      set({ equipment, inventory: [...s.inventory, item].slice(-72), derived: computeDerived(s.level, s.stats, equipment, s.talents) });
+      const inventory = [...s.inventory, prev];
+      const derived = computeDerived(s.level, s.stats, equipment, s.talents);
+      set({ equipment, inventory, derived });
     },
 
-    sellItem: (itemId) => {
+    sellItem: (itemId: string) => {
       const s = get();
       const item = s.inventory.find(i => i.id === itemId);
       if (!item) return;
-      set({ inventory: s.inventory.filter(i => i.id !== itemId), gold: s.gold + item.sellPrice, totalGoldEarned: s.totalGoldEarned + item.sellPrice });
-      addQuestProgress('gold', '', get().totalGoldEarned);
+      const inventory = s.inventory.filter(i => i.id !== itemId);
+      set({ inventory, gold: s.gold + item.sellPrice, totalGoldEarned: s.totalGoldEarned + item.sellPrice });
     },
 
-    sellJunk: (maxRarity) => {
+    sellJunk: (maxRarity: string) => {
       const s = get();
-      // sell all items with rarity below maxRarity
       const toSell = s.inventory.filter(i => !rarityAtLeast(i.rarity, maxRarity as never));
       const toKeep = s.inventory.filter(i => rarityAtLeast(i.rarity, maxRarity as never));
-      const gain = toSell.reduce((sum, i) => sum + i.sellPrice, 0);
-      set({ inventory: toKeep, gold: s.gold + gain, totalGoldEarned: s.totalGoldEarned + gain });
-      pushLog(s.log, `💰 Продано ${toSell.length} предметов за ${gain} золота`, '#fbbf24');
-      addQuestProgress('gold', '', get().totalGoldEarned);
+      const gained = toSell.reduce((acc, i) => acc + i.sellPrice, 0);
+      set({ inventory: toKeep, gold: s.gold + gained, totalGoldEarned: s.totalGoldEarned + gained });
+      pushLog(s.log, `💰 Продано ${toSell.length} предметов на ${gained} золота`, '#facc15');
     },
 
-    castSkill: (id) => doCast(id, true),
-
-    upgradeSkill: (id) => {
+    castSkill: (id: string) => {
       const s = get();
-      const skill = SKILLS.find(k => k.id === id)!;
-      const rank = s.skillRanks[id] ?? 0;
-      if (s.level < skill.unlockLevel || s.skillPoints <= 0 || rank >= skill.maxRank) return;
-      set({ skillRanks: { ...s.skillRanks, [id]: rank + 1 }, skillPoints: s.skillPoints - 1 });
-      pushLog(s.log, `✨ Скилл «${skill.name}» улучшен до ранга ${rank + 1}`, skill.color);
+      const cls = getClassById(s.classId);
+      const sk = cls.skills.find(x => x.id === id);
+      if (!sk || (s.skillRanks[id] ?? 0) <= 0 || (s.skillCds[id] ?? 0) > 0) return;
+      if (s.mana < sk.manaCost) return;
+
+      const mana = s.mana - sk.manaCost;
+      const d = s.derived;
+      const skillCds = { ...s.skillCds, [id]: sk.cooldown * (1 - d.cdReduction / 100) };
+
+      if (id.includes('heal') || id.includes('meditate') || id.includes('rejuvenation')) {
+        const hp = Math.min(d.maxHp, s.hp + Math.round(d.maxHp * 0.35));
+        pushFx(s.fxQueue, { type: 'heal', text: `+${Math.round(d.maxHp * 0.35)} HP`, color: '#4ade80' });
+        set({ mana, hp, skillCds });
+      } else {
+        const skillDmg = Math.round(d.skillPower * 2.5);
+        const mHp = s.monster.hp - skillDmg;
+        pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${skillDmg}`, color: sk.color });
+        if (mHp <= 0) {
+          onKill(s.monster);
+          set({ mana, skillCds });
+        } else {
+          set({ mana, skillCds, monster: { ...s.monster, hp: mHp } });
+        }
+      }
     },
 
-    toggleAutoCast: (id) => {
+    upgradeSkill: (id: string) => {
+      const s = get();
+      if (s.skillPoints <= 0) return;
+      const skillRanks = { ...s.skillRanks, [id]: (s.skillRanks[id] ?? 0) + 1 };
+      set({ skillRanks, skillPoints: s.skillPoints - 1 });
+    },
+
+    toggleAutoCast: (id: string) => {
       const s = get();
       set({ autoCast: { ...s.autoCast, [id]: !s.autoCast[id] } });
     },
 
-    learnTalent: (id) => {
+    learnTalent: (id: string) => {
       const s = get();
-      const t = TALENTS.find(x => x.id === id)!;
-      const rank = s.talents[id] ?? 0;
-      if (s.talentPoints <= 0 || rank >= t.maxRank) return;
-      const branchPoints = TALENTS.filter(x => x.branch === t.branch).reduce((sum, x) => sum + (s.talents[x.id] ?? 0), 0);
-      if (t.row > 0 && branchPoints < t.row * 3) return;
-      const talents = { ...s.talents, [id]: rank + 1 };
-      set({ talents, talentPoints: s.talentPoints - 1, derived: computeDerived(s.level, s.stats, s.equipment, talents) });
-      pushLog(s.log, `🌟 Талант «${t.name}» — ранг ${rank + 1}`, '#facc15');
+      if (s.talentPoints <= 0) return;
+      const talents = { ...s.talents, [id]: (s.talents[id] ?? 0) + 1 };
+      const derived = computeDerived(s.level, s.stats, s.equipment, talents);
+      set({ talents, talentPoints: s.talentPoints - 1, derived });
     },
 
-    claimQuest: (id) => {
+    claimQuest: (id: string) => {
       const s = get();
-      const st = s.quests[id];
-      const def = QUESTS.find(q => q.id === id)!;
-      if (!st?.done || st.claimed) return;
-      const mult = 1 + (s.talents['t_quest'] ?? 0) * 0.10;
-      const gold = Math.floor(def.reward.gold * mult);
-      const quests = { ...s.quests, [id]: { ...st, claimed: true } };
-      pushLog(s.log, `✅ Награда за «${def.name}»: +${gold} золота${def.reward.xp ? `, +${Math.floor(def.reward.xp * mult)} опыта` : ''}`, '#4ade80');
-      pushFx(s.fxQueue, { type: 'quest', text: '✅ Награда!', color: '#4ade80' });
-      set({
-        quests,
-        gold: s.gold + gold,
-        totalGoldEarned: s.totalGoldEarned + gold,
-        statPoints: s.statPoints + (def.reward.statPoints ?? 0),
-        talentPoints: s.talentPoints + (def.reward.talentPoints ?? 0),
-        skillPoints: s.skillPoints + (def.reward.skillPoints ?? 0),
-      });
-      if (def.reward.itemRarity) {
-        const it = generateItem(s.level, s.stats.luk, 10, def.reward.itemRarity);
-        set({ inventory: [...get().inventory, it].slice(-72) });
-        pushLog(get().log, `🎁 Награда: ${it.name}`, rarityById(it.rarity).color);
-        addQuestProgress('loot', it.rarity, 1);
+      const q = s.quests[id];
+      const def = QUESTS.find(x => x.id === id);
+      if (!q || !q.done || q.claimed || !def) return;
+
+      const quests = { ...s.quests, [id]: { ...q, claimed: true } };
+      let gold = s.gold + (def.reward.gold ?? 0);
+      let statPoints = s.statPoints + (def.reward.statPoints ?? 0);
+      let talentPoints = s.talentPoints + (def.reward.talentPoints ?? 0);
+      let skillPoints = s.skillPoints + (def.reward.skillPoints ?? 0);
+
+      const inventory = [...s.inventory];
+      if (def.reward.itemRarity && inventory.length < 72) {
+        inventory.push(generateItem(s.level, def.reward.itemRarity));
       }
-      if (def.reward.xp) grantXp(Math.floor(def.reward.xp * mult));
-      // secret unlocks
-      const s2 = get();
-      const secrets = [...s2.unlockedSecrets];
-      const unlockSecret = (sid: string, msg: string, color: string) => {
-        if (!secrets.includes(sid)) { secrets.push(sid); pushLog(s2.log, msg, color); pushFx(s2.fxQueue, { type: 'levelup', text: msg, color }); }
-      };
-      if (id === 'q_any1') unlockSecret('shroom', '🍄 Открыта скрытая территория: Грибная роща!', '#d946ef');
-      if (id === 'q_boss3') unlockSecret('sunken', '🌊 Открыта скрытая территория: Затонувший храм!', '#38bdf8');
-      if (id === 'q_lvl3') unlockSecret('graveyard', '🪦 Открыта скрытая территория: Кладбище героев!', '#94a3b8');
-      if (id === 'q_dun2') unlockSecret('mechgarden', '⚙️ Открыта скрытая территория: Механический сад!', '#facc15');
-      set({ unlockedSecrets: secrets });
-      addQuestProgress('secret', '', secrets.length);
+
+      set({ quests, gold, statPoints, talentPoints, skillPoints, inventory });
+      pushLog(s.log, `🎁 Получена награда за квест «${def.name}»!`, '#4ade80');
+      if (def.reward.xp) grantXp(def.reward.xp);
     },
 
-    travelTo: (zoneId) => {
+    travelTo: (zoneId: string) => {
       const s = get();
-      const zone = zoneById(zoneId);
-      const isSecret = zone.hidden;
-      if (isSecret && !s.unlockedSecrets.includes(zoneId)) return;
-      if (!isSecret && !s.unlockedZones.includes(zoneId)) return;
-      if (s.level < zone.minLevel) return;
       set({ zoneId, stage: 1, stageKills: 0, dungeon: null, monster: spawnFor(zoneId, 1, s.mastery[zoneId] ?? 0, null) });
-      pushLog(s.log, `🗺️ Переход: ${zone.name}`, '#93c5fd');
     },
 
-    startDungeon: (id) => {
+    startDungeon: (id: string) => {
       const s = get();
-      const d = DUNGEONS.find(x => x.id === id)!;
-      if (s.level < d.minLevel) return;
-      const run: DungeonRun = { dungeonId: id, wave: 1, active: true };
+      const run: DungeonRun = { dungeonId: id, wave: 1, totalTimeSec: 60, timeLeftSec: 60 };
       set({ dungeon: run, monster: spawnFor(s.zoneId, 1, 0, run) });
-      pushLog(s.log, `🏰 Вход в подземелье: ${d.name} (волн: ${d.waves})`, '#c084fc');
     },
 
     leaveDungeon: () => {
       const s = get();
       set({ dungeon: null, monster: spawnFor(s.zoneId, s.stage, s.mastery[s.zoneId] ?? 0, null) });
-      pushLog(s.log, '🚪 Вы покинули подземелье', '#94a3b8');
     },
 
     clearFx: () => set({ fxQueue: [] }),
@@ -637,6 +640,8 @@ export const useGame = create<GameState>((set, get) => {
     save: () => {
       const s = get();
       const data = {
+        characterName: s.characterName,
+        classId: s.classId,
         level: s.level, xp: s.xp, gold: s.gold, totalGoldEarned: s.totalGoldEarned,
         stats: s.stats, statPoints: s.statPoints, skillPoints: s.skillPoints, talentPoints: s.talentPoints,
         equipment: s.equipment, inventory: s.inventory,
@@ -671,6 +676,8 @@ export function loadSave() {
     Object.entries(d.quests ?? {}).forEach(([k, v]) => { if (quests[k]) quests[k] = v as never; });
     const targetZoneId = d.zoneId && ZONES.some(z => z.id === d.zoneId) ? d.zoneId : 'hills';
     useGame.setState({
+      characterName: d.characterName ?? '',
+      classId: d.classId ?? '',
       level: d.level ?? 1, xp: d.xp ?? 0, gold: d.gold ?? 0, totalGoldEarned: d.totalGoldEarned ?? 0,
       stats: { ...s.stats, ...(d.stats ?? {}) }, statPoints: d.statPoints ?? 0,
       skillPoints: d.skillPoints ?? 0, talentPoints: d.talentPoints ?? 0,
@@ -681,21 +688,6 @@ export function loadSave() {
       unlockedSecrets: d.unlockedSecrets ?? [],
       quests, kills: d.kills ?? 0, bossKills: d.bossKills ?? 0, dungeonsCleared: d.dungeonsCleared ?? 0,
     });
-    // offline progress (cap 8h)
-    const away = Math.min(8 * 3600 * 1000, Date.now() - (d.savedAt ?? Date.now()));
-    if (away > 60000) {
-      const st = useGame.getState();
-      const minutes = away / 60000;
-      const zone = zoneById(st.zoneId);
-      const lvl = zone.minLevel + st.stage;
-      const kpm = 8;
-      const kills = Math.floor(minutes * kpm * 0.5);
-      const gold = Math.floor(kills * monsterReward(lvl, 1, 1).gold * 0.5);
-      const xp = Math.floor(kills * monsterReward(lvl, 1, 1).xp * 0.4);
-      useGame.setState({ gold: st.gold + gold, totalGoldEarned: st.totalGoldEarned + gold });
-      st.log.push({ id: 9999 + Date.now(), text: `🌙 Офлайн-прогресс (${Math.floor(minutes)} мин): +${gold} золота, +${xp} опыта`, color: '#93c5fd', time: Date.now() });
-      useGame.setState({ log: [...st.log] });
-    }
     // recompute derived and respawn
     const st2 = useGame.getState();
     const derived = computeDerived(st2.level, st2.stats, st2.equipment, st2.talents);
