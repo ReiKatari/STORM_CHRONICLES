@@ -581,7 +581,8 @@ export const useGame = create<GameState>((set, get) => {
       const s = get();
       if (s.skillPoints <= 0) return;
       const skillRanks = { ...s.skillRanks, [id]: (s.skillRanks[id] ?? 0) + 1 };
-      set({ skillRanks, skillPoints: s.skillPoints - 1 });
+      const autoCast = { ...s.autoCast, [id]: s.autoCast[id] !== undefined ? s.autoCast[id] : true };
+      set({ skillRanks, autoCast, skillPoints: s.skillPoints - 1 });
     },
 
     toggleAutoCast: (id: string) => {

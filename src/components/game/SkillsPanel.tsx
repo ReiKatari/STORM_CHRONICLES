@@ -16,15 +16,17 @@ export default function SkillsPanel() {
   const cast = useGame(s => s.castSkill);
 
   const classSkills = heroClass.skills;
+  const learnedSkills = classSkills.filter(sk => (skillRanks[sk.id] ?? 0) > 0);
+  const isMasterAutoOn = learnedSkills.length > 0 && learnedSkills.every(sk => autoCast[sk.id]);
 
   const handleMasterToggleAuto = () => {
-    const anyOff = classSkills.some(sk => (skillRanks[sk.id] ?? 0) > 0 && !autoCast[sk.id]);
-    classSkills.forEach(sk => {
-      if ((skillRanks[sk.id] ?? 0) > 0) {
-        if (anyOff && !autoCast[sk.id]) toggleAuto(sk.id);
-        if (!anyOff && autoCast[sk.id]) toggleAuto(sk.id);
-      }
+    if (learnedSkills.length === 0) return;
+    const targetState = !isMasterAutoOn;
+    const newAutoCast = { ...autoCast };
+    learnedSkills.forEach(sk => {
+      newAutoCast[sk.id] = targetState;
     });
+    useGame.setState({ autoCast: newAutoCast });
   };
 
   return (
@@ -54,9 +56,13 @@ export default function SkillsPanel() {
 
           <button
             onClick={handleMasterToggleAuto}
-            className="text-[10px] font-bold px-2.5 py-1 rounded-xl bg-sky-950/80 border border-sky-500/40 text-sky-300 hover:bg-sky-900/80 transition-all shadow-md active:scale-95"
+            className={`text-[10px] font-bold px-3 py-1 rounded-xl border transition-all shadow-md active:scale-95 flex items-center gap-1 ${
+              isMasterAutoOn
+                ? 'bg-emerald-600/30 border-emerald-500/60 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-slate-200'
+            }`}
           >
-            ⚡ Авто-каст
+            <span>⚡ Авто-каст: {isMasterAutoOn ? 'ВКЛ' : 'ВЫКЛ'}</span>
           </button>
         </div>
       </div>

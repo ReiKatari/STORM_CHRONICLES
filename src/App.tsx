@@ -81,7 +81,7 @@ function Header({
           className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-950/80 hover:bg-amber-900 border border-amber-500/40 text-amber-200 transition-all shadow-md active:scale-95 flex items-center gap-1"
         >
           <span>🏪</span>
-          <span>Торговля & NPC</span>
+          <span>Торговля и NPC</span>
         </button>
 
         <span className="text-amber-300">💰 {fmt(gold)}</span>
