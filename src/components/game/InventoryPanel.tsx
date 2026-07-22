@@ -114,8 +114,8 @@ export default function InventoryPanel() {
         })}
       </div>
 
-      {/* Dynamic Inventory List/Grid */}
-      <div className="grid grid-cols-2 gap-1.5 overflow-y-auto flex-1 min-h-0 pr-1 align-content-start">
+      {/* Compact Dynamic Inventory List/Grid with content-start auto-rows-max */}
+      <div className="grid grid-cols-2 gap-1.5 overflow-y-auto flex-1 min-h-0 pr-1 content-start auto-rows-max">
         {filtered.length === 0 && (
           <div className="col-span-2 text-center text-slate-500 text-xs py-12 bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
             {selectedSlotFilter !== 'all'

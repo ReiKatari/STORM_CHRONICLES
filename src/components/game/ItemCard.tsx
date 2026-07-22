@@ -192,7 +192,7 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
 }
 
 /**
- * SmartItemTooltip: Clamps item card positioning strictly within the #app-root container bounds.
+ * SmartItemTooltip: Clamps item card positioning strictly within both viewport and #app-root container bounds.
  */
 export function SmartItemTooltip({
   item,
@@ -221,25 +221,32 @@ export function SmartItemTooltip({
       const appEl = document.getElementById('app-root') || document.body;
       const appRect = appEl.getBoundingClientRect();
 
-      const appLeft = appRect.left + 10;
-      const appRight = appRect.right - 10;
-      const appTop = appRect.top + 10;
-      const appBottom = appRect.bottom - 10;
+      const minX = Math.max(10, appRect.left + 10);
+      const maxX = Math.min(window.innerWidth - cardW - 10, appRect.right - cardW - 10);
+      const minY = Math.max(10, appRect.top + 10);
+      const maxY = Math.min(window.innerHeight - cardH - 10, appRect.bottom - cardH - 10);
 
+      // Prefer placing to the left of anchor
       let x = anchorRect.left - cardW - 12;
-      if (x < appLeft) {
+      if (x < minX) {
         x = anchorRect.right + 12;
       }
-      if (x + cardW > appRight) {
-        x = appRight - cardW;
+
+      // Clamp x strictly within [minX, maxX]
+      if (x > maxX) {
+        x = maxX;
       }
-      x = Math.max(appLeft, x);
+      if (x < minX) {
+        x = minX;
+      }
 
       let y = anchorRect.top;
-      if (y + cardH > appBottom) {
-        y = appBottom - cardH;
+      if (y > maxY) {
+        y = maxY;
       }
-      y = Math.max(appTop, y);
+      if (y < minY) {
+        y = minY;
+      }
 
       setPos({ x, y });
     };
@@ -258,7 +265,7 @@ export function SmartItemTooltip({
       )}
       <div
         ref={containerRef}
-        className="fixed z-50 animate-fadeIn pointer-events-auto"
+        className="fixed z-50 animate-fadeIn pointer-events-auto shadow-2xl"
         style={{ left: pos.x, top: pos.y }}
       >
         <ItemCard item={item} equippedItem={equippedItem} />
