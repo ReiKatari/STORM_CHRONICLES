@@ -1,7 +1,20 @@
-import type { BaseStats, DerivedStats, Item, SlotId, StatId } from './types';
+import type { BaseStats, DerivedStats, Item, SlotId, StatId, StatDef } from './types';
 import { SETS } from './items';
 
 export const MAX_LEVEL = 500;
+
+export const STAT_DEFS: StatDef[] = [
+  { id: 'str', name: 'Сила',          icon: '💪', desc: 'Увеличивает физический урон (+2 к урону)', color: '#ef4444' },
+  { id: 'agi', name: 'Ловкость',      icon: '🌀', desc: 'Увеличивает уворот и скорость атаки', color: '#38bdf8' },
+  { id: 'vit', name: 'Живучесть',     icon: '❤️', desc: 'Увеличивает максимальное здоровье (+12 HP)', color: '#22c55e' },
+  { id: 'int', name: 'Интеллект',     icon: '🧠', desc: 'Увеличивает силу заклинаний и скиллов', color: '#c084fc' },
+  { id: 'end', name: 'Выносливость', icon: '🛡️', desc: 'Увеличивает броню и регенерацию HP', color: '#f59e0b' },
+  { id: 'luk', name: 'Удача',         icon: '🍀', desc: 'Шанс крита и шанс выпадения лучшего лута', color: '#facc15' },
+  { id: 'wis', name: 'Мудрость',      icon: '📖', desc: 'Максимальная мана (+8) и регенерация маны', color: '#818cf8' },
+  { id: 'per', name: 'Восприятие',   icon: '👁️', desc: 'Множитель крита и критический урон', color: '#f43f5e' },
+  { id: 'cha', name: 'Харизма',       icon: '✨', desc: 'Увеличивает количество получаемого золота', color: '#fbbf24' },
+  { id: 'wil', name: 'Воля',          icon: '🔥', desc: 'Усиливает маневренность и стойкость', color: '#fb923c' },
+];
 
 export function xpForLevel(level: number): number {
   return Math.floor(60 * Math.pow(level, 1.6) + level * 20);
