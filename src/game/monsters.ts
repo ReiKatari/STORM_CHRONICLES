@@ -225,12 +225,16 @@ export function zoneById(id: string): ZoneDef {
 
 // ===================== DUNGEONS (8 Dungeons) =====================
 export const DUNGEONS: DungeonDef[] = [
-  { id: 'd1', name: 'Склизкое Логово', icon: '🧪', reqLevel: 5, stages: 5, timeLimitSec: 60, bossName: 'Король Слаймов', bossIcon: '👑', rewardRarity: 'uncommon', desc: 'Первое испытание для начинающего искателя.' },
-  { id: 'd2', name: 'Паучье Гнездо', icon: '🕷️', reqLevel: 15, stages: 5, timeLimitSec: 60, bossName: 'Королева Арахнидов', bossIcon: '🕷️', rewardRarity: 'rare', desc: 'Ядовитые тенета и орды маленьких паучат.' },
-  { id: 'd3', name: 'Крипта Костей', icon: '💀', reqLevel: 25, stages: 6, timeLimitSec: 75, bossName: 'Владыка Скелетов', bossIcon: '💀', rewardRarity: 'rare', desc: 'Шорох костей в беззвучной мгле.' },
-  { id: 'd4', name: 'Обитель Огня', icon: '🔥', reqLevel: 40, stages: 6, timeLimitSec: 75, bossName: 'Демонический Ифрит', bossIcon: '🔥', rewardRarity: 'epic', desc: 'Печь Бездны, выжигающая слабых.' },
-  { id: 'd5', name: 'Башня Мага', icon: '🔮', reqLevel: 60, stages: 7, timeLimitSec: 90, bossName: 'Тёмный Сумрачный Архимаг', bossIcon: '🧙‍♂️', rewardRarity: 'epic', desc: 'Магические ловушки и стихийные аномалии.' },
-  { id: 'd6', name: 'Гробница Вампира', icon: '🦇', reqLevel: 80, stages: 7, timeLimitSec: 90, bossName: 'Кровавый Дракула', bossIcon: '🧛‍♂️', rewardRarity: 'legendary', desc: 'Древний склеп высшей аристократии ночи.' },
-  { id: 'd7', name: 'Разлом Бездны', icon: '🌌', reqLevel: 120, stages: 8, timeLimitSec: 105, bossName: 'Породитель Тьмы', bossIcon: '👁️', rewardRarity: 'mythic', desc: 'Нестабильное измерение чистого хаоса.' },
-  { id: 'd8', name: 'Святилище Богов', icon: '⚡', reqLevel: 180, stages: 10, timeLimitSec: 120, bossName: 'Верховный Титан', bossIcon: '🌟', rewardRarity: 'divine', desc: 'Финиширующее испытание величайших героев.' },
+  { id: 'd1', name: 'Склизкое Логово', icon: '🧪', minLevel: 5, waves: 5, familyPool: ['slime', 'rat', 'mushroom'], bossName: 'Король Слаймов', bossIcon: '👑', lootBonus: 1, xpMult: 2, goldMult: 2, desc: 'Первое испытание для начинающего искателя.' },
+  { id: 'd2', name: 'Паучье Гнездо', icon: '🕷️', minLevel: 15, waves: 5, familyPool: ['spider', 'snake', 'scorpion'], bossName: 'Королева Арахнидов', bossIcon: '🕷️', lootBonus: 2, xpMult: 2.5, goldMult: 2.5, desc: 'Ядовитые тенета и орды маленьких паучат.' },
+  { id: 'd3', name: 'Крипта Костей', icon: '💀', minLevel: 25, waves: 6, familyPool: ['skeleton', 'zombie', 'ghost'], bossName: 'Владыка Скелетов', bossIcon: '💀', lootBonus: 2, xpMult: 3, goldMult: 3, desc: 'Шорох костей в беззвучной мгле.' },
+  { id: 'd4', name: 'Обитель Огня', icon: '🔥', minLevel: 40, waves: 6, familyPool: ['elemental_fire', 'demon', 'manticore'], bossName: 'Демонический Ифрит', bossIcon: '🔥', lootBonus: 3, xpMult: 3.5, goldMult: 3.5, desc: 'Печь Бездны, выжигающая слабых.' },
+  { id: 'd5', name: 'Башня Мага', icon: '🔮', minLevel: 60, waves: 7, familyPool: ['mage', 'construct', 'wisp'], bossName: 'Тёмный Сумрачный Архимаг', bossIcon: '🧙‍♂️', lootBonus: 3, xpMult: 4, goldMult: 4, desc: 'Магические ловушки и стихийные аномалии.' },
+  { id: 'd6', name: 'Гробница Вампира', icon: '🦇', minLevel: 80, waves: 7, familyPool: ['vampire', 'cultist', 'knight'], bossName: 'Кровавый Дракула', bossIcon: '🧛‍♂️', lootBonus: 4, xpMult: 5, goldMult: 5, desc: 'Древний склеп высшей аристократии ночи.' },
+  { id: 'd7', name: 'Разлом Бездны', icon: '🌌', minLevel: 120, waves: 8, familyPool: ['abyss', 'lich', 'shadow'], bossName: 'Породитель Тьмы', bossIcon: '👁️', lootBonus: 5, xpMult: 6, goldMult: 6, desc: 'Нестабильное измерение чистого хаоса.' },
+  { id: 'd8', name: 'Святилище Богов', icon: '⚡', minLevel: 180, waves: 10, familyPool: ['dragon', 'phoenix', 'archdemon'], bossName: 'Верховный Титан', bossIcon: '🌟', lootBonus: 6, xpMult: 8, goldMult: 8, desc: 'Финиширующее испытание величайших героев.' },
 ];
+
+export function dungeonById(id: string): DungeonDef {
+  return DUNGEONS.find(d => d.id === id) ?? DUNGEONS[0];
+}
