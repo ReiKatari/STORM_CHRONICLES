@@ -12,8 +12,10 @@ import TalentsPanel from '@/components/game/TalentsPanel';
 import QuestsPanel from '@/components/game/QuestsPanel';
 import WorldPanel from '@/components/game/WorldPanel';
 import EventsPanel from '@/components/game/EventsPanel';
+import HotbarPanel from '@/components/game/HotbarPanel';
 import CharacterCreationModal from '@/components/game/CharacterCreationModal';
 import EquipmentModal from '@/components/game/EquipmentModal';
+import MerchantModal from '@/components/game/MerchantModal';
 
 type Tab = 'inventory' | 'skills' | 'talents' | 'quests' | 'world';
 const TABS: { id: Tab; name: string; icon: string }[] = [
@@ -24,7 +26,13 @@ const TABS: { id: Tab; name: string; icon: string }[] = [
   { id: 'world', name: 'Мир', icon: '🗺️' },
 ];
 
-function Header({ onOpenPaperdoll }: { onOpenPaperdoll: () => void }) {
+function Header({
+  onOpenPaperdoll,
+  onOpenMerchant,
+}: {
+  onOpenPaperdoll: () => void;
+  onOpenMerchant: () => void;
+}) {
   const name = useGame(s => s.characterName);
   const classId = useGame(s => s.classId);
   const heroClass = classId ? getClassById(classId) : null;
@@ -69,14 +77,22 @@ function Header({ onOpenPaperdoll }: { onOpenPaperdoll: () => void }) {
         <span className="text-[9px] text-slate-500 font-mono">{MAX_LEVEL}</span>
       </div>
 
-      {/* Meta Stats & Open Paperdoll Button */}
-      <div className="flex items-center gap-2.5 ml-auto text-xs font-semibold">
+      {/* Meta Stats, Merchant & Paperdoll Buttons */}
+      <div className="flex items-center gap-2 ml-auto text-xs font-semibold">
+        <button
+          onClick={onOpenMerchant}
+          className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-950/80 hover:bg-amber-900 border border-amber-500/40 text-amber-200 transition-all shadow-md active:scale-95 flex items-center gap-1"
+        >
+          <span>🏪</span>
+          <span>Торговля & NPC</span>
+        </button>
+
         <button
           onClick={onOpenPaperdoll}
           className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-200 transition-all shadow-md active:scale-95 flex items-center gap-1"
         >
           <span>🥋</span>
-          <span>Кукла Снаряжения</span>
+          <span>Кукла</span>
         </button>
 
         <span className="text-amber-300">💰 {fmt(gold)}</span>
@@ -183,6 +199,7 @@ export default function App() {
   const [loaded, setLoaded] = useState(false);
   const [showCreationModal, setShowCreationModal] = useState(false);
   const [showPaperdollModal, setShowPaperdollModal] = useState(false);
+  const [showMerchantModal, setShowMerchantModal] = useState(false);
 
   const characterName = useGame(s => s.characterName);
   const classId = useGame(s => s.classId);
@@ -223,8 +240,15 @@ export default function App() {
         />
       )}
 
+      {showMerchantModal && (
+        <MerchantModal onClose={() => setShowMerchantModal(false)} />
+      )}
+
       <div id="app-root" className="w-full max-w-[1600px] mx-auto min-h-screen relative flex flex-col">
-        <Header onOpenPaperdoll={() => setShowPaperdollModal(true)} />
+        <Header
+          onOpenPaperdoll={() => setShowPaperdollModal(true)}
+          onOpenMerchant={() => setShowMerchantModal(true)}
+        />
         <main className="p-2.5 grid gap-2.5 xl:grid-cols-[300px_1fr_370px] lg:grid-cols-[280px_1fr] flex-1 min-h-0 items-start">
           {/* LEFT COLUMN */}
           <div className="space-y-2.5 order-2 lg:order-1">
@@ -238,6 +262,7 @@ export default function App() {
             <div className="rounded-xl border border-slate-700/60 overflow-hidden shadow-2xl bg-slate-900" style={{ height: 350 }}>
               <CombatCanvas />
             </div>
+            <HotbarPanel />
             <SkillBar />
             <BattleLog />
             <EventsPanel />
