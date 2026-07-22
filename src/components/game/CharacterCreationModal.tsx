@@ -13,7 +13,7 @@ export default function CharacterCreationModal({ onComplete }: { onComplete: () 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-4xl w-full p-5 shadow-2xl space-y-4 my-auto">
         {/* Title Header */}
         <div className="text-center border-b border-slate-800 pb-3 space-y-1">
@@ -21,7 +21,7 @@ export default function CharacterCreationModal({ onComplete }: { onComplete: () 
             ⚔️ СОЗДАНИЕ ГЕРОЯ БЕЗДНЫ
           </h2>
           <p className="text-xs text-slate-400">
-            Выберите легендарный класс и введите имя вашего воина для исследования 16 регионов.
+            Выберите уникальный класс с настраиваемыми талантами, историями и анимациями боя.
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export default function CharacterCreationModal({ onComplete }: { onComplete: () 
         {/* Class Selection Grid */}
         <div className="space-y-1.5">
           <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Выберите Класс Персонажа (10 Классов)
+            Выберите Класс Персонажа (10 Героев)
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             {HERO_CLASSES.map(cls => {
@@ -52,15 +52,21 @@ export default function CharacterCreationModal({ onComplete }: { onComplete: () 
                 <button
                   key={cls.id}
                   onClick={() => setSelectedClass(cls)}
-                  className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${
+                  className={`p-2 rounded-xl border flex flex-col items-center gap-1.5 transition-all relative overflow-hidden group ${
                     isSelected
-                      ? 'bg-slate-800 border-2 shadow-lg scale-105'
+                      ? 'bg-slate-800 border-2 shadow-2xl scale-105 ring-2 ring-amber-400/50'
                       : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
                   }`}
                   style={{ borderColor: isSelected ? cls.color : undefined }}
                 >
-                  <span className="text-2xl">{cls.icon}</span>
-                  <span className="text-xs font-extrabold truncate w-full text-center" style={{ color: cls.color }}>
+                  <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-700/60 bg-slate-900 flex items-center justify-center relative shadow-md">
+                    {cls.artSrc ? (
+                      <img src={cls.artSrc} alt={cls.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                    ) : (
+                      <span className="text-2xl">{cls.icon}</span>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-extrabold truncate w-full text-center" style={{ color: cls.color }}>
                     {cls.name}
                   </span>
                 </button>
@@ -69,18 +75,32 @@ export default function CharacterCreationModal({ onComplete }: { onComplete: () 
           </div>
         </div>
 
-        {/* Selected Class Lore & Details Card */}
-        <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 grid md:grid-cols-2 gap-4">
-          {/* Left: Lore Story & Stats */}
-          <div className="space-y-2.5 border-r border-slate-800/80 md:pr-4">
-            <div className="flex items-center gap-2">
-              <span className="text-3xl">{selectedClass.icon}</span>
-              <div>
-                <h3 className="text-base font-black" style={{ color: selectedClass.color }}>
-                  {selectedClass.title}
-                </h3>
-                <p className="text-[11px] text-slate-300">{selectedClass.desc}</p>
-              </div>
+        {/* Selected Class Lore & Details Card with Generated Artwork */}
+        <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 grid md:grid-cols-12 gap-4 items-center">
+          {/* Left: High-Res Hero Art Card */}
+          <div className="md:col-span-4 flex flex-col items-center justify-center">
+            <div
+              className="w-36 h-36 rounded-2xl border-2 overflow-hidden bg-slate-900 shadow-2xl relative"
+              style={{ borderColor: selectedClass.color, boxShadow: `0 0 35px ${selectedClass.color}44` }}
+            >
+              {selectedClass.artSrc ? (
+                <img src={selectedClass.artSrc} alt={selectedClass.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-5xl">{selectedClass.icon}</div>
+              )}
+            </div>
+            <span className="text-xs font-bold mt-2" style={{ color: selectedClass.color }}>
+              {selectedClass.icon} {selectedClass.name}
+            </span>
+          </div>
+
+          {/* Right: Lore Story & Stats */}
+          <div className="md:col-span-8 space-y-2.5">
+            <div>
+              <h3 className="text-base font-black" style={{ color: selectedClass.color }}>
+                {selectedClass.title}
+              </h3>
+              <p className="text-[11px] text-slate-300">{selectedClass.desc}</p>
             </div>
 
             <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[10px] italic text-slate-300 leading-relaxed shadow-inner">
@@ -107,56 +127,23 @@ export default function CharacterCreationModal({ onComplete }: { onComplete: () 
                   <div>{selectedClass.baseStats.int}</div>
                 </div>
                 <div className="bg-slate-900 p-1 rounded border border-slate-800">
-                  <div className="text-amber-400 font-bold">WIS</div>
-                  <div>{selectedClass.baseStats.wis}</div>
+                  <div className="text-amber-400 font-bold">END</div>
+                  <div>{selectedClass.baseStats.end}</div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right: 3 Talent Branches & 4 Unique Skills Preview */}
-          <div className="space-y-3">
-            <div>
-              <div className="text-[10px] font-bold text-slate-400 mb-1">
-                🌟 3 Ветки Талантов Класса:
-              </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                {selectedClass.branches.map(b => (
-                  <div key={b.id} className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-[10px] text-center">
-                    <span className="text-base">{b.icon}</span>
-                    <div className="font-extrabold truncate" style={{ color: b.color }}>{b.name}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-[10px] font-bold text-slate-400 mb-1">
-                ✨ 4 Уникальных Скилла Класса:
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {selectedClass.skills.map(sk => (
-                  <div key={sk.id} className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-1.5 text-[10px]">
-                    <span className="text-lg">{sk.icon}</span>
-                    <div className="min-w-0">
-                      <div className="font-bold truncate" style={{ color: sk.color }}>{sk.name}</div>
-                      <div className="text-[9px] text-slate-400">{sk.manaCost} маны</div>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Start Game Button */}
-        <button
-          onClick={handleStart}
-          disabled={!name.trim()}
-          className="w-full py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-400 hover:to-red-400 font-extrabold text-sm text-slate-950 uppercase tracking-wider rounded-xl transition-all shadow-xl disabled:opacity-50 active:scale-98"
-        >
-          ⚔️ НАЧАТЬ ПРИКЛЮЧЕНИЕ В БЕЗДНЕ
-        </button>
+        {/* Start Game Action */}
+        <div className="pt-2">
+          <button
+            onClick={handleStart}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-400 hover:to-red-400 font-black text-slate-950 text-sm tracking-wider uppercase shadow-xl transition-all hover:scale-[1.01] active:scale-95"
+          >
+            ⚔️ Начать Наследие («{name}» — {selectedClass.name})
+          </button>
+        </div>
       </div>
     </div>
   );
