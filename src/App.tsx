@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useGame, loadSave } from '@/game/store';
 import { fmt, xpForLevel, MAX_LEVEL } from '@/game/engine';
 import { zoneById } from '@/game/monsters';
-import { SKILLS } from '@/game/skills';
+import { getClassById } from '@/game/classes';
 import CombatCanvas from '@/components/game/CombatCanvas';
 import StatsPanel from '@/components/game/StatsPanel';
 import EquipmentPanel from '@/components/game/EquipmentPanel';
@@ -12,6 +12,8 @@ import TalentsPanel from '@/components/game/TalentsPanel';
 import QuestsPanel from '@/components/game/QuestsPanel';
 import WorldPanel from '@/components/game/WorldPanel';
 import EventsPanel from '@/components/game/EventsPanel';
+import CharacterCreationModal from '@/components/game/CharacterCreationModal';
+import EquipmentModal from '@/components/game/EquipmentModal';
 
 type Tab = 'inventory' | 'skills' | 'talents' | 'quests' | 'world';
 const TABS: { id: Tab; name: string; icon: string }[] = [
@@ -22,7 +24,11 @@ const TABS: { id: Tab; name: string; icon: string }[] = [
   { id: 'world', name: 'Мир', icon: '🗺️' },
 ];
 
-function Header() {
+function Header({ onOpenPaperdoll }: { onOpenPaperdoll: () => void }) {
+  const name = useGame(s => s.characterName);
+  const classId = useGame(s => s.classId);
+  const heroClass = classId ? getClassById(classId) : null;
+
   const level = useGame(s => s.level);
   const xp = useGame(s => s.xp);
   const gold = useGame(s => s.gold);
@@ -33,12 +39,23 @@ function Header() {
 
   return (
     <header className="bg-slate-900/95 border-b border-slate-700/60 px-4 py-2 flex items-center gap-3 flex-wrap backdrop-blur-md sticky top-0 z-40 shadow-lg shrink-0">
+      {/* Hero Name & Class Badge */}
       <div className="flex items-center gap-2">
-        <span className="text-xl">⚔️</span>
-        <h1 className="font-black text-sm leading-none bg-gradient-to-r from-amber-300 via-orange-400 to-red-400 bg-clip-text text-transparent tracking-wide">
-          ХРОНИКИ БЕЗДНЫ
-        </h1>
+        <span className="text-2xl">{heroClass?.icon || '⚔️'}</span>
+        <div>
+          <div className="font-extrabold text-xs text-white leading-tight flex items-center gap-1.5">
+            <span>{name || 'Герой Бездны'}</span>
+            {heroClass && (
+              <span className="text-[9px] px-1.5 py-0.2 rounded font-black uppercase tracking-wider" style={{ backgroundColor: `${heroClass.color}22`, color: heroClass.color, border: `1px solid ${heroClass.color}55` }}>
+                {heroClass.name}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] text-amber-300 font-semibold">{heroClass?.title || 'Искатель приключений'}</span>
+        </div>
       </div>
+
+      {/* Level & XP Bar */}
       <div className="flex items-center gap-2 flex-1 min-w-[180px] max-w-sm">
         <span className="text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/40 rounded-lg px-2 py-0.5">
           Ур. {level}
@@ -51,13 +68,23 @@ function Header() {
         </div>
         <span className="text-[9px] text-slate-500 font-mono">{MAX_LEVEL}</span>
       </div>
-      <div className="flex items-center gap-3 ml-auto text-xs font-semibold">
+
+      {/* Meta Stats & Open Paperdoll Button */}
+      <div className="flex items-center gap-2.5 ml-auto text-xs font-semibold">
+        <button
+          onClick={onOpenPaperdoll}
+          className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-200 transition-all shadow-md active:scale-95 flex items-center gap-1"
+        >
+          <span>🥋</span>
+          <span>Кукла Снаряжения</span>
+        </button>
+
         <span className="text-amber-300">💰 {fmt(gold)}</span>
         <span className="text-slate-400">☠️ {fmt(kills)}</span>
         <span className="text-orange-400">👑 {bossKills}</span>
         <button
-          onClick={() => { if (confirm('Полный сброс прогресса? Это необратимо!')) hardReset(); }}
-          className="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 border border-slate-700 transition-colors"
+          onClick={() => { if (confirm('Полный сброс прогресса? Вы сможете выбрать новый класс!')) hardReset(); }}
+          className="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 border border-slate-700 transition-colors"
         >
           Сброс
         </button>
@@ -97,10 +124,13 @@ function StageBar() {
 }
 
 function SkillBar() {
+  const classId = useGame(s => s.classId);
+  const heroClass = classId ? getClassById(classId) : null;
   const skillRanks = useGame(s => s.skillRanks);
   const skillCds = useGame(s => s.skillCds);
   const castSkill = useGame(s => s.castSkill);
-  const learned = SKILLS.filter(sk => (skillRanks[sk.id] ?? 0) > 0);
+
+  const learned = (heroClass?.skills || []).filter(sk => (skillRanks[sk.id] ?? 0) > 0);
 
   if (learned.length === 0) return (
     <div className="bg-slate-900/80 rounded-xl border border-slate-700/60 px-3 py-1.5 text-center text-[10px] text-slate-400">
@@ -151,6 +181,11 @@ function BattleLog() {
 export default function App() {
   const [tab, setTab] = useState<Tab>('inventory');
   const [loaded, setLoaded] = useState(false);
+  const [showCreationModal, setShowCreationModal] = useState(false);
+  const [showPaperdollModal, setShowPaperdollModal] = useState(false);
+
+  const characterName = useGame(s => s.characterName);
+  const classId = useGame(s => s.classId);
 
   useEffect(() => {
     if (!loaded) {
@@ -163,14 +198,33 @@ export default function App() {
     return () => { clearInterval(iv); window.removeEventListener('beforeunload', onVis); };
   }, [loaded]);
 
+  useEffect(() => {
+    if (loaded && (!characterName || !classId)) {
+      setShowCreationModal(true);
+    } else if (characterName && classId) {
+      setShowCreationModal(false);
+    }
+  }, [loaded, characterName, classId]);
+
   const handleSelectEquipmentSlot = () => {
     setTab('inventory');
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col" style={{ backgroundImage: 'radial-gradient(ellipse at 20% 0%, rgba(76,29,149,0.2), transparent 50%), radial-gradient(ellipse at 80% 100%, rgba(154,52,18,0.12), transparent 50%)' }}>
+      {showCreationModal && (
+        <CharacterCreationModal onComplete={() => setShowCreationModal(false)} />
+      )}
+
+      {showPaperdollModal && (
+        <EquipmentModal
+          onClose={() => setShowPaperdollModal(false)}
+          onSelectSlot={handleSelectEquipmentSlot}
+        />
+      )}
+
       <div id="app-root" className="w-full max-w-[1600px] mx-auto min-h-screen relative flex flex-col">
-        <Header />
+        <Header onOpenPaperdoll={() => setShowPaperdollModal(true)} />
         <main className="p-2.5 grid gap-2.5 xl:grid-cols-[300px_1fr_370px] lg:grid-cols-[280px_1fr] flex-1 min-h-0 items-start">
           {/* LEFT COLUMN */}
           <div className="space-y-2.5 order-2 lg:order-1">
@@ -186,7 +240,6 @@ export default function App() {
             </div>
             <SkillBar />
             <BattleLog />
-            {/* Interactive World Events Panel in empty space under battle log */}
             <EventsPanel />
 
             {/* mobile right panel */}
@@ -211,8 +264,10 @@ export default function App() {
   );
 }
 
+/**
+ * Uniform Tab Buttons with Stacked Layout (Icon Over Text)
+ */
 function TabButtons({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
-  const statPoints = useGame(s => s.statPoints);
   const skillPoints = useGame(s => s.skillPoints);
   const talentPoints = useGame(s => s.talentPoints);
   const quests = useGame(s => s.quests);
@@ -220,24 +275,26 @@ function TabButtons({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const badges: Partial<Record<Tab, number>> = { skills: skillPoints, talents: talentPoints, quests: readyQuests };
 
   return (
-    <div className="flex gap-1 bg-slate-900/90 rounded-xl border border-slate-700/60 p-1 shadow-md shrink-0">
+    <div className="flex gap-1.5 bg-slate-900/90 rounded-xl border border-slate-700/60 p-1.5 shadow-md shrink-0">
       {TABS.map(t => (
         <button
           key={t.id}
           onClick={() => setTab(t.id)}
-          className={`relative flex-1 text-[11px] py-1.5 rounded-lg font-bold transition-all ${
-            tab === t.id ? 'bg-slate-700 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+          className={`relative flex-1 py-2 px-1 rounded-xl font-bold transition-all flex flex-col items-center justify-center gap-0.5 text-center ${
+            tab === t.id
+              ? 'bg-slate-700/90 text-white shadow-lg border border-slate-600 scale-[1.02]'
+              : 'text-slate-400 hover:text-slate-200 bg-slate-950/40 hover:bg-slate-800/50'
           }`}
         >
-          {t.icon} {t.name}
+          <span className="text-xl leading-none">{t.icon}</span>
+          <span className="text-[10px] font-extrabold leading-tight">{t.name}</span>
           {(badges[t.id] ?? 0) > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center animate-pulse shadow-md">
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center animate-pulse shadow-md font-mono">
               {badges[t.id]}
             </span>
           )}
         </button>
       ))}
-      {statPoints > 0 && <span className="sr-only">{statPoints}</span>}
     </div>
   );
 }

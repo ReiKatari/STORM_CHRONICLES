@@ -1,27 +1,33 @@
 import { useState } from 'react';
 import { useGame } from '@/game/store';
-import { BRANCHES, TALENTS } from '@/game/skills';
+import { getClassById } from '@/game/classes';
 
 export default function TalentsPanel() {
+  const classId = useGame(s => s.classId);
+  const heroClass = getClassById(classId);
+
   const talents = useGame(s => s.talents);
   const points = useGame(s => s.talentPoints);
   const learn = useGame(s => s.learnTalent);
 
-  const [activeBranch, setActiveBranch] = useState<'all' | 'warrior' | 'mage' | 'wanderer'>('all');
+  const [activeBranch, setActiveBranch] = useState<string>('all');
   const [selectedTalentId, setSelectedTalentId] = useState<string | null>(null);
 
-  const visibleBranches = BRANCHES.filter(b => activeBranch === 'all' || b.id === activeBranch);
-  const selectedTalent = selectedTalentId ? TALENTS.find(t => t.id === selectedTalentId) : null;
+  const branches = heroClass.branches;
+  const talentsDef = heroClass.talents;
+
+  const visibleBranches = branches.filter(b => activeBranch === 'all' || b.id === activeBranch);
+  const selectedTalent = selectedTalentId ? talentsDef.find(t => t.id === selectedTalentId) : null;
 
   return (
     <div className="bg-slate-900/90 rounded-xl border border-slate-700/60 p-3.5 flex flex-col h-full min-h-0 shadow-2xl backdrop-blur-md">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 mb-2 border-b border-slate-800 pb-2 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🌟</span>
+          <span className="text-xl">{heroClass.icon}</span>
           <div>
-            <h3 className="font-extrabold text-sm text-slate-100 leading-tight">Древо Талантов</h3>
-            <span className="text-[10px] text-slate-400">Усиливайте персонажа пассивными навыками</span>
+            <h3 className="font-extrabold text-sm text-slate-100 leading-tight">Таланты: {heroClass.name}</h3>
+            <span className="text-[10px] text-slate-400">3 ветки талантов класса «{heroClass.name}»</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -45,8 +51,8 @@ export default function TalentsPanel() {
         >
           🌐 Все ветки
         </button>
-        {BRANCHES.map(b => {
-          const bTalents = TALENTS.filter(t => t.branch === b.id);
+        {branches.map(b => {
+          const bTalents = talentsDef.filter(t => t.branchId === b.id);
           const bPoints = bTalents.reduce((sum, t) => sum + (talents[t.id] ?? 0), 0);
           const isActive = activeBranch === b.id;
           return (
@@ -59,7 +65,7 @@ export default function TalentsPanel() {
               style={{ color: isActive ? b.color : undefined }}
             >
               <span>{b.icon}</span>
-              <span>{b.name}</span>
+              <span className="truncate">{b.name}</span>
               <span className="text-[9px] px-1 rounded bg-slate-900/60 font-mono" style={{ color: b.color }}>{bPoints}</span>
             </button>
           );
@@ -69,7 +75,7 @@ export default function TalentsPanel() {
       {/* Visual Tree Branches Container */}
       <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1">
         {visibleBranches.map(b => {
-          const branchTalents = TALENTS.filter(t => t.branch === b.id);
+          const branchTalents = talentsDef.filter(t => t.branchId === b.id);
           const branchPoints = branchTalents.reduce((sum, t) => sum + (talents[t.id] ?? 0), 0);
 
           return (
@@ -87,26 +93,24 @@ export default function TalentsPanel() {
 
               {/* Rows */}
               <div className="space-y-3">
-                {[0, 1, 2, 3, 4].map(row => {
-                  const reqPoints = row * 3;
+                {[0, 1].map(row => {
+                  const reqPoints = row * 2;
                   const isRowUnlocked = row === 0 || branchPoints >= reqPoints;
                   const rowTalents = branchTalents.filter(t => t.row === row);
 
                   return (
                     <div key={row} className="relative">
-                      {/* Row Requirement Badge */}
                       <div className="flex items-center gap-2 mb-1.5">
                         <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border ${
                           isRowUnlocked
                             ? 'bg-slate-800/70 text-slate-300 border-slate-700/60'
                             : 'bg-red-950/40 text-red-400 border-red-900/50'
                         }`}>
-                          {row === 0 ? 'Старт' : isRowUnlocked ? `Ряд ${row + 1}` : `🔒 Ряд ${row + 1} (нужно ${reqPoints} очк.)`}
+                          {row === 0 ? 'Ряд 1' : isRowUnlocked ? `Ряд 2` : `🔒 Ряд 2 (нужно ${reqPoints} очка)`}
                         </span>
                         <div className="flex-1 h-[1px] bg-slate-800/60" />
                       </div>
 
-                      {/* Talent Nodes Grid */}
                       <div className="grid grid-cols-2 gap-2">
                         {rowTalents.map(t => {
                           const rank = talents[t.id] ?? 0;
@@ -158,7 +162,6 @@ export default function TalentsPanel() {
                                 </div>
                               </div>
 
-                              {/* Progress bar & Upgrade Button */}
                               <div className="mt-1 space-y-1">
                                 <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800">
                                   <div
@@ -201,7 +204,7 @@ export default function TalentsPanel() {
         })}
       </div>
 
-      {/* Selected Talent Detailed Card */}
+      {/* Selected Talent Card */}
       {selectedTalent && (
         <div className="mt-2 p-2.5 rounded-xl border border-purple-500/40 bg-purple-950/40 text-xs shrink-0 flex items-center justify-between gap-3 animate-fadeIn">
           <div className="flex items-center gap-2 min-w-0">
@@ -225,7 +228,7 @@ export default function TalentsPanel() {
 
       {/* Footer Info */}
       <div className="mt-2 text-[10px] text-slate-400 text-center shrink-0 border-t border-slate-800 pt-1.5">
-        🌟 Очки выдаются каждые 5 уровней · Новые ряды за каждые 3 очка в ветке
+        🌟 Очки выдаются каждые 5 уровней · Новые ряды открываются при вложении очков в ветку
       </div>
     </div>
   );

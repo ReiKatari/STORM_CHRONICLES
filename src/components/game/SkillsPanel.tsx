@@ -1,134 +1,165 @@
 import { useGame } from '@/game/store';
-import { SKILLS } from '@/game/skills';
+import { getClassById } from '@/game/classes';
 
 export default function SkillsPanel() {
+  const classId = useGame(s => s.classId);
+  const heroClass = getClassById(classId);
+
   const level = useGame(s => s.level);
   const skillRanks = useGame(s => s.skillRanks);
-  const skillCds = useGame(s => s.skillCds);
-  const skillPoints = useGame(s => s.skillPoints);
+  const points = useGame(s => s.skillPoints);
   const autoCast = useGame(s => s.autoCast);
-  const mana = useGame(s => s.mana);
-  const castSkill = useGame(s => s.castSkill);
-  const upgradeSkill = useGame(s => s.upgradeSkill);
-  const toggleAutoCast = useGame(s => s.toggleAutoCast);
+  const skillCds = useGame(s => s.skillCds);
 
-  const learnedSkills = SKILLS.filter(sk => (skillRanks[sk.id] ?? 0) > 0);
-  const allAutoActive = learnedSkills.length > 0 && learnedSkills.every(sk => autoCast[sk.id]);
+  const upgrade = useGame(s => s.upgradeSkill);
+  const toggleAuto = useGame(s => s.toggleAutoCast);
+  const cast = useGame(s => s.castSkill);
 
-  const handleToggleAllAuto = () => {
-    const targetState = !allAutoActive;
-    learnedSkills.forEach(sk => {
-      if (autoCast[sk.id] !== targetState) {
-        toggleAutoCast(sk.id);
+  const classSkills = heroClass.skills;
+
+  const handleMasterToggleAuto = () => {
+    const anyOff = classSkills.some(sk => (skillRanks[sk.id] ?? 0) > 0 && !autoCast[sk.id]);
+    classSkills.forEach(sk => {
+      if ((skillRanks[sk.id] ?? 0) > 0) {
+        if (anyOff && !autoCast[sk.id]) toggleAuto(sk.id);
+        if (!anyOff && autoCast[sk.id]) toggleAuto(sk.id);
       }
     });
   };
 
   return (
-    <div className="bg-slate-900/90 rounded-xl border border-slate-700/60 p-3 flex flex-col h-full min-h-0 shadow-2xl backdrop-blur-md">
+    <div className="bg-slate-900/90 rounded-xl border border-slate-700/60 p-3.5 flex flex-col h-full min-h-0 shadow-2xl backdrop-blur-md">
       {/* Header */}
-      <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-800 shrink-0">
-        <h3 className="font-extrabold text-sm text-slate-100 flex items-center gap-1.5">
-          <span>✨ Боевые Скиллы</span>
-        </h3>
+      <div className="flex items-center justify-between gap-2 mb-3 border-b border-slate-800 pb-2 shrink-0">
         <div className="flex items-center gap-2">
-          {learnedSkills.length > 0 && (
-            <button
-              onClick={handleToggleAllAuto}
-              className={`text-[10px] font-extrabold px-2 py-1 rounded-lg border transition-all ${
-                allAutoActive
-                  ? 'bg-emerald-600 border-emerald-500 text-white shadow-[0_0_8px_rgba(16,185,129,0.3)]'
-                  : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              ⚡ {allAutoActive ? 'Отключить авто' : 'Включить все авто'}
-            </button>
-          )}
-          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border transition-all ${
-            skillPoints > 0 ? 'bg-sky-500/20 text-sky-300 border-sky-500/40 animate-pulse' : 'bg-slate-800 text-slate-400 border-slate-700'
+          <span className="text-xl">✨</span>
+          <div>
+            <h3 className="font-extrabold text-sm text-slate-100 leading-tight">Скиллы: {heroClass.name}</h3>
+            <span className="text-[10px] text-slate-400">Уникальные навыки класса {heroClass.title}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-black px-3 py-1 rounded-full border transition-all ${
+            points > 0
+              ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 animate-pulse shadow-[0_0_12px_rgba(245,158,11,0.3)]'
+              : 'bg-slate-800 text-slate-400 border-slate-700'
           }`}>
-            {skillPoints} очков
+            {points} очков
           </span>
+          <button
+            onClick={handleMasterToggleAuto}
+            className="text-[10px] font-bold px-2 py-1 rounded-lg bg-sky-950/80 border border-sky-500/40 text-sky-300 hover:bg-sky-900/80 transition-all shadow-md active:scale-95"
+          >
+            ⚡ Авто-каст
+          </button>
         </div>
       </div>
 
-      {/* Skills List */}
-      <div className="space-y-1.5 overflow-y-auto flex-1 min-h-0 pr-1">
-        {SKILLS.map(sk => {
+      {/* Skills List Grid */}
+      <div className="space-y-2.5 overflow-y-auto flex-1 min-h-0 pr-1">
+        {classSkills.map(sk => {
           const rank = skillRanks[sk.id] ?? 0;
-          const locked = level < sk.unlockLevel;
+          const unlocked = level >= sk.unlockLevel;
+          const canUpgrade = points > 0 && rank < sk.maxRank && unlocked;
+          const isAuto = !!autoCast[sk.id];
           const cd = skillCds[sk.id] ?? 0;
-          const learned = rank > 0;
-          const cdPct = cd > 0 ? (cd / sk.cooldown) * 100 : 0;
 
           return (
             <div
               key={sk.id}
-              className={`relative rounded-xl border p-2 overflow-hidden transition-all ${
-                locked
+              className={`rounded-xl border p-3 transition-all relative overflow-hidden flex flex-col justify-between ${
+                !unlocked
                   ? 'border-slate-800/80 bg-slate-950/40 opacity-50'
-                  : learned
-                  ? 'border-sky-500/40 bg-slate-850/80 shadow-md'
-                  : 'border-slate-700/60 bg-slate-900/60 hover:border-slate-600'
+                  : rank > 0
+                  ? 'border-slate-700 bg-slate-950/70 shadow-lg'
+                  : 'border-slate-800 bg-slate-900/50'
               }`}
             >
-              {cd > 0 && <div className="absolute inset-0 bg-slate-950/75 transition-all" style={{ width: `${cdPct}%` }} />}
-              <div className="relative flex items-center gap-2">
-                <button
-                  onClick={() => learned && castSkill(sk.id)}
-                  disabled={!learned || cd > 0}
-                  className="w-10 h-10 rounded-lg text-xl flex items-center justify-center border transition-all hover:scale-110 active:scale-95 disabled:cursor-not-allowed shrink-0"
-                  style={{
-                    borderColor: sk.color,
-                    background: learned ? `${sk.color}22` : '#0f172a',
-                    boxShadow: learned ? `0 0 10px ${sk.color}44` : undefined,
-                  }}
-                  title={sk.desc}
+              {/* Top row */}
+              <div className="flex items-start gap-3">
+                {/* Skill Icon */}
+                <div
+                  className="w-11 h-11 rounded-xl border flex items-center justify-center text-2xl shrink-0 bg-slate-800 shadow-md relative"
+                  style={{ borderColor: sk.color, boxShadow: rank > 0 ? `0 0 14px ${sk.color}44` : undefined }}
                 >
                   {sk.icon}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold truncate" style={{ color: learned ? sk.color : '#94a3b8' }}>
-                      {sk.name}
+                  {cd > 0 && (
+                    <div className="absolute inset-0 bg-slate-950/80 rounded-xl flex items-center justify-center text-xs font-bold font-mono text-white">
+                      {cd.toFixed(0)}с
+                    </div>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="font-extrabold text-xs text-slate-100 truncate">{sk.name}</span>
+                      {rank > 0 && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          Ранг {rank}/{sk.maxRank}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-sky-400 font-bold shrink-0">
+                      💧 {sk.manaCost} маны
                     </span>
-                    {learned && (
-                      <span className="text-[9px] font-mono px-1 rounded bg-slate-950 text-slate-400">
-                        {rank}/{sk.maxRank}
-                      </span>
-                    )}
                   </div>
-                  <div className="text-[10px] text-slate-400 truncate">
-                    {locked ? `🔒 Требуется ${sk.unlockLevel} ур.` : `${sk.manaCost} маны · ${sk.cooldown}с · ${sk.desc}`}
+
+                  <p className="text-[10px] text-slate-400 leading-tight">
+                    {sk.desc}
+                  </p>
+
+                  <div className="flex items-center gap-3 text-[9px] text-slate-500 font-mono">
+                    <span>⏱️ Перезарядка: {sk.cooldown}с</span>
+                    {!unlocked && <span className="text-red-400 font-bold">🔒 Требуется {sk.unlockLevel} уровень</span>}
                   </div>
                 </div>
-                <div className="flex flex-col gap-1 items-end shrink-0">
-                  <button
-                    onClick={() => upgradeSkill(sk.id)}
-                    disabled={locked || skillPoints <= 0 || rank >= sk.maxRank}
-                    className="text-[10px] px-2 py-0.5 rounded bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold transition-all shadow"
-                  >
-                    {learned ? '↑ Апгрейд' : 'Изучить'}
-                  </button>
-                  {learned && (
+              </div>
+
+              {/* Bottom Actions Row */}
+              <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {rank > 0 && (
                     <button
-                      onClick={() => toggleAutoCast(sk.id)}
-                      className={`text-[9px] px-1.5 py-0.5 rounded font-bold transition-all ${
-                        autoCast[sk.id] ? 'bg-emerald-600 text-white shadow' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                      onClick={() => toggleAuto(sk.id)}
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 ${
+                        isAuto
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
+                          : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
                       }`}
                     >
-                      {autoCast[sk.id] ? '⚡ АВТО' : 'ручной'}
+                      <span>{isAuto ? '⚡ Авто: ВКЛ' : '⚪ Авто: ВЫКЛ'}</span>
+                    </button>
+                  )}
+
+                  {rank > 0 && (
+                    <button
+                      onClick={() => cast(sk.id)}
+                      disabled={cd > 0}
+                      className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white shadow-md transition-all disabled:opacity-50 active:scale-95"
+                    >
+                      🪄 Каст
                     </button>
                   )}
                 </div>
+
+                {canUpgrade && (
+                  <button
+                    onClick={() => upgrade(sk.id)}
+                    className="text-[10px] font-bold px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black shadow-lg transition-all animate-bounce active:scale-95"
+                  >
+                    +1 Улучшить
+                  </button>
+                )}
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="mt-2 text-[10px] text-slate-400 shrink-0 text-center border-t border-slate-800 pt-1.5">
-        🔷 Мана: <b className="text-sky-300">{Math.floor(mana)}</b> · Нажмите ⚡Включить все авто для автокаста заклинаний
+      {/* Footer Info */}
+      <div className="mt-2 text-[10px] text-slate-400 text-center shrink-0 border-t border-slate-800 pt-1.5">
+        ✨ Очки скиллов даются каждые 3 уровня · Включите «Авто-каст» для автоматического призыва
       </div>
     </div>
   );
