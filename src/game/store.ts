@@ -228,7 +228,7 @@ export const useGame = create<GameState>((set, get) => {
     const goldGain = Math.round(m.gold * (1 + d.goldBonus / 100));
     const xpGain = Math.round(m.xp * (1 + d.xpBonus / 100));
 
-    pushLog(s.log, `☠️ Убит ${m.def.name} (Ур.${m.level}): +${goldGain}g, +${xpGain}xp`, m.def.color);
+    pushLog(s.log, `☠️ Убит ${m.def.name} (Ур.${m.level}): +${fmt(goldGain)}g, +${fmt(xpGain)}xp`, m.def.color);
     grantXp(xpGain);
     addQuestProgress('kill', m.def.family, 1);
     if (m.def.isBoss || m.def.isMiniBoss) addQuestProgress('boss', '', 1);
@@ -458,10 +458,10 @@ export const useGame = create<GameState>((set, get) => {
             let skillDmg = Math.round(d.skillPower * 2.2);
             if (sk.id.includes('heal') || sk.id.includes('meditate') || sk.id.includes('rejuvenation')) {
               hp = Math.min(d.maxHp, hp + Math.round(d.maxHp * 0.35));
-              pushFx(s.fxQueue, { type: 'heal', text: `+${Math.round(d.maxHp * 0.35)} HP`, color: '#4ade80' });
+              pushFx(s.fxQueue, { type: 'heal', text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
             } else {
               let mHp = s.monster.hp - skillDmg;
-              pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${skillDmg}`, color: sk.color });
+              pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
               if (mHp <= 0) {
                 onKill(s.monster);
                 return;
@@ -485,7 +485,7 @@ export const useGame = create<GameState>((set, get) => {
 
         if (isCrit) sound.playCrit(); else sound.playHit();
         monster.hp -= dealt;
-        pushFx(s.fxQueue, { type: isCrit ? 'crit' : 'monsterHit', value: dealt, text: isCrit ? `💥 КРИТ ${dealt}` : `${dealt}`, color: isCrit ? '#facc15' : '#f87171' });
+        pushFx(s.fxQueue, { type: isCrit ? 'crit' : 'monsterHit', value: dealt, text: isCrit ? `💥 КРИТ ${fmt(dealt)}` : `${fmt(dealt)}`, color: isCrit ? '#facc15' : '#f87171' });
 
         if (monster.hp <= 0) {
           onKill(monster);
@@ -501,7 +501,7 @@ export const useGame = create<GameState>((set, get) => {
         if (Math.random() * 100 >= d.dodge) {
           const mDmg = mitigate(monster.dmg, d.armor);
           hp -= mDmg;
-          pushFx(s.fxQueue, { type: 'playerHit', value: mDmg, text: `-${mDmg}`, color: '#ef4444' });
+          pushFx(s.fxQueue, { type: 'playerHit', value: mDmg, text: `-${fmt(mDmg)}`, color: '#ef4444' });
           if (hp <= 0) {
             // player death reset to stage start
             hp = d.maxHp;
@@ -594,12 +594,12 @@ export const useGame = create<GameState>((set, get) => {
 
       if (id.includes('heal') || id.includes('meditate') || id.includes('rejuvenation')) {
         const hp = Math.min(d.maxHp, s.hp + Math.round(d.maxHp * 0.35));
-        pushFx(s.fxQueue, { type: 'heal', text: `+${Math.round(d.maxHp * 0.35)} HP`, color: '#4ade80' });
+        pushFx(s.fxQueue, { type: 'heal', text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
         set({ mana, hp, skillCds });
       } else {
         const skillDmg = Math.round(d.skillPower * 2.5);
         const mHp = s.monster.hp - skillDmg;
-        pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${skillDmg}`, color: sk.color });
+        pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
         if (mHp <= 0) {
           onKill(s.monster);
           set({ mana, skillCds });
