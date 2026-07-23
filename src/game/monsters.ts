@@ -18,14 +18,14 @@ const ADJ = [
 ];
 
 export const FAMILIES: FamilyDef[] = [
-  { id: 'slime',           name: 'Слайм',             icons: ['🟢', '🟩', '💚', '🫧', '🧪', '🦠', '☢️', '🧫', '❇️', '🌑'], color: '#4ade80', adjectives: ADJ },
+  { id: 'slime',           name: 'Слайм',             icons: ['🟢', '🟩', '💚', '🫧', '🧪', '🦠', '☢️', '🧫', '❇️', '🌑'], color: '#4ade80', adjectives: ADJ, artSrc: '/monsters/slime.jpg' },
   { id: 'rat',             name: 'Крысолюд',          icons: ['🐀', '🐁', '🦷', '🐭', '👁️', '🦴', '⚫', '🩸', '💀', '👑'], color: '#a8a29e', adjectives: ADJ },
-  { id: 'goblin',          name: 'Гоблин',            icons: ['👺', '🗡️', '🏹', '💣', '🛡️', '🔥', '👑', '⚡', '💥', '💀'], color: '#84cc16', adjectives: ADJ },
-  { id: 'skeleton',        name: 'Скелет',            icons: ['💀', '🦴', '⚔️', '🛡️', '🏹', '🔮', '👑', '🕯️', '☠️', '🌑'], color: '#e7e5e4', adjectives: ADJ },
+  { id: 'goblin',          name: 'Гоблин',            icons: ['👺', '🗡️', '🏹', '💣', '🛡️', '🔥', '👑', '⚡', '💥', '💀'], color: '#84cc16', adjectives: ADJ, artSrc: '/monsters/goblin.jpg' },
+  { id: 'skeleton',        name: 'Скелет',            icons: ['💀', '🦴', '⚔️', '🛡️', '🏹', '🔮', '👑', '🕯️', '☠️', '🌑'], color: '#e7e5e4', adjectives: ADJ, artSrc: '/monsters/skeleton.jpg' },
   { id: 'zombie',          name: 'Зомби',             icons: ['🧟', '🧟‍♂️', '🧟‍♀️', '🪦', '☣️', '🧠', '👑', '🩸', '☠️', '🌑'], color: '#65a30d', adjectives: ADJ },
   { id: 'spider',          name: 'Паук',              icons: ['🕷️', '🕸️', '🦂', '👁️', '🥚', '💀', '👑', '🟣', '🔮', '🌑'], color: '#7c3aed', adjectives: ADJ, artSrc: '/monsters/spider.jpg' },
   { id: 'wolf',            name: 'Волк',              icons: ['🐺', '🦷', '🌕', '❄️', '🔥', '⚡', '👑', '🌌', '🌠', '🌑'], color: '#64748b', adjectives: ADJ },
-  { id: 'orc',             name: 'Орк',               icons: ['👹', '🪓', '🛡️', '🏹', '💪', '🔥', '👑', '⚔️', '🌋', '🌑'], color: '#16a34a', adjectives: ADJ },
+  { id: 'orc',             name: 'Орк',               icons: ['👹', '🪓', '🛡️', '🏹', '💪', '🔥', '👑', '⚔️', '🌋', '🌑'], color: '#16a34a', adjectives: ADJ, artSrc: '/monsters/orc.jpg' },
   { id: 'bandit',          name: 'Бандит',            icons: ['🥷', '🗡️', '💰', '🏴‍☠️', '⚔️', '🎯', '👑', '💣', '⚡', '🌑'], color: '#b45309', adjectives: ADJ },
   { id: 'ghost',           name: 'Призрак',           icons: ['👻', '🕯️', '⚪', '🌫️', '😱', '💀', '👑', '❄️', '🌌', '🌑'], color: '#93c5fd', adjectives: ADJ },
   { id: 'vampire',         name: 'Вампир',            icons: ['🧛', '🧛‍♂️', '🦇', '🩸', '🍷', '🌹', '👑', '🩸', '🔮', '🌑'], color: '#dc2626', adjectives: ADJ, artSrc: '/monsters/vampire.jpg' },
@@ -52,8 +52,8 @@ export const FAMILIES: FamilyDef[] = [
   // New Monster Families T30-T50
   { id: 'lich',            name: 'Лич',               icons: ['🧙‍♂️', '💀', '🔮', '🕯️', '⚡', '📜', '👑', '🟣', '🌌', '🌑'], color: '#06b6d4', adjectives: ADJ, artSrc: '/monsters/lich.jpg' },
   { id: 'gargoyle',        name: 'Гаргулья',          icons: ['🗿', '🦅', '🦇', '🪨', '⛓️', '👁️', '👑', '⚡', '🌟', '🌑'], color: '#64748b', adjectives: ADJ, g: 'f' },
-  { id: 'minotaur',        name: 'Минотавр',          icons: ['🐂', '🪓', '🛡️', '🪵', '🌋', '🔥', '👑', '⚔️', '💥', '🌑'], color: '#b45309', adjectives: ADJ },
-  { id: 'hydra',           name: 'Гидра',             icons: ['🐍', '🐉', '🌊', '🧪', '💚', '🔥', '👑', '⚡', '💥', '🌑'], color: '#059669', adjectives: ADJ, g: 'f' },
+  { id: 'minotaur',        name: 'Минотавр',          icons: ['🐂', '🪓', '🛡️', '🪵', '🌋', '🔥', '👑', '⚔️', '💥', '🌑'], color: '#b45309', adjectives: ADJ, artSrc: '/monsters/minotaur.jpg' },
+  { id: 'hydra',           name: 'Гидра',             icons: ['🐍', '🐉', '🌊', '🧪', '💚', '🔥', '👑', '⚡', '💥', '🌑'], color: '#059669', adjectives: ADJ, g: 'f', artSrc: '/monsters/hydra.jpg' },
   { id: 'siren',           name: 'Сирена',            icons: ['🧜‍♀️', '🐚', '🌊', '🔮', '🎵', '💫', '👑', '✨', '🌐', '🌑'], color: '#0284c7', adjectives: ADJ, g: 'f' },
   { id: 'treant',          name: 'Древень',           icons: ['🪵', '🌳', '🌲', '🌿', '🍄', '🍃', '👑', '🌱', '✨', '🌑'], color: '#15803d', adjectives: ADJ },
   { id: 'wyvern',          name: 'Виверна',           icons: ['🦎', '🦅', '💨', '⚡', '🐉', '🔥', '👑', '🌟', '🌌', '🌑'], color: '#ea580c', adjectives: ADJ, g: 'f' },
