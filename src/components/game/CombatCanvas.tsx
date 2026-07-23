@@ -76,11 +76,16 @@ export default function CombatCanvas() {
     getImageAsset('/monsters/wyvern.jpg');
     getImageAsset('/monsters/archdemon.jpg');
     getImageAsset('/monsters/chimera.jpg');
+    getImageAsset('/monsters/basilisk.jpg');
+    getImageAsset('/monsters/phoenix.jpg');
 
     // Preload background artwork assets
     getImageAsset('/backgrounds/forest.jpg');
     getImageAsset('/backgrounds/volcano.jpg');
     getImageAsset('/backgrounds/abyss.jpg');
+    getImageAsset('/backgrounds/mine.jpg');
+    getImageAsset('/backgrounds/swamp.jpg');
+    getImageAsset('/backgrounds/desert.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
@@ -261,6 +266,12 @@ export default function CombatCanvas() {
         ? '/backgrounds/volcano.jpg'
         : (zoneId === 'abyss' || zoneId === 'void' || zoneId === 'space')
         ? '/backgrounds/abyss.jpg'
+        : zoneId === 'mine'
+        ? '/backgrounds/mine.jpg'
+        : zoneId === 'swamp'
+        ? '/backgrounds/swamp.jpg'
+        : zoneId === 'desert'
+        ? '/backgrounds/desert.jpg'
         : '/backgrounds/forest.jpg';
       const bgImg = getImageAsset(bgPath);
       if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
@@ -278,7 +289,6 @@ export default function CombatCanvas() {
       ctx.fillRect(0, 0, W, H);
 
       const groundY = H * 0.68;
-      const zoneId = s.zoneId;
 
       // ===== DRAW UNIQUE ZONE ENVIRONMENT LANDSCAPE =====
       if (zoneId === 'forest') {
