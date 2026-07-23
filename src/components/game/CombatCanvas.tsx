@@ -50,6 +50,8 @@ export default function CombatCanvas() {
 
   useEffect(() => {
     // Preload background assets
+    getImageAsset('/backgrounds/hills.jpg');
+    getImageAsset('/backgrounds/sea.jpg');
     getImageAsset('/backgrounds/abyss.jpg');
     getImageAsset('/backgrounds/dark_forest.jpg');
     getImageAsset('/backgrounds/volcano.jpg');
@@ -64,6 +66,11 @@ export default function CombatCanvas() {
     getImageAsset('/backgrounds/garden.jpg');
     getImageAsset('/backgrounds/throne.jpg');
     getImageAsset('/backgrounds/astral.jpg');
+
+    // Preload monster art assets
+    getImageAsset('/monsters/wisp.jpg');
+    getImageAsset('/monsters/storm_elemental.jpg');
+    getImageAsset('/monsters/harpy.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
@@ -373,17 +380,30 @@ export default function CombatCanvas() {
 
       ctx.restore();
 
-      // Player Name & Level Badge (Positioned ABOVE the 160px sprite)
+      // Player Name & Level Badge Plate (Positioned ABOVE the 160px sprite)
       ctx.save();
+      const pBadgeW = 165, pBadgeH = 34;
+      const pBx = px - pBadgeW / 2, pBy = py - 150;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      ctx.strokeStyle = heroColor;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = heroColor;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(pBx, pBy, pBadgeW, pBadgeH, 10);
+      ctx.fill();
+      ctx.stroke();
+
       ctx.fillStyle = '#fef08a';
-      ctx.font = "bold 13px 'Century Gothic', CenturyGothic, sans-serif";
+      ctx.font = "bold 12px 'Century Gothic', CenturyGothic, sans-serif";
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0,0,0,0.95)';
-      ctx.shadowBlur = 8;
-      ctx.fillText(`${s.characterName || 'Герой'} · Ур. ${s.level}`, px, py - 135);
+      ctx.shadowBlur = 4;
+      ctx.fillText(`${s.characterName || 'Герой'} · Ур. ${s.level}`, px, pBy + 15);
+
       ctx.fillStyle = heroColor;
-      ctx.font = "bold 11.5px 'Century Gothic', CenturyGothic, sans-serif";
-      ctx.fillText(`${heroClass?.icon ?? ''} ${heroClass?.name ?? 'Искатель'}`, px, py - 118);
+      ctx.font = "bold 10.5px 'Century Gothic', CenturyGothic, sans-serif";
+      ctx.fillText(`${heroClass?.icon ?? ''} ${heroClass?.name ?? 'Искатель'}`, px, pBy + 28);
       ctx.restore();
 
       // Player HP/Mana Bar
@@ -413,7 +433,7 @@ export default function CombatCanvas() {
           const petLvl = s.petLvl ?? 1;
           const evoTier = petLvl >= 30 ? 3 : petLvl >= 15 ? 2 : 1;
           const evoBadge = evoTier === 3 ? '👑' : evoTier === 2 ? '🔥' : '🐣';
-          const petSize = evoTier === 3 ? 48 : evoTier === 2 ? 40 : 32; // Enlarged Pet Sizes
+          const petSize = evoTier === 3 ? 48 : evoTier === 2 ? 40 : 32;
 
           // Pet Companion Position with Attack Strike Animation
           const petStrike = playerLunge.current > 0 ? Math.sin((playerLunge.current / 0.22) * Math.PI) * 60 : 0;
@@ -441,13 +461,30 @@ export default function CombatCanvas() {
           ctx.textAlign = 'center';
           ctx.fillText(petDef.icon, petX, petY + petSize * 0.35);
 
-          // Pet Name, Tier & Level Tag
+          // Pet Name & Level Badge Plate
           const petCustomName = s.petCustomNames?.[activePetId] || petDef.name.split(' ')[0];
+          const petTextStr = `${evoBadge} ${petCustomName} (Ур.${fmt(petLvl)})`;
+          const ptBadgeW = 145, ptBadgeH = 22;
+          const ptBx = petX - ptBadgeW / 2, ptBy = petY - petSize - 26;
+
+          ctx.save();
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+          ctx.strokeStyle = petDef.color;
+          ctx.lineWidth = 1.5;
+          ctx.shadowColor = petDef.color;
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.roundRect(ptBx, ptBy, ptBadgeW, ptBadgeH, 8);
+          ctx.fill();
+          ctx.stroke();
+
           ctx.fillStyle = '#ffffff';
-          ctx.font = "bold 11px 'Century Gothic', CenturyGothic, sans-serif";
+          ctx.font = "bold 10.5px 'Century Gothic', CenturyGothic, sans-serif";
+          ctx.textAlign = 'center';
           ctx.shadowColor = 'rgba(0,0,0,0.95)';
-          ctx.shadowBlur = 9;
-          ctx.fillText(`${evoBadge} ${petCustomName} (Ур.${fmt(petLvl)})`, petX, petY - petSize - 10);
+          ctx.shadowBlur = 5;
+          ctx.fillText(petTextStr, petX, ptBy + 15);
+          ctx.restore();
           ctx.restore();
         }
       }
@@ -506,14 +543,29 @@ export default function CombatCanvas() {
 
       ctx.restore();
 
-      // Monster Name & Level Badge (Positioned ABOVE the 185px/240px monster sprite)
+      // Monster Name & Level Badge Plate (Positioned ABOVE the monster sprite)
       ctx.save();
+      const mTextStr = `${mDef.name} (Ур.${s.monster.level})`;
+      const mBadgeW = isBoss ? 210 : 170, mBadgeH = 26;
+      const mBy = my - (isBoss ? 215 : 165);
+      const mBx = mx - mBadgeW / 2;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      ctx.strokeStyle = mDef.color;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = mDef.color;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(mBx, mBy, mBadgeW, mBadgeH, 9);
+      ctx.fill();
+      ctx.stroke();
+
       ctx.fillStyle = mDef.color;
-      ctx.font = `bold ${isBoss ? 15 : 13}px 'Century Gothic', CenturyGothic, sans-serif`;
+      ctx.font = `bold ${isBoss ? 13 : 11.5}px 'Century Gothic', CenturyGothic, sans-serif`;
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0,0,0,0.95)';
-      ctx.shadowBlur = 8;
-      ctx.fillText(`${mDef.name} (Ур.${s.monster.level})`, mx, my - (isBoss ? 200 : 150));
+      ctx.shadowBlur = 5;
+      ctx.fillText(mTextStr, mx, mBy + 17);
       ctx.restore();
 
       // Monster HP Bar
