@@ -176,11 +176,23 @@ export default function App() {
       loadSave();
       setLoaded(true);
     }
-    const iv = setInterval(() => useGame.getState().tick(0.1), 100);
+  }, [loaded]);
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      try {
+        useGame.getState().tick(0.1);
+      } catch (err) {
+        console.error('Tick error:', err);
+      }
+    }, 100);
     const onVis = () => useGame.getState().save();
     window.addEventListener('beforeunload', onVis);
-    return () => { clearInterval(iv); window.removeEventListener('beforeunload', onVis); };
-  }, [loaded]);
+    return () => {
+      clearInterval(iv);
+      window.removeEventListener('beforeunload', onVis);
+    };
+  }, []);
 
   useEffect(() => {
     if (loaded && (!characterName || !classId)) {
