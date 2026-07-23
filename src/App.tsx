@@ -86,7 +86,7 @@ function Header({
           className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-orange-950/80 hover:bg-orange-900 border border-orange-500/40 text-orange-200 transition-all shadow-md active:scale-95 flex items-center gap-1"
         >
           <span>🔨</span>
-          <span>Кузница & Крафт</span>
+          <span>Кузница и Крафт</span>
         </button>
 
         <button
@@ -270,7 +270,6 @@ export default function App() {
               <CombatCanvas />
             </div>
             <HotbarPanel />
-            <SkillBar />
             <BattleLog />
             <EventsPanel />
 
