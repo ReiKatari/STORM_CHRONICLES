@@ -130,8 +130,8 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
         <div className="flex items-center gap-1.5">
           <button
             onClick={equipBestAll}
-            className="text-[10px] px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black border border-emerald-400/50 shadow-lg transition-all active:scale-95 flex items-center gap-1"
-            title="Автоматически надевает предметы с наибольшей мощью из инвентаря в каждый слот"
+            className="text-[10px] px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:scale-105 text-white font-black border border-emerald-400/60 shadow-lg transition-all active:scale-95 flex items-center gap-1"
+            title="Автоматически надевает предметы с наибольшей мощью из инвентаря во все слоты"
           >
             <span>⚡ Надеть всё лучшее</span>
           </button>
@@ -152,17 +152,21 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
         <div className="text-emerald-400">❤️ +{fmt(totalHp)} <span className="text-[9px] text-slate-400 font-sans block font-semibold">HP</span></div>
       </div>
 
-      {/* Paperdoll Slot Grid */}
+      {/* Main Body Armor Paperdoll Slot Grid */}
       <div className="space-y-2">
         <div className="flex justify-center">{renderSlotBtn(PAPERDOLL_LAYOUT.top[0])}</div>
         <div className="flex gap-2">{PAPERDOLL_LAYOUT.bodyUpper.map(renderSlotBtn)}</div>
         <div className="flex gap-2">{PAPERDOLL_LAYOUT.bodyMid.map(renderSlotBtn)}</div>
         <div className="flex gap-2">{PAPERDOLL_LAYOUT.bodyLower.map(renderSlotBtn)}</div>
 
-        {/* Jewelry section */}
-        <div className="pt-2 border-t border-slate-800/80">
-          <div className="text-[10px] text-slate-400 font-bold mb-1.5 uppercase tracking-wider">Бижутерия & Аксессуары:</div>
-          <div className="grid grid-cols-5 gap-1.5">
+        {/* Redesigned Jewelry Section with Clear Names & Stats */}
+        <div className="pt-2.5 border-t border-slate-800/80 space-y-1.5">
+          <div className="text-[10px] text-slate-300 font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+            <span>💎</span>
+            <span>БИЖУТЕРИЯ И АКСЕССУАРЫ</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {PAPERDOLL_LAYOUT.jewelry.map(slot => {
               const item = equipment[slot.id];
               const r = item ? rarityById(item.rarity) : null;
@@ -183,16 +187,31 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
                       e.preventDefault();
                       if (item) unequip(slot.id);
                     }}
-                    className={`w-full aspect-square rounded-2xl border flex items-center justify-center text-xl transition-all hover:scale-105 bg-slate-950 ${
+                    className={`w-full p-2 rounded-xl border flex items-center gap-2 text-left transition-all hover:scale-[1.02] bg-slate-950/90 ${
                       isSelected ? 'ring-2 ring-amber-400 border-amber-400 shadow-md' : ''
                     }`}
                     style={{
                       borderColor: r ? r.color : isSelected ? '#facc15' : '#334155',
-                      boxShadow: r ? `0 0 10px ${r.glow}` : undefined,
+                      boxShadow: r ? `0 0 8px ${r.glow}` : undefined,
                     }}
-                    title={item ? `${item.name}\n(ЛКМ — фильтр, ПКМ — снять)` : slot.name}
                   >
-                    {item ? item.icon : slot.icon}
+                    <div
+                      className="w-8 h-8 rounded-lg border flex items-center justify-center text-lg shrink-0 bg-slate-900 shadow"
+                      style={{ borderColor: r ? r.color : '#475569' }}
+                    >
+                      {item ? item.icon : slot.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[9px] text-slate-400 font-bold leading-none">{slot.name}</div>
+                      <div className="text-[10.5px] font-extrabold truncate leading-tight mt-0.5" style={{ color: r ? r.color : '#94a3b8' }}>
+                        {item ? item.name : 'Пустой слот'}
+                      </div>
+                    </div>
+                    {item && (
+                      <span className="text-[9.5px] font-black text-amber-300 font-mono shrink-0 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                        ⚡{fmt(item.score)}
+                      </span>
+                    )}
                   </button>
                 </div>
               );

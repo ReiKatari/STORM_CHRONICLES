@@ -540,7 +540,11 @@ export const useGame = create<GameState>((set, get) => {
 
     equipBestAll: () => {
       const s = get();
-      const slotList: { slotId: SlotId; kind: string }[] = [
+      let equipment = { ...s.equipment };
+      let inventory = [...s.inventory];
+
+      // 1. Single Slots
+      const singleSlots: { slotId: SlotId; kind: string }[] = [
         { slotId: 'helmet', kind: 'helmet' },
         { slotId: 'shoulders', kind: 'shoulders' },
         { slotId: 'armor', kind: 'armor' },
@@ -552,16 +556,9 @@ export const useGame = create<GameState>((set, get) => {
         { slotId: 'kneepads', kind: 'kneepads' },
         { slotId: 'boots', kind: 'boots' },
         { slotId: 'amulet', kind: 'amulet' },
-        { slotId: 'ring1', kind: 'ring' },
-        { slotId: 'ring2', kind: 'ring' },
-        { slotId: 'earring1', kind: 'earring' },
-        { slotId: 'earring2', kind: 'earring' },
       ];
 
-      let equipment = { ...s.equipment };
-      let inventory = [...s.inventory];
-
-      slotList.forEach(({ slotId, kind }) => {
+      singleSlots.forEach(({ slotId, kind }) => {
         const candidates = inventory.filter(i => i.slot === kind).sort((a, b) => b.score - a.score);
         if (candidates.length === 0) return;
 
@@ -574,6 +571,50 @@ export const useGame = create<GameState>((set, get) => {
           equipment[slotId] = best;
         }
       });
+
+      // 2. Rings (ring1 & ring2)
+      let ringCandidates = inventory.filter(i => i.slot === 'ring').sort((a, b) => b.score - a.score);
+      if (ringCandidates.length > 0) {
+        const best1 = ringCandidates[0];
+        const eq1 = equipment.ring1;
+        if (!eq1 || best1.score > eq1.score) {
+          inventory = inventory.filter(i => i.id !== best1.id);
+          if (eq1) inventory.push(eq1);
+          equipment.ring1 = best1;
+        }
+      }
+      ringCandidates = inventory.filter(i => i.slot === 'ring').sort((a, b) => b.score - a.score);
+      if (ringCandidates.length > 0) {
+        const best2 = ringCandidates[0];
+        const eq2 = equipment.ring2;
+        if (!eq2 || best2.score > eq2.score) {
+          inventory = inventory.filter(i => i.id !== best2.id);
+          if (eq2) inventory.push(eq2);
+          equipment.ring2 = best2;
+        }
+      }
+
+      // 3. Earrings (earring1 & earring2)
+      let earringCandidates = inventory.filter(i => i.slot === 'earring').sort((a, b) => b.score - a.score);
+      if (earringCandidates.length > 0) {
+        const best1 = earringCandidates[0];
+        const eq1 = equipment.earring1;
+        if (!eq1 || best1.score > eq1.score) {
+          inventory = inventory.filter(i => i.id !== best1.id);
+          if (eq1) inventory.push(eq1);
+          equipment.earring1 = best1;
+        }
+      }
+      earringCandidates = inventory.filter(i => i.slot === 'earring').sort((a, b) => b.score - a.score);
+      if (earringCandidates.length > 0) {
+        const best2 = earringCandidates[0];
+        const eq2 = equipment.earring2;
+        if (!eq2 || best2.score > eq2.score) {
+          inventory = inventory.filter(i => i.id !== best2.id);
+          if (eq2) inventory.push(eq2);
+          equipment.earring2 = best2;
+        }
+      }
 
       const derived = computeDerived(s.level, s.stats, equipment, s.talents);
       sound.playEquip();
