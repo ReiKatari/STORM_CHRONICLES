@@ -82,6 +82,7 @@ export default function CombatCanvas() {
     getImageAsset('/monsters/beholder.jpg');
     getImageAsset('/monsters/sphinx.jpg');
     getImageAsset('/monsters/djinn.jpg');
+    getImageAsset('/monsters/gargoyle.jpg');
 
     // Preload background artwork assets
     getImageAsset('/backgrounds/forest.jpg');
@@ -95,6 +96,9 @@ export default function CombatCanvas() {
     getImageAsset('/backgrounds/castle.jpg');
     getImageAsset('/backgrounds/peaks.jpg');
     getImageAsset('/backgrounds/catacombs.jpg');
+    getImageAsset('/backgrounds/garden.jpg');
+    getImageAsset('/backgrounds/throne.jpg');
+    getImageAsset('/backgrounds/astral.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
@@ -287,6 +291,12 @@ export default function CombatCanvas() {
         ? '/backgrounds/peaks.jpg'
         : zoneId === 'catacombs'
         ? '/backgrounds/catacombs.jpg'
+        : zoneId === 'hidden_garden'
+        ? '/backgrounds/garden.jpg'
+        : zoneId === 'hidden_throne'
+        ? '/backgrounds/throne.jpg'
+        : zoneId === 'astral'
+        ? '/backgrounds/astral.jpg'
         : '/backgrounds/forest.jpg';
       const bgImg = getImageAsset(bgPath);
       if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
