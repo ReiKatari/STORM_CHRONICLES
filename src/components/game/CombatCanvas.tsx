@@ -119,24 +119,32 @@ export default function CombatCanvas() {
         P.push({ x: x + (Math.random() - 0.5) * 30, y, vx: (Math.random() - 0.5) * 20, vy: -70, life: 0, maxLife: 1.1, size, color, gravity: 0, kind: 'text', text });
       };
 
+      // Correct FX assignments:
+      // monsterHit / crit / skill -> player attacks monster (particles & text at monster pos mx, my)
+      // playerHit -> monster attacks player (particles & text at player pos px, py)
       switch (fx.type) {
-        case 'playerHit':
-          burst(mx, my - 30, 14, fx.color ?? '#e2e8f0', 200);
-          P.push({ x: mx - 20, y: my - 30, vx: 0, vy: 0, life: 0, maxLife: 0.25, size: 45, color: '#e2e8f0', gravity: 0, kind: 'slash' });
-          floatText(mx, my - 95, `-${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, fx.color ?? '#fff', 22);
-          monsterHit.current = 0.15; playerLunge.current = 0.18;
+        case 'monsterHit':
+          burst(mx, my - 40, 16, '#f87171', 220);
+          P.push({ x: mx - 20, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.25, size: 45, color: '#f87171', gravity: 0, kind: 'slash' });
+          floatText(mx, my - 95, `-${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#f87171', 22);
+          monsterHit.current = 0.20; playerLunge.current = 0.22;
           break;
         case 'crit':
-          burst(mx, my - 30, 35, '#facc15', 320, 4);
-          P.push({ x: mx - 30, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 65, color: '#facc15', gravity: 0, kind: 'slash' });
+          burst(mx, my - 40, 38, '#facc15', 340, 4);
+          P.push({ x: mx - 30, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 70, color: '#facc15', gravity: 0, kind: 'slash' });
           floatText(mx, my - 105, `💥 ${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#facc15', 34);
-          shake.current = Math.max(shake.current, 9);
-          monsterHit.current = 0.22; playerLunge.current = 0.22;
+          shake.current = Math.max(shake.current, 10);
+          monsterHit.current = 0.25; playerLunge.current = 0.25;
           break;
-        case 'monsterHit':
-          burst(px, py - 30, 14, '#f87171', 200);
-          floatText(px, py - 95, `-${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#f87171', 22);
-          shake.current = Math.max(shake.current, 5);
+        case 'skill':
+          burst(mx, my - 40, 26, fx.color ?? '#c084fc', 260);
+          floatText(mx, my - 100, fx.text ?? '', fx.color ?? '#c084fc', 22);
+          monsterHit.current = 0.22; playerLunge.current = 0.20;
+          break;
+        case 'playerHit':
+          burst(px, py - 30, 14, '#ef4444', 200);
+          floatText(px, py - 95, `-${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#ef4444', 22);
+          shake.current = Math.max(shake.current, 6);
           break;
         case 'dodge':
           floatText(px, py - 85, '💨 Уворот!', '#38bdf8', 18);
@@ -144,11 +152,6 @@ export default function CombatCanvas() {
         case 'heal':
           burst(px, py - 30, 18, '#4ade80', 140, 3, -100);
           floatText(px, py - 95, fx.text ?? '+HP', '#4ade80', 22);
-          break;
-        case 'skill':
-          burst(mx, my - 30, 24, fx.color ?? '#c084fc', 250);
-          floatText(mx, my - 100, fx.text ?? '', fx.color ?? '#c084fc', 20);
-          playerLunge.current = 0.15;
           break;
         case 'loot':
           P.push({ x: mx, y: my - 50, vx: 0, vy: -120, life: 0, maxLife: 1.4, size: 20, color: fx.color ?? '#facc15', gravity: 0, kind: 'text', text: `✨ ${fx.text}` });
@@ -341,10 +344,9 @@ export default function CombatCanvas() {
       ctx.restore();
 
       const heroImg = heroClass?.artSrc ? getImageAsset(heroClass.artSrc) : null;
-      const size = 160; // Enlarged Player Sprite Size
+      const size = 160;
 
       if (heroImg) {
-        // Multi-layer glowing aura
         ctx.save();
         ctx.shadowColor = heroColor;
         ctx.shadowBlur = 28;
