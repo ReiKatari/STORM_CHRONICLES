@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useGame } from '@/game/store';
 import { zoneById } from '@/game/monsters';
 import { getClassById } from '@/game/classes';
+import { PETS } from '@/game/pets';
+import { fmt } from '@/game/engine';
 import type { FxEvent } from '@/game/types';
 
 interface Particle {
@@ -66,6 +68,10 @@ export default function CombatCanvas() {
     getImageAsset('/monsters/rat.jpg');
     getImageAsset('/monsters/bandit.jpg');
     getImageAsset('/monsters/cultist.jpg');
+    getImageAsset('/monsters/bear.jpg');
+    getImageAsset('/monsters/elemental_ice.jpg');
+    getImageAsset('/monsters/mimic.jpg');
+    getImageAsset('/monsters/knight.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
@@ -118,19 +124,19 @@ export default function CombatCanvas() {
         case 'playerHit':
           burst(mx, my - 30, 12, fx.color ?? '#e2e8f0', 180);
           P.push({ x: mx - 20, y: my - 30, vx: 0, vy: 0, life: 0, maxLife: 0.25, size: 40, color: '#e2e8f0', gravity: 0, kind: 'slash' });
-          floatText(mx, my - 80, `-${fx.value}`, fx.color ?? '#fff', 20);
+          floatText(mx, my - 80, `-${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, fx.color ?? '#fff', 20);
           monsterHit.current = 0.15; playerLunge.current = 0.18;
           break;
         case 'crit':
           burst(mx, my - 30, 30, '#facc15', 300, 4);
           P.push({ x: mx - 30, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 60, color: '#facc15', gravity: 0, kind: 'slash' });
-          floatText(mx, my - 90, `💥 ${fx.value}`, '#facc15', 32);
+          floatText(mx, my - 90, `💥 ${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#facc15', 32);
           shake.current = Math.max(shake.current, 8);
           monsterHit.current = 0.22; playerLunge.current = 0.22;
           break;
         case 'monsterHit':
           burst(px, py - 30, 12, '#f87171', 190);
-          floatText(px, py - 80, `-${fx.value}`, '#f87171', 20);
+          floatText(px, py - 80, `-${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#f87171', 20);
           shake.current = Math.max(shake.current, 4);
           break;
         case 'dodge':
@@ -549,7 +555,37 @@ export default function CombatCanvas() {
       ctx.fillStyle = '#ffffff';
       ctx.font = "bold 8px font-mono";
       ctx.textAlign = 'center';
-      ctx.fillText(`${Math.round(s.hp)}/${s.derived.maxHp}`, px, py + 56);
+      ctx.fillText(`${fmt(Math.round(s.hp))}/${fmt(s.derived.maxHp)}`, px, py + 56);
+
+      // ===== DRAW ACTIVE PET COMPANION =====
+      const activePetId = s.activePetId ?? 'pet_dragon';
+      if (activePetId) {
+        const petDef = PETS.find(p => p.id === activePetId);
+        if (petDef) {
+          const petX = px - 80 + lunge * 0.4;
+          const petY = py + Math.sin(time.current * 4) * 6 - 15;
+          ctx.save();
+          // Pet Aura
+          ctx.shadowColor = petDef.color;
+          ctx.shadowBlur = 16;
+          ctx.fillStyle = `${petDef.color}44`;
+          ctx.beginPath(); ctx.arc(petX, petY, 22, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = petDef.color;
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(petX, petY, 20, 0, Math.PI * 2); ctx.stroke();
+          // Pet Icon
+          ctx.font = "28px 'Century Gothic', CenturyGothic, sans-serif";
+          ctx.textAlign = 'center';
+          ctx.fillText(petDef.icon, petX, petY + 9);
+          // Pet Name & Level Tag
+          ctx.fillStyle = petDef.color;
+          ctx.font = "bold 9px 'Century Gothic', CenturyGothic, sans-serif";
+          ctx.shadowColor = 'rgba(0,0,0,0.95)';
+          ctx.shadowBlur = 5;
+          ctx.fillText(`${petDef.name.split(' ')[0]} (Ур.${s.petLvl ?? 1})`, petX, petY - 26);
+          ctx.restore();
+        }
+      }
 
       // ===== DRAW MONSTER =====
       const mx = W * 0.75;
@@ -630,7 +666,7 @@ export default function CombatCanvas() {
       ctx.fillStyle = '#ffffff';
       ctx.font = "bold 8px font-mono";
       ctx.textAlign = 'center';
-      ctx.fillText(`${s.monster.hp}/${s.monster.maxHp}`, mx, my + 47);
+      ctx.fillText(`${fmt(s.monster.hp)}/${fmt(s.monster.maxHp)}`, mx, my + 47);
 
       // ===== DRAW PARTICLES =====
       const P = particles.current;

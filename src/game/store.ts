@@ -53,6 +53,11 @@ export interface GameState {
   playerAtk: number;
   frostSlow: number;
 
+  // pets
+  activePetId: string | null;
+  petLvl: number;
+  petXp: number;
+
   // quests
   quests: Record<string, QuestState>;
 
@@ -226,6 +231,21 @@ export const useGame = create<GameState>((set, get) => {
     addQuestProgress('kill', m.def.family, 1);
     if (m.def.isBoss || m.def.isMiniBoss) addQuestProgress('boss', '', 1);
 
+    // Pet XP gain & leveling
+    if (s.activePetId) {
+      let petXp = (s.petXp ?? 0) + Math.max(10, Math.floor(m.xp * 0.5));
+      let petLvl = s.petLvl ?? 1;
+      const petNeed = petLvl * 120;
+      if (petXp >= petNeed) {
+        petXp -= petNeed;
+        petLvl += 1;
+        sound.playLevelUp();
+        pushLog(s.log, `🐾 Ваш питомец поднялся до Ур. ${petLvl}!`, '#4ade80');
+        pushFx(s.fxQueue, { type: 'levelup', text: `🐾 Питомец Ур.${petLvl}!`, color: '#4ade80' });
+      }
+      set({ petXp, petLvl });
+    }
+
     let kills = s.kills + 1;
     let bossKills = s.bossKills + (m.def.isBoss ? 1 : 0);
 
@@ -355,6 +375,10 @@ export const useGame = create<GameState>((set, get) => {
     unlockedZones: ['hills'],
     unlockedSecrets: [],
     dungeon: null,
+
+    activePetId: 'pet_dragon',
+    petLvl: 1,
+    petXp: 0,
 
     monster: initialMonster,
     playerAtk: 0,
