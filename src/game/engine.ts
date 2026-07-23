@@ -24,11 +24,8 @@ export function xpForLevel(level: number): number {
  * Format numbers with thousand space separators (e.g. 221 212 or 2 122).
  */
 export function fmt(num: number): string {
-  if (num >= 1e12) return (num / 1e12).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' T';
-  if (num >= 1e9) return (num / 1e9).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' B';
-  if (num >= 1e6) return (num / 1e6).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' M';
-  if (num >= 1e3) return (num / 1e3).toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' K';
-  return Math.floor(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  if (isNaN(num) || num === null || num === undefined) return '0';
+  return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
 export const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'divine'];
