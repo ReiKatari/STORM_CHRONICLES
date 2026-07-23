@@ -27,12 +27,12 @@ export const FAMILIES: FamilyDef[] = [
   { id: 'wolf',            name: 'Волк',              icons: ['🐺', '🦷', '🌕', '❄️', '🔥', '⚡', '👑', '🌌', '🌠', '🌑'], color: '#64748b', adjectives: ADJ },
   { id: 'orc',             name: 'Орк',               icons: ['👹', '🪓', '🛡️', '🏹', '💪', '🔥', '👑', '⚔️', '🌋', '🌑'], color: '#16a34a', adjectives: ADJ, artSrc: '/monsters/orc.jpg' },
   { id: 'bandit',          name: 'Бандит',            icons: ['🥷', '🗡️', '💰', '🏴‍☠️', '⚔️', '🎯', '👑', '💣', '⚡', '🌑'], color: '#b45309', adjectives: ADJ },
-  { id: 'ghost',           name: 'Призрак',           icons: ['👻', '🕯️', '⚪', '🌫️', '😱', '💀', '👑', '❄️', '🌌', '🌑'], color: '#93c5fd', adjectives: ADJ },
+  { id: 'ghost',           name: 'Призрак',           icons: ['👻', '🕯️', '⚪', '🌫️', '😱', '💀', '👑', '❄️', '🌌', '🌑'], color: '#93c5fd', adjectives: ADJ, artSrc: '/monsters/ghost.jpg' },
   { id: 'vampire',         name: 'Вампир',            icons: ['🧛', '🧛‍♂️', '🦇', '🩸', '🍷', '🌹', '👑', '🩸', '🔮', '🌑'], color: '#dc2626', adjectives: ADJ, artSrc: '/monsters/vampire.jpg' },
   { id: 'golem',           name: 'Голем',             icons: ['🗿', '🪨', '⛰️', '💎', '🔥', '❄️', '👑', '⚡', '🌋', '🌑'], color: '#78716c', adjectives: ADJ, artSrc: '/monsters/golem.jpg' },
   { id: 'cultist',         name: 'Культист',          icons: ['🕯️', '🔮', '📿', '☠️', '🩸', '👁️', '👑', '🖤', '🌌', '🌑'], color: '#9333ea', adjectives: ADJ },
   { id: 'demon',           name: 'Демон',             icons: ['😈', '🔥', '👿', '⚔️', '💀', '🌋', '👑', '🩸', '⚡', '🌑'], color: '#ef4444', adjectives: ADJ, artSrc: '/monsters/demon.jpg' },
-  { id: 'elemental_fire',  name: 'Элементаль огня',   icons: ['🔥', '🎇', '☄️', '🌋', '💥', '⚡', '👑', '☀️', '🌟', '🌑'], color: '#f97316', adjectives: ADJ },
+  { id: 'elemental_fire',  name: 'Элементаль огня',   icons: ['🔥', '🎇', '☄️', '🌋', '💥', '⚡', '👑', '☀️', '🌟', '🌑'], color: '#f97316', adjectives: ADJ, artSrc: '/monsters/fire_elemental.jpg' },
   { id: 'elemental_ice',   name: 'Элементаль льда',   icons: ['❄️', '🧊', '💠', '🌨️', '⛄', '💎', '👑', '🌐', '🌌', '🌑'], color: '#38bdf8', adjectives: ADJ },
   { id: 'elemental_storm', name: 'Элементаль бури',  icons: ['⚡', '🌩️', '🌪️', '💨', '☁️', '🔮', '👑', '🌟', '⚡', '🌑'], color: '#facc15', adjectives: ADJ },
   { id: 'mushroom',        name: 'Гриб',              icons: ['🍄', '🌿', '🟤', '☠️', '💚', '🔮', '👑', '🧪', '✨', '🌑'], color: '#d946ef', adjectives: ADJ },
@@ -82,6 +82,12 @@ export function makeMonster(familyId: string, tier: number, opts?: { boss?: bool
   const name = opts?.name ?? `${adj} ${fam.name.toLowerCase()}`;
   const tierMult = 1 + t * 0.35;
   const bossMult = isBoss ? 6 : isMini ? 2.6 : 1;
+  let artSrc = fam.artSrc;
+  if (isBoss && familyId === 'spider') artSrc = '/monsters/spider_queen.jpg';
+  if (isBoss && familyId === 'goblin') artSrc = '/monsters/goblin_king.jpg';
+  if (isBoss && familyId === 'ghost') artSrc = '/monsters/ghost.jpg';
+  if (isBoss && familyId === 'elemental_fire') artSrc = '/monsters/fire_elemental.jpg';
+
   return {
     id: `${familyId}_${t}_${isBoss ? 'b' : isMini ? 'm' : 'n'}`,
     name,
@@ -95,6 +101,7 @@ export function makeMonster(familyId: string, tier: number, opts?: { boss?: bool
     xpMult: tierMult * (isBoss ? 12 : isMini ? 4 : 1),
     goldMult: tierMult * (isBoss ? 15 : isMini ? 5 : 1),
     color: fam.color,
+    artSrc,
   };
 }
 
