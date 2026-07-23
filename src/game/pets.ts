@@ -33,6 +33,7 @@ export interface PetDef {
   type: 'dragon' | 'beast' | 'demon' | 'elemental' | 'mech' | 'astral';
   desc: string;
   color: string;
+  artSrc?: string;
   baseDmg: number;
   baseHp: number;
   branches: PetTalentBranch[];
@@ -48,6 +49,7 @@ export const PETS: PetDef[] = [
     type: 'dragon',
     desc: 'Дитя вулканического дракона. Дышит пламенем и усиливает силу атаки хозяина.',
     color: '#ef4444',
+    artSrc: '/pets/pet_dragon.jpg',
     baseDmg: 45,
     baseHp: 300,
     branches: [
@@ -80,12 +82,13 @@ export const PETS: PetDef[] = [
   },
   {
     id: 'pet_slime',
-    name: 'Маленький Изумрудный Слайм',
-    icon: '🟢',
+    name: 'Маленький Изумрудный Страж',
+    icon: '🗿',
     rarity: 'rare',
     type: 'elemental',
-    desc: 'Милый желеобразный спутник. Поглощает удары и исцеляет раны хозяина.',
+    desc: 'Милый древний големообразный спутник. Поглощает удары и исцеляет раны хозяина.',
     color: '#4ade80',
+    artSrc: '/pets/pet_golem.jpg',
     baseDmg: 20,
     baseHp: 400,
     branches: [
@@ -94,7 +97,7 @@ export const PETS: PetDef[] = [
         name: 'Регенерация',
         icon: '🧪',
         color: '#4ade80',
-        desc: 'Исцеляющие желеобразные ферменты.',
+        desc: 'Исцеляющие древние кристаллы.',
         talents: [
           { id: 'sl_h1', name: 'Изумрудный Сок', icon: '💧', desc: 'Увеличивает регенерацию HP.', maxRank: 5, per: r => `+${r * 20}% реген HP` },
         ],
@@ -106,22 +109,23 @@ export const PETS: PetDef[] = [
         color: '#38bdf8',
         desc: 'Поглощение урона и уклонение.',
         talents: [
-          { id: 'sl_b1', name: 'Пружинистый Слайм', icon: '💨', desc: 'Увеличивает уклонение.', maxRank: 5, per: r => `+${r * 2}% уклонения` },
+          { id: 'sl_b1', name: 'Пружинистый Покров', icon: '💨', desc: 'Увеличивает уклонение.', maxRank: 5, per: r => `+${r * 2}% уклонения` },
         ],
       },
     ],
     skills: [
-      { id: 'sk_slime_heal', name: 'Желейный Бинт', icon: '🧪', desc: 'Восстанавливает 15% HP героя.', cooldown: 8, healPct: 0.15 },
+      { id: 'sk_slime_heal', name: 'Каменный Бинт', icon: '🧪', desc: 'Восстанавливает 15% HP героя.', cooldown: 8, healPct: 0.15 },
     ],
   },
   {
     id: 'pet_demon',
     name: 'Теневой Демон Бездны',
-    icon: '👿',
+    icon: '🔮',
     rarity: 'mythic',
     type: 'demon',
     desc: 'Вызванный из глубин Пропасти астральный дух. Разрывает врагов критическими атаками.',
     color: '#a855f7',
+    artSrc: '/pets/pet_spirit.jpg',
     baseDmg: 70,
     baseHp: 250,
     branches: [
@@ -152,12 +156,13 @@ export const PETS: PetDef[] = [
   },
   {
     id: 'pet_falcon',
-    name: 'Астральный Сокол',
-    icon: '🦅',
+    name: 'Астральный Волк',
+    icon: '🐺',
     rarity: 'epic',
     type: 'astral',
-    desc: 'Быстрый космический сокол. Разведывает сокровища и ускоряет атаки героя.',
+    desc: 'Быстрый космический астральный волк. Разведывает сокровища и ускоряет атаки героя.',
     color: '#38bdf8',
+    artSrc: '/pets/pet_wolf.jpg',
     baseDmg: 35,
     baseHp: 220,
     branches: [
@@ -183,17 +188,18 @@ export const PETS: PetDef[] = [
       },
     ],
     skills: [
-      { id: 'sk_falcon_dive', name: 'Пике Сокола', icon: '🦅', desc: 'Сокол пикирует на врага на 250% урона.', cooldown: 5, damageMult: 2.5 },
+      { id: 'sk_falcon_dive', name: 'Пике Волка', icon: '🐺', desc: 'Волк пикирует на врага на 250% урона.', cooldown: 5, damageMult: 2.5 },
     ],
   },
   {
     id: 'pet_mech_spider',
-    name: 'Паровой Механический Паук',
+    name: 'Паровой Механический Конструкт',
     icon: '🤖',
     rarity: 'epic',
     type: 'mech',
     desc: 'Стальной автоматический робот. Стреляет лазерным лучем и защищает экраном.',
     color: '#06b6d4',
+    artSrc: '/pets/pet_mech.jpg',
     baseDmg: 40,
     baseHp: 350,
     branches: [
@@ -219,7 +225,7 @@ export const PETS: PetDef[] = [
       },
     ],
     skills: [
-      { id: 'sk_spider_laser', name: 'Орбитальный Импульс', icon: '🛰️', desc: 'Паук выпускает плазменный луч на 350% урона.', cooldown: 8, damageMult: 3.5 },
+      { id: 'sk_spider_laser', name: 'Орбитальный Импульс', icon: '🛰️', desc: 'Робот выпускает плазменный луч на 350% урона.', cooldown: 8, damageMult: 3.5 },
     ],
   },
 ];

@@ -67,10 +67,15 @@ export default function CombatCanvas() {
     getImageAsset('/backgrounds/throne.jpg');
     getImageAsset('/backgrounds/astral.jpg');
 
-    // Preload monster art assets
+    // Preload monster & pet art assets
     getImageAsset('/monsters/wisp.jpg');
     getImageAsset('/monsters/storm_elemental.jpg');
     getImageAsset('/monsters/harpy.jpg');
+    getImageAsset('/pets/pet_dragon.jpg');
+    getImageAsset('/pets/pet_wolf.jpg');
+    getImageAsset('/pets/pet_golem.jpg');
+    getImageAsset('/pets/pet_spirit.jpg');
+    getImageAsset('/pets/pet_mech.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
@@ -421,10 +426,20 @@ export default function CombatCanvas() {
           const petY = py + Math.sin(time.current * 4.5) * 10 - 25;
 
           ctx.save();
-          // Pet Icon Sprite (Clean without colored stroke circles)
-          ctx.font = `${petSize + 12}px 'Century Gothic', CenturyGothic, sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.fillText(petDef.icon, petX, petY + petSize * 0.35);
+          // Pet Sprite (Clean image without colored stroke circles)
+          const petImg = petDef.artSrc ? getImageAsset(petDef.artSrc) : null;
+          if (petImg) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(petX, petY, petSize, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(petImg, petX - petSize, petY - petSize, petSize * 2, petSize * 2);
+            ctx.restore();
+          } else {
+            ctx.font = `${petSize + 12}px 'Century Gothic', CenturyGothic, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText(petDef.icon, petX, petY + petSize * 0.35);
+          }
 
           // Pet Name & Level Badge Plate
           const petCustomName = s.petCustomNames?.[activePetId] || petDef.name.split(' ')[0];

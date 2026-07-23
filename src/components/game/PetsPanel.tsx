@@ -121,7 +121,11 @@ export default function PetsPanel() {
                   : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
               }`}
             >
-              <span className="text-2xl drop-shadow">{pet.icon}</span>
+              {pet.artSrc ? (
+                <img src={pet.artSrc} alt={pet.name} className="w-7 h-7 rounded-lg object-cover shadow" />
+              ) : (
+                <span className="text-2xl drop-shadow">{pet.icon}</span>
+              )}
               <span className="text-[10px] font-extrabold truncate w-full text-center leading-tight" style={{ color }}>
                 {pName}
               </span>
@@ -141,10 +145,14 @@ export default function PetsPanel() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
           <div className="flex items-center gap-2.5">
             <div
-              className="w-11 h-11 rounded-xl border flex items-center justify-center text-2xl shadow bg-slate-900 shrink-0"
+              className="w-12 h-12 rounded-xl border overflow-hidden flex items-center justify-center text-2xl shadow bg-slate-900 shrink-0"
               style={{ borderColor: selectedPet.color }}
             >
-              {selectedPet.icon}
+              {selectedPet.artSrc ? (
+                <img src={selectedPet.artSrc} alt={selectedPet.name} className="w-full h-full object-cover" />
+              ) : (
+                selectedPet.icon
+              )}
             </div>
 
             <div>
