@@ -78,6 +78,10 @@ export default function CombatCanvas() {
     getImageAsset('/monsters/chimera.jpg');
     getImageAsset('/monsters/basilisk.jpg');
     getImageAsset('/monsters/phoenix.jpg');
+    getImageAsset('/monsters/kraken.jpg');
+    getImageAsset('/monsters/beholder.jpg');
+    getImageAsset('/monsters/sphinx.jpg');
+    getImageAsset('/monsters/djinn.jpg');
 
     // Preload background artwork assets
     getImageAsset('/backgrounds/forest.jpg');
@@ -87,6 +91,10 @@ export default function CombatCanvas() {
     getImageAsset('/backgrounds/swamp.jpg');
     getImageAsset('/backgrounds/desert.jpg');
     getImageAsset('/backgrounds/vault.jpg');
+    getImageAsset('/backgrounds/grotto.jpg');
+    getImageAsset('/backgrounds/castle.jpg');
+    getImageAsset('/backgrounds/peaks.jpg');
+    getImageAsset('/backgrounds/catacombs.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
@@ -271,8 +279,14 @@ export default function CombatCanvas() {
         ? '/backgrounds/vault.jpg'
         : zoneId === 'swamp'
         ? '/backgrounds/swamp.jpg'
-        : zoneId === 'desert'
-        ? '/backgrounds/desert.jpg'
+        : zoneId === 'sea'
+        ? '/backgrounds/grotto.jpg'
+        : zoneId === 'castle'
+        ? '/backgrounds/castle.jpg'
+        : zoneId === 'peaks'
+        ? '/backgrounds/peaks.jpg'
+        : zoneId === 'catacombs'
+        ? '/backgrounds/catacombs.jpg'
         : '/backgrounds/forest.jpg';
       const bgImg = getImageAsset(bgPath);
       if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
