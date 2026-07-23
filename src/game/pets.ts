@@ -78,6 +78,8 @@ export const PETS: PetDef[] = [
     ],
     skills: [
       { id: 'sk_drag_breath', name: 'Огненное Дыхание', icon: '🔥', desc: 'Дракон дышит пламенем, нанося 300% урона.', cooldown: 6, damageMult: 3.0 },
+      { id: 'sk_drag_roar', name: 'Вулканический Рев', icon: '🌋', desc: 'Увеличивает урон героя на +25% на 6 сек.', cooldown: 12, damageMult: 1.5 },
+      { id: 'sk_drag_meteor', name: 'Метеорный Дождь', icon: '☄️', desc: 'Обрушивает кометы на 450% критического урона.', cooldown: 15, damageMult: 4.5 },
     ],
   },
   {
@@ -115,6 +117,8 @@ export const PETS: PetDef[] = [
     ],
     skills: [
       { id: 'sk_slime_heal', name: 'Каменный Бинт', icon: '🧪', desc: 'Восстанавливает 15% HP героя.', cooldown: 8, healPct: 0.15 },
+      { id: 'sk_golem_shield', name: 'Гранитный Покров', icon: '🛡️', desc: 'Увеличивает броню героя на +30%.', cooldown: 14, healPct: 0.10 },
+      { id: 'sk_golem_smash', name: 'Сейсмический Удар', icon: '💥', desc: 'Раскалывает землю на 280% урона.', cooldown: 10, damageMult: 2.8 },
     ],
   },
   {
@@ -152,6 +156,8 @@ export const PETS: PetDef[] = [
     ],
     skills: [
       { id: 'sk_demon_strike', name: 'Теневой Разлом', icon: '⚡', desc: 'Критический удар демона на 400% урона.', cooldown: 7, damageMult: 4.0 },
+      { id: 'sk_demon_curse', name: 'Проклятие Бездны', icon: '👁️', desc: 'Снижает броню цели на 40%.', cooldown: 12, damageMult: 2.0 },
+      { id: 'sk_demon_drain', name: 'Жатва Душ', icon: '🔮', desc: 'Поглощает 350% урона и восстанавливает Ману.', cooldown: 10, damageMult: 3.5 },
     ],
   },
   {
@@ -189,6 +195,8 @@ export const PETS: PetDef[] = [
     ],
     skills: [
       { id: 'sk_falcon_dive', name: 'Пике Волка', icon: '🐺', desc: 'Волк пикирует на врага на 250% урона.', cooldown: 5, damageMult: 2.5 },
+      { id: 'sk_wolf_howl', name: 'Астральный Вой', icon: '🌕', desc: 'Ускоряет атаки героя на +35%.', cooldown: 10, damageMult: 1.5 },
+      { id: 'sk_wolf_frenzy', name: 'Звездное Неистовство', icon: '⚡', desc: 'Серия ударов на 380% урона.', cooldown: 12, damageMult: 3.8 },
     ],
   },
   {
@@ -226,6 +234,8 @@ export const PETS: PetDef[] = [
     ],
     skills: [
       { id: 'sk_spider_laser', name: 'Орбитальный Импульс', icon: '🛰️', desc: 'Робот выпускает плазменный луч на 350% урона.', cooldown: 8, damageMult: 3.5 },
+      { id: 'sk_mech_overclock', name: 'Перегрузка Ядра', icon: '⚙️', desc: 'Повышает Критический Урон на +45%.', cooldown: 12, damageMult: 2.0 },
+      { id: 'sk_mech_barrier', name: 'Силовой Батарейный Щит', icon: '🔋', desc: 'Создает экран и гасит урон.', cooldown: 15, healPct: 0.20 },
     ],
   },
 ];
