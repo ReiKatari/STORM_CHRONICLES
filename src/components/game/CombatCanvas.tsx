@@ -57,6 +57,8 @@ export default function CombatCanvas() {
     getImageAsset('/monsters/orc.jpg');
     getImageAsset('/monsters/hydra.jpg');
     getImageAsset('/monsters/minotaur.jpg');
+    getImageAsset('/monsters/wolf.jpg');
+    getImageAsset('/monsters/zombie.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
@@ -376,15 +378,15 @@ export default function CombatCanvas() {
       ctx.restore();
 
       const heroImg = heroClass?.artSrc ? getImageAsset(heroClass.artSrc) : null;
-      const size = 70;
+      const size = 110;
 
       if (heroImg) {
         // Multi-layer glowing aura
         ctx.save();
         ctx.shadowColor = heroColor;
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 22;
         ctx.strokeStyle = heroColor;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3.5;
         ctx.beginPath();
         ctx.arc(0, 0, size / 2 + 4, 0, Math.PI * 2);
         ctx.stroke();
@@ -399,57 +401,57 @@ export default function CombatCanvas() {
         ctx.restore();
       } else {
         // Emoji fallback
-        ctx.font = "60px 'Century Gothic', CenturyGothic, sans-serif";
+        ctx.font = "80px 'Century Gothic', CenturyGothic, sans-serif";
         ctx.textAlign = 'center';
-        ctx.fillText(heroClass?.icon ?? '🧝', 0, 15);
+        ctx.fillText(heroClass?.icon ?? '🧝', 0, 20);
       }
 
       // Floating Weapon with Attack Swing Arc
       const wBob = Math.cos(time.current * 4) * 4;
       const wRot = playerLunge.current > 0 ? Math.sin((playerLunge.current / 0.22) * Math.PI) * -0.8 : 0;
       ctx.save();
-      ctx.translate(42, -10 + wBob);
+      ctx.translate(62, -15 + wBob);
       ctx.rotate(wRot);
-      ctx.font = "26px 'Century Gothic', CenturyGothic, sans-serif";
+      ctx.font = "32px 'Century Gothic', CenturyGothic, sans-serif";
       ctx.textAlign = 'center';
       ctx.shadowColor = heroColor;
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 10;
       ctx.fillText(weaponIcon, 0, 0);
       ctx.restore();
 
       ctx.restore();
 
-      // Player Name & Level Badge
+      // Player Name & Level Badge (Positioned ABOVE the 110px sprite)
       ctx.save();
       ctx.fillStyle = '#fef08a';
-      ctx.font = "bold 11px 'Century Gothic', CenturyGothic, sans-serif";
+      ctx.font = "bold 12px 'Century Gothic', CenturyGothic, sans-serif";
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'rgba(0,0,0,0.9)';
-      ctx.shadowBlur = 5;
-      ctx.fillText(`${s.characterName || 'Герой'} · Ур. ${s.level}`, px, py - 70);
+      ctx.shadowColor = 'rgba(0,0,0,0.95)';
+      ctx.shadowBlur = 6;
+      ctx.fillText(`${s.characterName || 'Герой'} · Ур. ${s.level}`, px, py - 110);
       ctx.fillStyle = heroColor;
-      ctx.font = "bold 10px 'Century Gothic', CenturyGothic, sans-serif";
-      ctx.fillText(`${heroClass?.icon ?? ''} ${heroClass?.name ?? 'Искатель'}`, px, py - 56);
+      ctx.font = "bold 11px 'Century Gothic', CenturyGothic, sans-serif";
+      ctx.fillText(`${heroClass?.icon ?? ''} ${heroClass?.name ?? 'Искатель'}`, px, py - 95);
       ctx.restore();
 
       // Player HP/Mana Bar
-      const barW = 110;
+      const barW = 120;
       ctx.fillStyle = 'rgba(15,23,42,0.85)';
-      ctx.fillRect(px - barW / 2 - 2, py + 38, barW + 4, 16);
+      ctx.fillRect(px - barW / 2 - 2, py + 48, barW + 4, 16);
       ctx.strokeStyle = 'rgba(51,65,85,0.8)';
-      ctx.strokeRect(px - barW / 2 - 2, py + 38, barW + 4, 16);
+      ctx.strokeRect(px - barW / 2 - 2, py + 48, barW + 4, 16);
 
       // HP Fill
       ctx.fillStyle = '#22c55e';
-      ctx.fillRect(px - barW / 2, py + 40, barW * Math.max(0, s.hp / s.derived.maxHp), 7);
+      ctx.fillRect(px - barW / 2, py + 50, barW * Math.max(0, s.hp / s.derived.maxHp), 7);
       // Mana Fill
       ctx.fillStyle = '#3b82f6';
-      ctx.fillRect(px - barW / 2, py + 48, barW * Math.max(0, s.mana / s.derived.maxMana), 4);
+      ctx.fillRect(px - barW / 2, py + 58, barW * Math.max(0, s.mana / s.derived.maxMana), 4);
 
       ctx.fillStyle = '#ffffff';
       ctx.font = "bold 8px font-mono";
       ctx.textAlign = 'center';
-      ctx.fillText(`${Math.round(s.hp)}/${s.derived.maxHp}`, px, py + 46);
+      ctx.fillText(`${Math.round(s.hp)}/${s.derived.maxHp}`, px, py + 56);
 
       // ===== DRAW MONSTER =====
       const mx = W * 0.75;
@@ -461,12 +463,12 @@ export default function CombatCanvas() {
 
       // Monster Pedestal
       ctx.save();
-      ctx.translate(mx + mHitShake, my + 24);
+      ctx.translate(mx + mHitShake, my + 32);
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.beginPath(); ctx.ellipse(0, 0, isBoss ? 60 : 42, 12, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0, 0, isBoss ? 75 : 55, 14, 0, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = mDef.color;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.ellipse(0, 0, isBoss ? 56 : 38, 10, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(0, 0, isBoss ? 70 : 50, 12, 0, 0, Math.PI * 2); ctx.stroke();
       ctx.restore();
 
       // Monster Character
@@ -478,17 +480,18 @@ export default function CombatCanvas() {
         ctx.filter = 'brightness(2.5)';
       }
 
-      // Check image artwork
+      // Check image artwork (Increased Monster Sprite Sizes: Normal = 130px, Boss = 175px)
       const mImg = mDef.artSrc ? getImageAsset(mDef.artSrc) : null;
+      const mSize = isBoss ? 175 : 130;
+
       if (mImg) {
-        const mSize = isBoss ? 105 : 80;
         ctx.save();
         ctx.shadowColor = mDef.color;
-        ctx.shadowBlur = isBoss ? 24 : 12;
+        ctx.shadowBlur = isBoss ? 28 : 16;
         ctx.strokeStyle = mDef.color;
-        ctx.lineWidth = isBoss ? 3 : 2;
+        ctx.lineWidth = isBoss ? 4 : 2.5;
         ctx.beginPath();
-        ctx.arc(0, -mSize / 4, mSize / 2 + 2, 0, Math.PI * 2);
+        ctx.arc(0, -mSize / 4, mSize / 2 + 3, 0, Math.PI * 2);
         ctx.stroke();
 
         ctx.beginPath();
@@ -497,21 +500,22 @@ export default function CombatCanvas() {
         ctx.drawImage(mImg, -mSize / 2, -mSize * 0.75, mSize, mSize);
         ctx.restore();
       } else {
-        ctx.font = `${isBoss ? 75 : 55}px 'Century Gothic', CenturyGothic, sans-serif`;
+        ctx.font = `${isBoss ? 95 : 75}px 'Century Gothic', CenturyGothic, sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText(mDef.icon, 0, 0);
       }
 
       ctx.restore();
 
-      // Monster Name & Level Badge
+      // Monster Name & Level Badge (Positioned ABOVE the 130px/175px monster sprite)
       ctx.save();
       ctx.fillStyle = mDef.color;
-      ctx.font = `bold ${isBoss ? 13 : 11}px 'Century Gothic', CenturyGothic, sans-serif`;
+      ctx.font = `bold ${isBoss ? 14 : 12}px 'Century Gothic', CenturyGothic, sans-serif`;
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
-      ctx.shadowBlur = 4;
-      ctx.fillText(`${mDef.name} (Ур.${s.monster.level})`, mx, my - (isBoss ? 75 : 60));
+      ctx.shadowColor = 'rgba(0,0,0,0.95)';
+      ctx.shadowBlur = 6;
+      ctx.fillText(`${mDef.name} (Ур.${s.monster.level})`, mx, my - (isBoss ? 165 : 125));
+      ctx.restore();
       ctx.restore();
 
       // Monster HP Bar
