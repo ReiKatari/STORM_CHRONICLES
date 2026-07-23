@@ -428,12 +428,21 @@ export const useGame = create<GameState>((set, get) => {
         hp: derived.maxHp,
         mana: derived.maxMana,
         derived,
+        monster: spawnFor('hills', 1, 0, null),
       });
       get().save();
     },
 
     tick: (dt: number) => {
       const s = get();
+      if (!s.characterName || !s.classId) return;
+
+      // Ensure active valid monster
+      if (!s.monster || !s.monster.hp || isNaN(s.monster.hp) || s.monster.hp <= 0) {
+        set({ monster: spawnFor(s.zoneId, s.stage, s.mastery[s.zoneId] ?? 0, s.dungeon) });
+        return;
+      }
+
       const d = s.derived;
 
       // regen & cooldowns
