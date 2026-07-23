@@ -72,6 +72,10 @@ export default function CombatCanvas() {
     getImageAsset('/monsters/elemental_ice.jpg');
     getImageAsset('/monsters/mimic.jpg');
     getImageAsset('/monsters/knight.jpg');
+    getImageAsset('/monsters/treant.jpg');
+    getImageAsset('/monsters/wyvern.jpg');
+    getImageAsset('/monsters/archdemon.jpg');
+    getImageAsset('/monsters/chimera.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
@@ -578,11 +582,12 @@ export default function CombatCanvas() {
           ctx.textAlign = 'center';
           ctx.fillText(petDef.icon, petX, petY + 9);
           // Pet Name & Level Tag
+          const petCustomName = s.petCustomNames?.[activePetId] || petDef.name.split(' ')[0];
           ctx.fillStyle = petDef.color;
-          ctx.font = "bold 9px 'Century Gothic', CenturyGothic, sans-serif";
+          ctx.font = "bold 9.5px 'Century Gothic', CenturyGothic, sans-serif";
           ctx.shadowColor = 'rgba(0,0,0,0.95)';
           ctx.shadowBlur = 5;
-          ctx.fillText(`${petDef.name.split(' ')[0]} (Ур.${s.petLvl ?? 1})`, petX, petY - 26);
+          ctx.fillText(`${petCustomName} (Ур.${s.petLvl ?? 1})`, petX, petY - 26);
           ctx.restore();
         }
       }

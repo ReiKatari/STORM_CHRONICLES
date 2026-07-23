@@ -57,6 +57,8 @@ export interface GameState {
   activePetId: string | null;
   petLvl: number;
   petXp: number;
+  petCustomNames: Record<string, string>;
+  petTalents: Record<string, number>;
 
   // quests
   quests: Record<string, QuestState>;
@@ -379,6 +381,8 @@ export const useGame = create<GameState>((set, get) => {
     activePetId: 'pet_dragon',
     petLvl: 1,
     petXp: 0,
+    petCustomNames: {},
+    petTalents: {},
 
     monster: initialMonster,
     playerAtk: 0,
