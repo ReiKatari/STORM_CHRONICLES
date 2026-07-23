@@ -77,6 +77,11 @@ export default function CombatCanvas() {
     getImageAsset('/monsters/archdemon.jpg');
     getImageAsset('/monsters/chimera.jpg');
 
+    // Preload background artwork assets
+    getImageAsset('/backgrounds/forest.jpg');
+    getImageAsset('/backgrounds/volcano.jpg');
+    getImageAsset('/backgrounds/abyss.jpg');
+
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
     getImageAsset('/heroes/hero_necromancer.jpg');
@@ -249,6 +254,21 @@ export default function CombatCanvas() {
       grad.addColorStop(1, '#0f172a');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
+
+      // ===== DRAW HIGH QUALITY GENERATED ARTWORK BACKGROUND =====
+      const zoneId = s.zoneId;
+      const bgPath = (zoneId === 'volcano' || zoneId === 'demons' || zoneId === 'abyss_core')
+        ? '/backgrounds/volcano.jpg'
+        : (zoneId === 'abyss' || zoneId === 'void' || zoneId === 'space')
+        ? '/backgrounds/abyss.jpg'
+        : '/backgrounds/forest.jpg';
+      const bgImg = getImageAsset(bgPath);
+      if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.65;
+        ctx.drawImage(bgImg, 0, 0, W, H);
+        ctx.restore();
+      }
 
       // Distant horizon glow
       const horizonG = ctx.createRadialGradient(W / 2, H * 0.6, 10, W / 2, H * 0.6, W * 0.6);

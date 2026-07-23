@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Item } from '@/game/types';
 import { AFFIX_LABELS, getItemLore, rarityById, getSetById } from '@/game/items';
+import { fmt } from '@/game/engine';
 
 export function ItemCard({ item, equippedItem, compact }: { item: Item; equippedItem?: Item | null; compact?: boolean }) {
   if (!item) return null;
@@ -55,9 +56,9 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
           <div className="text-slate-400 text-[10px] flex items-center gap-1.5 mt-0.5 font-bold">
             <span>{r.name}</span>
             <span>·</span>
-            <span>{item.ilvl || 1} ур.</span>
+            <span>{fmt(item.ilvl || 1)} ур.</span>
             <span>·</span>
-            <span className="text-amber-300">⚡{item.score || 0}</span>
+            <span className="text-amber-300">⚡{fmt(item.score || 0)}</span>
           </div>
         </div>
       </div>
@@ -67,19 +68,19 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
         {item.base && item.base.dmg ? (
           <div className="flex justify-between items-center">
             <span>⚔️ Урон:</span>
-            <b className="text-white font-mono">+{item.base.dmg}</b>
+            <b className="text-white font-mono">+{fmt(item.base.dmg)}</b>
           </div>
         ) : null}
         {item.base && item.base.armor ? (
           <div className="flex justify-between items-center">
             <span>🛡️ Броня:</span>
-            <b className="text-white font-mono">+{item.base.armor}</b>
+            <b className="text-white font-mono">+{fmt(item.base.armor)}</b>
           </div>
         ) : null}
         {item.base && item.base.hp ? (
           <div className="flex justify-between items-center">
             <span>❤️ Здоровье:</span>
-            <b className="text-white font-mono">+{item.base.hp}</b>
+            <b className="text-white font-mono">+{fmt(item.base.hp)}</b>
           </div>
         ) : null}
 
@@ -93,14 +94,14 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
               return (
                 <div key={i} className="text-emerald-300 flex justify-between items-center text-[10px]">
                   <span>{l.icon} {l.name}:</span>
-                  <span className="font-extrabold font-mono">+{a.value}{l.suffix ?? ''}</span>
+                  <span className="font-extrabold font-mono">+{fmt(a.value)}{l.suffix ?? ''}</span>
                 </div>
               );
             })}
           </div>
         )}
 
-        {!compact && <div className="text-amber-300 font-bold pt-1 text-[10px]">💰 Продажа: {item.sellPrice || 10} gold</div>}
+        {!compact && <div className="text-amber-300 font-bold pt-1 text-[10px]">💰 Продажа: {fmt(item.sellPrice || 10)} gold</div>}
       </div>
 
       {/* Set Item Info */}
@@ -137,11 +138,11 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
             <span>Сравнение с надетым:</span>
             {scoreDiff > 0 ? (
               <span className="text-emerald-400 font-black flex items-center gap-0.5">
-                ▲ +{scoreDiff} ⚡
+                ▲ +{fmt(scoreDiff)} ⚡
               </span>
             ) : scoreDiff < 0 ? (
               <span className="text-red-400 font-black flex items-center gap-0.5">
-                ▼ {scoreDiff} ⚡
+                ▼ {fmt(scoreDiff)} ⚡
               </span>
             ) : (
               <span className="text-slate-400 font-bold">= Равно</span>
@@ -157,7 +158,7 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
                 <div className="flex justify-between font-mono">
                   <span>Урон:</span>
                   <span className={dmgDiff > 0 ? 'text-emerald-400 font-extrabold' : 'text-red-400 font-extrabold'}>
-                    {dmgDiff > 0 ? `+${dmgDiff}` : dmgDiff}
+                    {dmgDiff > 0 ? `+${fmt(dmgDiff)}` : fmt(dmgDiff)}
                   </span>
                 </div>
               )}
@@ -165,7 +166,7 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
                 <div className="flex justify-between font-mono">
                   <span>Броня:</span>
                   <span className={armorDiff > 0 ? 'text-emerald-400 font-extrabold' : 'text-red-400 font-extrabold'}>
-                    {armorDiff > 0 ? `+${armorDiff}` : armorDiff}
+                    {armorDiff > 0 ? `+${fmt(armorDiff)}` : fmt(armorDiff)}
                   </span>
                 </div>
               )}
@@ -173,7 +174,7 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
                 <div className="flex justify-between font-mono">
                   <span>Здоровье:</span>
                   <span className={hpDiff > 0 ? 'text-emerald-400 font-extrabold' : 'text-red-400 font-extrabold'}>
-                    {hpDiff > 0 ? `+${hpDiff}` : hpDiff}
+                    {hpDiff > 0 ? `+${fmt(hpDiff)}` : fmt(hpDiff)}
                   </span>
                 </div>
               )}
