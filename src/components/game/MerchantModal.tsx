@@ -26,10 +26,7 @@ export default function MerchantModal({ onClose }: { onClose: () => void }) {
   const sellJunk = useGame(s => s.sellJunk);
 
   // 3-Minute Persistent Refresh State (180 seconds)
-  const [stockTimer, setStockTimer] = useState<number>(() => {
-    const t = getTargetMerchantTime();
-    return Math.max(0, Math.ceil((t - Date.now()) / 1000));
-  });
+  const [stockTimer, setStockTimer] = useState<number>(180);
   const [shopStock, setShopStock] = useState<Item[]>(() => [
     generateItem(level, 'rare'),
     generateItem(level + 1, 'rare'),
@@ -50,21 +47,20 @@ export default function MerchantModal({ onClose }: { onClose: () => void }) {
     ]);
     const nextTarget = Date.now() + 180000;
     try { localStorage.setItem('storm_merchant_target', nextTarget.toString()); } catch { /* ignore */ }
+    setStockTimer(180);
   };
 
   // Live persistent countdown timer for 3-minute stock rotation
   useEffect(() => {
-    const timerId = setInterval(() => {
+    const tickTimer = () => {
       const target = getTargetMerchantTime();
       const diff = Math.max(0, Math.ceil((target - Date.now()) / 1000));
       setStockTimer(diff);
-
-      if (diff <= 0) {
-        refreshStock();
-      }
-    }, 1000);
+    };
+    tickTimer();
+    const timerId = setInterval(tickTimer, 1000);
     return () => clearInterval(timerId);
-  }, [level]);
+  }, []);
 
   // ESC key listener
   useEffect(() => {

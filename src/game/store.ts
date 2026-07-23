@@ -140,6 +140,7 @@ function spawnFor(zoneId: string, stage: number, mastery: number, dungeon: Dunge
 }
 
 const SAVE_KEY = 'rogalik_save_v4';
+let isResettingGame = false;
 
 function pushFx(fx: FxEvent[], e: Omit<FxEvent, 'id'>) {
   fx.push({ ...e, id: fxId++ });
@@ -442,15 +443,11 @@ export const useGame = create<GameState>((set, get) => {
     },
 
     tick: (dt: number) => {
-    try {
-      let s = get();
-      if (!s.classId || !s.characterName) {
-        useGame.setState({
-          classId: s.classId || 'paladin',
-          characterName: s.characterName || 'Герой'
-        });
-        s = get();
-      }
+      try {
+        let s = get();
+        if (!s.classId || !s.characterName) {
+          return;
+        }
 
       // Ensure active valid monster
       if (!s.monster || !s.monster.hp || isNaN(s.monster.hp) || s.monster.hp <= 0) {
@@ -806,7 +803,9 @@ export const useGame = create<GameState>((set, get) => {
     clearFx: () => set({ fxQueue: [] }),
 
     save: () => {
+      if (isResettingGame) return;
       const s = get();
+      if (!s.classId || !s.characterName) return;
       const data = {
         characterName: s.characterName,
         classId: s.classId,
@@ -824,6 +823,7 @@ export const useGame = create<GameState>((set, get) => {
     },
 
     hardReset: () => {
+      isResettingGame = true;
       localStorage.removeItem(SAVE_KEY);
       location.reload();
     },

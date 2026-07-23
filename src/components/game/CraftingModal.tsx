@@ -29,10 +29,7 @@ export default function CraftingModal({ onClose }: { onClose: () => void }) {
   const [selectedItemForRune, setSelectedItemForRune] = useState<Item | null>(null);
 
   // 3-Minute Persistent Recipe Rotation Timer (180 seconds)
-  const [recipeTimer, setRecipeTimer] = useState<number>(() => {
-    const t = getTargetCraftingTime();
-    return Math.max(0, Math.ceil((t - Date.now()) / 1000));
-  });
+  const [recipeTimer, setRecipeTimer] = useState<number>(180);
   const [activeRecipes, setActiveRecipes] = useState<CraftingRecipe[]>(() => {
     const shuffled = [...CRAFTING_RECIPES].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 5);
@@ -43,19 +40,18 @@ export default function CraftingModal({ onClose }: { onClose: () => void }) {
     setActiveRecipes(shuffled.slice(0, 5));
     const nextTarget = Date.now() + 180000;
     try { localStorage.setItem('storm_crafting_target', nextTarget.toString()); } catch { /* ignore */ }
+    setRecipeTimer(180);
   };
 
   // Live persistent countdown timer for 3-minute recipe rotation
   useEffect(() => {
-    const timerId = setInterval(() => {
+    const tickTimer = () => {
       const target = getTargetCraftingTime();
       const diff = Math.max(0, Math.ceil((target - Date.now()) / 1000));
       setRecipeTimer(diff);
-
-      if (diff <= 0) {
-        refreshRecipes();
-      }
-    }, 1000);
+    };
+    tickTimer();
+    const timerId = setInterval(tickTimer, 1000);
     return () => clearInterval(timerId);
   }, []);
 

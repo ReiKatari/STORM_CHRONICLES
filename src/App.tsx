@@ -18,6 +18,8 @@ import EquipmentModal from '@/components/game/EquipmentModal';
 import MerchantModal from '@/components/game/MerchantModal';
 import CraftingModal from '@/components/game/CraftingModal';
 
+import ResetConfirmModal from '@/components/game/ResetConfirmModal';
+
 type Tab = 'inventory' | 'skills' | 'talents' | 'quests' | 'pets' | 'world';
 const TABS: { id: Tab; name: string; icon: string }[] = [
   { id: 'inventory', name: 'Инвентарь', icon: '🎒' },
@@ -31,9 +33,11 @@ const TABS: { id: Tab; name: string; icon: string }[] = [
 function Header({
   onOpenMerchant,
   onOpenCrafting,
+  onOpenReset,
 }: {
   onOpenMerchant: () => void;
   onOpenCrafting: () => void;
+  onOpenReset: () => void;
 }) {
   const name = useGame(s => s.characterName);
   const classId = useGame(s => s.classId);
@@ -44,7 +48,6 @@ function Header({
   const gold = useGame(s => s.gold);
   const kills = useGame(s => s.kills);
   const bossKills = useGame(s => s.bossKills);
-  const hardReset = useGame(s => s.hardReset);
   const xpPct = Math.min(100, (xp / xpForLevel(level)) * 100);
 
   return (
@@ -107,7 +110,7 @@ function Header({
           👑 {fmt(bossKills)}
         </span>
         <button
-          onClick={() => { if (confirm('Полный сброс прогресса? Вы сможете выбрать новый класс!')) hardReset(); }}
+          onClick={onOpenReset}
           className="text-[10px] px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 border border-slate-700 transition-all font-bold"
         >
           Сброс
@@ -167,6 +170,7 @@ export default function App() {
   const [showPaperdollModal, setShowPaperdollModal] = useState(false);
   const [showMerchantModal, setShowMerchantModal] = useState(false);
   const [showCraftingModal, setShowCraftingModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
 
   const characterName = useGame(s => s.characterName);
   const classId = useGame(s => s.classId);
@@ -232,10 +236,15 @@ export default function App() {
         <CraftingModal onClose={() => setShowCraftingModal(false)} />
       )}
 
+      {showResetModal && (
+        <ResetConfirmModal onClose={() => setShowResetModal(false)} />
+      )}
+
       <div id="app-root" className="w-full max-w-[1920px] mx-auto min-h-screen relative flex flex-col px-2 sm:px-4">
         <Header
           onOpenMerchant={() => setShowMerchantModal(true)}
           onOpenCrafting={() => setShowCraftingModal(true)}
+          onOpenReset={() => setShowResetModal(true)}
         />
         <main className="p-3 grid gap-3.5 xl:grid-cols-[360px_1fr_460px] lg:grid-cols-[320px_1fr] flex-1 min-h-0 items-start">
           {/* LEFT COLUMN */}
