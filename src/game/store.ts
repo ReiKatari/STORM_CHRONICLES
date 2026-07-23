@@ -194,13 +194,15 @@ export const useGame = create<GameState>((set, get) => {
 
   function grantXp(amount: number) {
     const s = get();
-    let xp = s.xp + amount;
-    let level = s.level;
-    let statPoints = s.statPoints;
-    let skillPoints = s.skillPoints;
-    let talentPoints = s.talentPoints;
-    const tBonus = s.talents['t_stats'] ?? 0;
+    if (isNaN(amount) || amount <= 0) return;
+    let xp = (s.xp ?? 0) + Math.round(amount);
+    let level = s.level ?? 1;
+    let statPoints = s.statPoints ?? 0;
+    let skillPoints = s.skillPoints ?? 0;
+    let talentPoints = s.talentPoints ?? 0;
     let leveled = 0;
+    const tBonus = (s.talents?.['t_stat'] ?? 0) * 2;
+
     while (level < MAX_LEVEL && xp >= xpForLevel(level)) {
       xp -= xpForLevel(level);
       level++;
@@ -225,17 +227,23 @@ export const useGame = create<GameState>((set, get) => {
     const s = get();
     const d = s.derived;
 
-    const goldGain = Math.round(m.gold * (1 + d.goldBonus / 100));
-    const xpGain = Math.round(m.xp * (1 + d.xpBonus / 100));
+    const baseGold = (m && !isNaN(m.gold) && m.gold > 0) ? m.gold : 10;
+    const baseXp = (m && !isNaN(m.xp) && m.xp > 0) ? m.xp : 20;
 
-    pushLog(s.log, `☠️ Убит ${m.def.name} (Ур.${m.level}): +${fmt(goldGain)}g, +${fmt(xpGain)}xp`, m.def.color);
+    const rawGoldGain = Math.round(baseGold * (1 + (d.goldBonus || 0) / 100));
+    const rawXpGain = Math.round(baseXp * (1 + (d.xpBonus || 0) / 100));
+
+    const goldGain = isNaN(rawGoldGain) || rawGoldGain < 1 ? 10 : rawGoldGain;
+    const xpGain = isNaN(rawXpGain) || rawXpGain < 1 ? 20 : rawXpGain;
+
+    pushLog(s.log, `☠️ Убит ${m.def.name} (Ур.${m.level}): +${goldGain}g, +${xpGain}xp`, m.def.color);
     grantXp(xpGain);
     addQuestProgress('kill', m.def.family, 1);
     if (m.def.isBoss || m.def.isMiniBoss) addQuestProgress('boss', '', 1);
 
     // Pet XP gain & leveling
     if (s.activePetId) {
-      let petXp = (s.petXp ?? 0) + Math.max(10, Math.floor(m.xp * 0.5));
+      let petXp = (s.petXp ?? 0) + Math.max(10, Math.floor(xpGain * 0.5));
       let petLvl = s.petLvl ?? 1;
       const petNeed = petLvl * 120;
       if (petXp >= petNeed) {
@@ -248,8 +256,8 @@ export const useGame = create<GameState>((set, get) => {
       set({ petXp, petLvl });
     }
 
-    let kills = s.kills + 1;
-    let bossKills = s.bossKills + (m.def.isBoss ? 1 : 0);
+    let kills = (s.kills ?? 0) + 1;
+    let bossKills = (s.bossKills ?? 0) + (m.def.isBoss ? 1 : 0);
 
     // loot chance
     const dropChance = 0.35 * (1 + d.dropBonus / 100) * (m.def.isBoss ? 2.5 : m.def.isMiniBoss ? 1.5 : 1);
