@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGame } from '@/game/store';
+import { fmt } from '@/game/engine';
 
 interface RandomEvent {
   id: string;
@@ -14,7 +15,7 @@ interface RandomEvent {
 
 export default function EventsPanel() {
   const [currentEvent, setCurrentEvent] = useState<RandomEvent | null>(null);
-  const [timer, setTimer] = useState(15);
+  const [eventTimer, setEventTimer] = useState<number>(300); // 5 minutes = 300s
 
   const level = useGame(s => s.level);
   const gold = useGame(s => s.gold);
@@ -27,7 +28,7 @@ export default function EventsPanel() {
         desc: 'Вы находите древнее древо, омытое кровью падших титанов. Голос шепчет о жертве.',
         icon: '🩸',
         choiceA: '🩸 Жертва HP (Потерять 20% HP)',
-        choiceB: '💰 Пожертвовать 100 золота',
+        choiceB: `💰 Пожертвовать ${fmt(100)} золота`,
         actionA: () => {
           useGame.setState(s => ({
             hp: Math.max(10, Math.round(s.hp * 0.8)),
@@ -43,20 +44,85 @@ export default function EventsPanel() {
         },
       },
       {
+        id: 'void_rift',
+        name: 'Разлом Астральной Бездны',
+        desc: 'В воздухе со скрежетом открылся фиолетовый разлом. Оттуда веет космической энергией.',
+        icon: '🌀',
+        choiceA: '⚡ Прыгнуть в разлом (+2 500 XP)',
+        choiceB: '🔮 Собрать астральные эссенции (+5 эссенций)',
+        actionA: () => {
+          const gainedXp = level * 250;
+          useGame.setState(s => ({
+            xp: s.xp + gainedXp,
+            log: [...s.log, { id: Date.now(), text: `🌀 Разлом даровал вам +${fmt(gainedXp)} опыта!`, color: '#c084fc', time: Date.now() }],
+          }));
+        },
+        actionB: () => {
+          useGame.setState(s => ({
+            astralEssence: ((s as unknown as { astralEssence: number }).astralEssence ?? 0) + 5,
+            log: [...s.log, { id: Date.now(), text: '🔮 Извлечено +5 Астральных Эссенций!', color: '#a855f7', time: Date.now() }],
+          }));
+        },
+      },
+      {
+        id: 'dragon_sanctuary',
+        name: 'Святилище Астрального Дракона',
+        desc: 'Перед вами гнездо золотого дракона. Вокруг блестят бесчисленные драгоценности.',
+        icon: '🐉',
+        choiceA: `💰 Забрать сокровище (+${fmt(1200)} gold)`,
+        choiceB: '🐲 Благословение дракона (+1 очко талантов)',
+        actionA: () => {
+          const rewardGold = level * 150;
+          useGame.setState(s => ({
+            gold: s.gold + rewardGold,
+            totalGoldEarned: s.totalGoldEarned + rewardGold,
+            log: [...s.log, { id: Date.now(), text: `💰 Сокровище дракона принесло +${fmt(rewardGold)} золота!`, color: '#facc15', time: Date.now() }],
+          }));
+        },
+        actionB: () => {
+          useGame.setState(s => ({
+            talentPoints: s.talentPoints + 1,
+            log: [...s.log, { id: Date.now(), text: '🐲 Дракон благословил вас! Получено +1 очко талантов!', color: '#f97316', time: Date.now() }],
+          }));
+        },
+      },
+      {
         id: 'goblin_merchant',
         name: 'Таинственный Гоблин-Торговец',
         desc: 'Из тени вылезает хитрый гоблин с тяжелым мешком астральных реликвий.',
         icon: '👺',
-        choiceA: '💰 Купить таинственный сундук (150g)',
+        choiceA: `💰 Купить сундук (${fmt(200)}g)`,
         choiceB: '👋 Пройти мимо',
         actionA: () => {
-          if (gold < 150) return;
+          if (gold < 200) return;
+          const dropXp = level * 350;
           useGame.setState(s => ({
-            gold: s.gold - 150,
-            log: [...s.log, { id: Date.now(), text: '🎁 Гоблин дал вам сокровище! Получено +1000 XP', color: '#38bdf8', time: Date.now() }],
+            gold: s.gold - 200,
+            xp: s.xp + dropXp,
+            log: [...s.log, { id: Date.now(), text: `🎁 Гоблин вручил сундук! Получено +${fmt(dropXp)} XP!`, color: '#38bdf8', time: Date.now() }],
           }));
         },
         actionB: () => {},
+      },
+      {
+        id: 'treasure_portal',
+        name: 'Портал Сокровищницы Золотого Повелителя',
+        desc: 'Сияющие ворота ведут в затерянные подземелья, набитые драгоценными камнями.',
+        icon: '🔑',
+        choiceA: '🔑 Открыть портал (+50 руды)',
+        choiceB: `💰 Забрать куш (+${fmt(800)} gold)`,
+        actionA: () => {
+          useGame.setState(s => ({
+            astralOre: ((s as unknown as { astralOre: number }).astralOre ?? 0) + 50,
+            log: [...s.log, { id: Date.now(), text: '🪵 Добыто +50 Астральной Руды!', color: '#f59e0b', time: Date.now() }],
+          }));
+        },
+        actionB: () => {
+          useGame.setState(s => ({
+            gold: s.gold + 800,
+            log: [...s.log, { id: Date.now(), text: `💰 Сокровищница пополнена на +${fmt(800)} золота!`, color: '#eab308', time: Date.now() }],
+          }));
+        },
       },
       {
         id: 'runestone',
@@ -64,10 +130,12 @@ export default function EventsPanel() {
         desc: 'На камне лежит открытый фолиант. Его страницы пылают неземным светом.',
         icon: '📜',
         choiceA: '📖 Прочесть заклятие опыта',
-        choiceB: '⚔️ Напитать оружие астралом',
+        choiceB: '⚡ Напитать оружие астралом',
         actionA: () => {
+          const gainedXp = level * 200;
           useGame.setState(s => ({
-            log: [...s.log, { id: Date.now(), text: '📖 Знания древних даровали вам +1000 опыта!', color: '#38bdf8', time: Date.now() }],
+            xp: s.xp + gainedXp,
+            log: [...s.log, { id: Date.now(), text: `📖 Знания древних даровали вам +${fmt(gainedXp)} опыта!`, color: '#38bdf8', time: Date.now() }],
           }));
         },
         actionB: () => {
@@ -82,7 +150,7 @@ export default function EventsPanel() {
         desc: 'Чистейшая астральная вода бьет из-под кристаллической скалы.',
         icon: '🪞',
         choiceA: '💧 Испить воды (100% HP & Мана)',
-        choiceB: '🔮 Набрать воду в эликсир',
+        choiceB: '🔮 Набрать эликсир (+2 стата)',
         actionA: () => {
           useGame.setState(s => ({
             hp: s.derived.maxHp,
@@ -102,13 +170,14 @@ export default function EventsPanel() {
         name: 'Падение Звездного Метеора',
         desc: 'С небес рухнул раскаленный космический осколок, полный астрального золота.',
         icon: '☄️',
-        choiceA: '⛏️ Раскопать руду (+500 золота)',
-        choiceB: '✨ Поглотить космическую пыль (+1 очко скиллов)',
+        choiceA: `⛏️ Раскопать руду (+${fmt(1500)} gold)`,
+        choiceB: '✨ Поглотить пыль (+1 очко скиллов)',
         actionA: () => {
+          const goldBonus = level * 100 + 500;
           useGame.setState(s => ({
-            gold: s.gold + 500,
-            totalGoldEarned: s.totalGoldEarned + 500,
-            log: [...s.log, { id: Date.now(), text: '⛏️ Извлечено +500 золота из метеора!', color: '#fbbf24', time: Date.now() }],
+            gold: s.gold + goldBonus,
+            totalGoldEarned: s.totalGoldEarned + goldBonus,
+            log: [...s.log, { id: Date.now(), text: `⛏️ Извлечено +${fmt(goldBonus)} золота из метеора!`, color: '#fbbf24', time: Date.now() }],
           }));
         },
         actionB: () => {
@@ -122,32 +191,58 @@ export default function EventsPanel() {
 
     const pick = events[Math.floor(Math.random() * events.length)];
     setCurrentEvent(pick);
+    setEventTimer(300); // Reset 5-min timer
+  };
+
+  // Automated 5-minute event generator (300 seconds)
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      setEventTimer(prev => {
+        if (prev <= 1) {
+          generateRandomEvent();
+          return 300;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerId);
+  }, []);
+
+  const formatTimer = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   return (
-    <div className="bg-slate-900/90 rounded-xl border border-slate-700/60 p-3 shadow-2xl backdrop-blur-md space-y-2">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-1 px-1">
+    <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-3.5 shadow-2xl backdrop-blur-md space-y-3 font-sans">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-2 px-1">
         <div className="flex items-center gap-2">
-          <span className="text-base">🔮</span>
-          <h3 className="font-extrabold text-xs text-slate-100 uppercase tracking-wider">
-            ЭКСПЕДИЦИИ И СОБЫТИЯ БЕЗДНЫ
-          </h3>
+          <span className="text-xl p-1 bg-purple-500/10 rounded-lg border border-purple-500/30">🔮</span>
+          <div>
+            <h3 className="font-black text-xs text-slate-100 uppercase tracking-wider">
+              ЭКСПЕДИЦИИ И СОБЫТИЯ БЕЗДНЫ
+            </h3>
+            <span className="text-[10px] text-purple-300 font-mono font-bold">
+              ⏱️ Авто-событие через: <b className="text-amber-300">{formatTimer(eventTimer)}</b>
+            </span>
+          </div>
         </div>
         <button
           onClick={generateRandomEvent}
-          className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 hover:bg-purple-900 border border-purple-500/40 text-purple-300 transition-all active:scale-95"
+          className="text-[10px] font-black px-3 py-1 rounded-xl bg-purple-950 hover:bg-purple-900 border border-purple-500/50 text-purple-200 transition-all active:scale-95 shadow"
         >
           ⚡ Исследовать
         </button>
       </div>
 
       {currentEvent ? (
-        <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2 animate-fadeIn">
-          <div className="flex items-start gap-2">
-            <span className="text-2xl p-1 bg-slate-900 rounded-lg border border-slate-800">{currentEvent.icon}</span>
+        <div className="p-3 rounded-2xl bg-slate-950 border border-purple-500/60 space-y-2.5 animate-fadeIn shadow-xl">
+          <div className="flex items-start gap-3">
+            <span className="text-3xl p-2 bg-slate-900 rounded-xl border border-slate-800 shrink-0">{currentEvent.icon}</span>
             <div>
-              <h4 className="font-extrabold text-xs text-amber-300">{currentEvent.name}</h4>
-              <p className="text-[10px] text-slate-300 leading-tight mt-0.5">{currentEvent.desc}</p>
+              <h4 className="font-black text-xs text-amber-300">{currentEvent.name}</h4>
+              <p className="text-[11px] text-slate-300 leading-snug mt-0.5">{currentEvent.desc}</p>
             </div>
           </div>
 
@@ -157,7 +252,7 @@ export default function EventsPanel() {
                 currentEvent.actionA();
                 setCurrentEvent(null);
               }}
-              className="py-1.5 px-2 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-bold text-[10px] text-left transition-all active:scale-95"
+              className="py-2 px-3 rounded-xl bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-black text-xs text-left transition-all active:scale-95 shadow"
             >
               {currentEvent.choiceA}
             </button>
@@ -166,15 +261,15 @@ export default function EventsPanel() {
                 currentEvent.actionB();
                 setCurrentEvent(null);
               }}
-              className="py-1.5 px-2 rounded-lg bg-amber-950/80 hover:bg-amber-900 border border-amber-500/40 text-amber-300 font-bold text-[10px] text-left transition-all active:scale-95"
+              className="py-2 px-3 rounded-xl bg-amber-950/90 hover:bg-amber-900 border border-amber-500/50 text-amber-300 font-black text-xs text-left transition-all active:scale-95 shadow"
             >
               {currentEvent.choiceB}
             </button>
           </div>
         </div>
       ) : (
-        <div className="p-2 text-center text-[10px] text-slate-400 italic bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
-          🔍 Поиск астральных аномалий и артефактов... Нажмите «Исследовать»
+        <div className="p-3 text-center text-[11px] text-slate-400 italic bg-slate-950/60 rounded-2xl border border-dashed border-slate-800">
+          🔍 Астральные сканеры ищут аномалии... Следующее авто-событие через <b className="text-amber-300 font-mono not-italic">{formatTimer(eventTimer)}</b> или нажмите «Исследовать».
         </div>
       )}
     </div>

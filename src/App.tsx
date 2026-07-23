@@ -220,12 +220,12 @@ export default function App() {
         <CraftingModal onClose={() => setShowCraftingModal(false)} />
       )}
 
-      <div id="app-root" className="w-full max-w-[1600px] mx-auto min-h-screen relative flex flex-col">
+      <div id="app-root" className="w-full max-w-[1920px] mx-auto min-h-screen relative flex flex-col px-2 sm:px-4">
         <Header
           onOpenMerchant={() => setShowMerchantModal(true)}
           onOpenCrafting={() => setShowCraftingModal(true)}
         />
-        <main className="p-3 grid gap-3 xl:grid-cols-[310px_1fr_380px] lg:grid-cols-[290px_1fr] flex-1 min-h-0 items-start">
+        <main className="p-3 grid gap-3.5 xl:grid-cols-[360px_1fr_460px] lg:grid-cols-[320px_1fr] flex-1 min-h-0 items-start">
           {/* LEFT COLUMN */}
           <div className="space-y-3 order-2 lg:order-1">
             <StatsPanel onOpenPaperdoll={handleOpenPaperdoll} />
@@ -234,7 +234,7 @@ export default function App() {
           {/* CENTER */}
           <div className="space-y-3 order-1 lg:order-2">
             <StageBar />
-            <div className="rounded-2xl border border-slate-700/60 overflow-hidden shadow-2xl bg-slate-900" style={{ height: 360 }}>
+            <div className="rounded-2xl border border-slate-700/60 overflow-hidden shadow-2xl bg-slate-900" style={{ height: 380 }}>
               <CombatCanvas />
             </div>
             <HotbarPanel />
