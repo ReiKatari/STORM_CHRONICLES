@@ -51,6 +51,12 @@ export default function CombatCanvas() {
     getImageAsset('/monsters/lich.jpg');
     getImageAsset('/monsters/spider.jpg');
     getImageAsset('/monsters/abyss.jpg');
+    getImageAsset('/monsters/slime.jpg');
+    getImageAsset('/monsters/goblin.jpg');
+    getImageAsset('/monsters/skeleton.jpg');
+    getImageAsset('/monsters/orc.jpg');
+    getImageAsset('/monsters/hydra.jpg');
+    getImageAsset('/monsters/minotaur.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
