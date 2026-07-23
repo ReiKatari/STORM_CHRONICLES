@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useGame } from '@/game/store';
 import { generateItem, rarityById } from '@/game/items';
 import type { Item } from '@/game/types';
+import { fmt } from '@/game/engine';
 
 export default function MerchantModal({ onClose }: { onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<'armorer' | 'alchemist' | 'bounty'>('armorer');
@@ -58,7 +59,7 @@ export default function MerchantModal({ onClose }: { onClose: () => void }) {
               <h2 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider">
                 Городская Торговая Площадь и Торговцы NPC
               </h2>
-              <span className="text-[10px] text-amber-300 font-bold">💰 Ваше золото: {gold} gold</span>
+              <span className="text-[10px] text-amber-300 font-bold">💰 Ваше золото: {fmt(gold)} gold</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -166,7 +167,7 @@ export default function MerchantModal({ onClose }: { onClose: () => void }) {
                           disabled={!canAfford}
                           className="py-1 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shrink-0 disabled:opacity-40 transition-all"
                         >
-                          💰 {buyCost} g
+                          💰 {fmt(buyCost)} g
                         </button>
                       </div>
                     );
