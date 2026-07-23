@@ -493,7 +493,9 @@ export const useGame = create<GameState>((set, get) => {
 
       // player auto-attack
       let currentM = get().monster;
-      let atkTimer = s.playerAtk + dt * d.attackSpeed;
+      const speed = (!d || isNaN(d.attackSpeed) || d.attackSpeed <= 0) ? 1.0 : d.attackSpeed;
+      const prevAtk = (isNaN(s.playerAtk) || s.playerAtk === undefined) ? 0 : s.playerAtk;
+      let atkTimer = prevAtk + dt * speed;
       let monster = { ...currentM };
 
       if (atkTimer >= 1.0) {

@@ -622,28 +622,44 @@ export default function CombatCanvas() {
       if (activePetId) {
         const petDef = PETS.find(p => p.id === activePetId);
         if (petDef) {
-          const petX = px - 80 + lunge * 0.4;
-          const petY = py + Math.sin(time.current * 4) * 6 - 15;
+          const petLvl = s.petLvl ?? 1;
+          const evoTier = petLvl >= 30 ? 3 : petLvl >= 15 ? 2 : 1;
+          const evoBadge = evoTier === 3 ? '👑' : evoTier === 2 ? '🔥' : '🐣';
+          const petSize = evoTier === 3 ? 28 : evoTier === 2 ? 24 : 20;
+
+          // Pet Companion Position with Attack Strike Animation
+          const petStrike = playerLunge.current > 0 ? Math.sin((playerLunge.current / 0.22) * Math.PI) * 45 : 0;
+          const petX = px - 75 + lunge * 0.7 + petStrike;
+          const petY = py + Math.sin(time.current * 4.5) * 8 - 20;
+
           ctx.save();
-          // Pet Aura
-          ctx.shadowColor = petDef.color;
-          ctx.shadowBlur = 16;
-          ctx.fillStyle = `${petDef.color}44`;
-          ctx.beginPath(); ctx.arc(petX, petY, 22, 0, Math.PI * 2); ctx.fill();
+          // Pulsing Outer Celestial Aura Ring
+          const pRing = petSize + 8 + Math.sin(time.current * 5) * 3;
+          const pGrad = ctx.createRadialGradient(petX, petY, 2, petX, petY, pRing);
+          pGrad.addColorStop(0, `${petDef.color}bb`);
+          pGrad.addColorStop(0.6, `${petDef.color}44`);
+          pGrad.addColorStop(1, 'transparent');
+          ctx.fillStyle = pGrad;
+          ctx.beginPath(); ctx.arc(petX, petY, pRing, 0, Math.PI * 2); ctx.fill();
+
           ctx.strokeStyle = petDef.color;
-          ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(petX, petY, 20, 0, Math.PI * 2); ctx.stroke();
-          // Pet Icon
-          ctx.font = "28px 'Century Gothic', CenturyGothic, sans-serif";
+          ctx.lineWidth = evoTier === 3 ? 3 : 2;
+          ctx.shadowColor = petDef.color;
+          ctx.shadowBlur = 18;
+          ctx.beginPath(); ctx.arc(petX, petY, petSize, 0, Math.PI * 2); ctx.stroke();
+
+          // Pet Icon Sprite
+          ctx.font = `${petSize + 8}px 'Century Gothic', CenturyGothic, sans-serif`;
           ctx.textAlign = 'center';
-          ctx.fillText(petDef.icon, petX, petY + 9);
-          // Pet Name & Level Tag
+          ctx.fillText(petDef.icon, petX, petY + petSize * 0.35);
+
+          // Pet Name, Tier & Level Tag
           const petCustomName = s.petCustomNames?.[activePetId] || petDef.name.split(' ')[0];
-          ctx.fillStyle = petDef.color;
-          ctx.font = "bold 9.5px 'Century Gothic', CenturyGothic, sans-serif";
+          ctx.fillStyle = '#ffffff';
+          ctx.font = "bold 10px 'Century Gothic', CenturyGothic, sans-serif";
           ctx.shadowColor = 'rgba(0,0,0,0.95)';
-          ctx.shadowBlur = 5;
-          ctx.fillText(`${petCustomName} (Ур.${s.petLvl ?? 1})`, petX, petY - 26);
+          ctx.shadowBlur = 8;
+          ctx.fillText(`${evoBadge} ${petCustomName} (Ур.${fmt(petLvl)})`, petX, petY - petSize - 8);
           ctx.restore();
         }
       }
