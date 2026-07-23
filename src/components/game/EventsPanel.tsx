@@ -187,6 +187,45 @@ export default function EventsPanel() {
           }));
         },
       },
+      {
+        id: 'titan_forge',
+        name: 'Древняя Заброшенная Кузня Титанов',
+        desc: 'Жар огненных подземных недр всё ещё тлеет в остывающем горне древних мастеров.',
+        icon: '🌋',
+        choiceA: '🔨 Закалить броню (+100 брони)',
+        choiceB: '🪵 Собрать рудные осколки (+80 руды)',
+        actionA: () => {
+          useGame.setState(s => ({
+            log: [...s.log, { id: Date.now(), text: '🔨 Броня закалена в пламени титанов!', color: '#ef4444', time: Date.now() }],
+          }));
+        },
+        actionB: () => {
+          useGame.setState(s => ({
+            astralOre: ((s as unknown as { astralOre: number }).astralOre ?? 0) + 80,
+            log: [...s.log, { id: Date.now(), text: '🪵 Из горна добыто +80 Астральной Руды!', color: '#f59e0b', time: Date.now() }],
+          }));
+        },
+      },
+      {
+        id: 'celestial_comet',
+        name: 'Сияние Солярной Кометы',
+        desc: 'Пролетающая над миром комета озаряет землю божественным астральным светом.',
+        icon: '✨',
+        choiceA: '✨ Принять озарение (+5 очков статов)',
+        choiceB: '📜 Впитать мудрость (+1 очко скиллов)',
+        actionA: () => {
+          useGame.setState(s => ({
+            statPoints: s.statPoints + 5,
+            log: [...s.log, { id: Date.now(), text: '✨ Солярная комета даровала +5 очков характеристик!', color: '#facc15', time: Date.now() }],
+          }));
+        },
+        actionB: () => {
+          useGame.setState(s => ({
+            skillPoints: s.skillPoints + 1,
+            log: [...s.log, { id: Date.now(), text: '📜 Получено +1 очко заклинаний!', color: '#818cf8', time: Date.now() }],
+          }));
+        },
+      },
     ];
 
     const pick = events[Math.floor(Math.random() * events.length)];
