@@ -66,8 +66,10 @@ export default function CombatCanvas() {
     const resize = () => {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
+      const w = Math.max(300, rect.width || canvas.parentElement?.clientWidth || 700);
+      const h = Math.max(200, rect.height || canvas.parentElement?.clientHeight || 350);
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
@@ -193,8 +195,8 @@ export default function CombatCanvas() {
       if (playerLunge.current > 0) playerLunge.current = Math.max(0, playerLunge.current - dt);
       if (monsterHit.current > 0) monsterHit.current = Math.max(0, monsterHit.current - dt);
 
-      const W = canvas.clientWidth;
-      const H = canvas.clientHeight;
+      const W = Math.max(300, canvas.clientWidth || canvas.parentElement?.clientWidth || 700);
+      const H = Math.max(200, canvas.clientHeight || canvas.parentElement?.clientHeight || 350);
 
       // Clean screen with background
       ctx.clearRect(0, 0, W, H);
