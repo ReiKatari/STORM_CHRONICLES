@@ -88,27 +88,32 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
             e.preventDefault();
             if (item) unequip(slot.id);
           }}
-          className={`w-full flex items-center gap-1.5 rounded-xl border px-2 py-1.5 text-left transition-all hover:scale-[1.03] bg-slate-950/90 ${
+          className={`w-full flex items-center gap-2 rounded-xl border p-2 text-left transition-all hover:scale-[1.02] bg-slate-950/90 ${
             isSelected ? 'ring-2 ring-amber-400 border-amber-400 shadow-lg' : ''
           }`}
           style={{
             borderColor: r ? r.color : isSelected ? '#facc15' : '#334155',
             boxShadow: r ? `0 0 10px ${r.glow}` : undefined,
           }}
-          title={item ? `${item.name}\n(ЛКМ — фильтр инвентаря, ПКМ — снять)` : `${slot.name} (ЛКМ — фильтр инвентаря)`}
+          title={item ? `${item.name}\n(ЛКМ — фильтр инвентаря, ПКМ — снять)` : `${slot.name} (Пусто - ЛКМ — фильтр инвентаря)`}
         >
           <div
-            className="w-8 h-8 rounded-lg border flex items-center justify-center text-base shrink-0 bg-slate-900 shadow"
+            className="w-8 h-8 rounded-lg border flex items-center justify-center text-lg shrink-0 bg-slate-900 shadow"
             style={{ borderColor: r ? r.color : '#475569' }}
           >
             {item ? item.icon : slot.icon}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[9px] text-slate-400 font-bold leading-none truncate">{slot.name}</div>
-            <div className="text-[11px] font-black text-white truncate leading-tight mt-0.5" style={{ color: r ? r.color : '#ffffff' }}>
-              {item ? item.name : '—'}
+            <div className="text-[9px] text-slate-400 font-extrabold uppercase leading-none truncate">{slot.name}</div>
+            <div className="text-[10.5px] font-extrabold truncate leading-tight mt-0.5" style={{ color: r ? r.color : '#64748b' }}>
+              {item ? item.name : 'Пусто'}
             </div>
           </div>
+          {item && (
+            <span className="text-[9.5px] font-black text-amber-300 font-mono shrink-0 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+              ⚡{fmt(item.score)}
+            </span>
+          )}
         </button>
       </div>
     );
@@ -159,7 +164,7 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
         <div className="flex gap-2">{PAPERDOLL_LAYOUT.bodyMid.map(renderSlotBtn)}</div>
         <div className="flex gap-2">{PAPERDOLL_LAYOUT.bodyLower.map(renderSlotBtn)}</div>
 
-        {/* Redesigned Jewelry Section with Clear Names & Stats */}
+        {/* Unified Jewelry Section */}
         <div className="pt-2.5 border-t border-slate-800/80 space-y-1.5">
           <div className="text-[10px] text-slate-300 font-extrabold uppercase tracking-wider flex items-center gap-1.5">
             <span>💎</span>
@@ -167,55 +172,7 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {PAPERDOLL_LAYOUT.jewelry.map(slot => {
-              const item = equipment[slot.id];
-              const r = item ? rarityById(item.rarity) : null;
-              const isSelected = selectedSlotFilter === slot.kind;
-
-              return (
-                <div
-                  key={slot.id}
-                  className="relative group"
-                  onMouseEnter={e => {
-                    setHoverSlot({ id: slot.id, rect: e.currentTarget.getBoundingClientRect() });
-                  }}
-                  onMouseLeave={() => setHoverSlot(null)}
-                >
-                  <button
-                    onClick={() => handleSlotClick(slot)}
-                    onContextMenu={e => {
-                      e.preventDefault();
-                      if (item) unequip(slot.id);
-                    }}
-                    className={`w-full p-2 rounded-xl border flex items-center gap-2 text-left transition-all hover:scale-[1.02] bg-slate-950/90 ${
-                      isSelected ? 'ring-2 ring-amber-400 border-amber-400 shadow-md' : ''
-                    }`}
-                    style={{
-                      borderColor: r ? r.color : isSelected ? '#facc15' : '#334155',
-                      boxShadow: r ? `0 0 8px ${r.glow}` : undefined,
-                    }}
-                  >
-                    <div
-                      className="w-8 h-8 rounded-lg border flex items-center justify-center text-lg shrink-0 bg-slate-900 shadow"
-                      style={{ borderColor: r ? r.color : '#475569' }}
-                    >
-                      {item ? item.icon : slot.icon}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[9px] text-slate-400 font-bold leading-none">{slot.name}</div>
-                      <div className="text-[10.5px] font-extrabold truncate leading-tight mt-0.5" style={{ color: r ? r.color : '#94a3b8' }}>
-                        {item ? item.name : 'Пустой слот'}
-                      </div>
-                    </div>
-                    {item && (
-                      <span className="text-[9.5px] font-black text-amber-300 font-mono shrink-0 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
-                        ⚡{fmt(item.score)}
-                      </span>
-                    )}
-                  </button>
-                </div>
-              );
-            })}
+            {PAPERDOLL_LAYOUT.jewelry.map(renderSlotBtn)}
           </div>
         </div>
       </div>
