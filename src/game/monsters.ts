@@ -19,18 +19,18 @@ const ADJ = [
 
 export const FAMILIES: FamilyDef[] = [
   { id: 'slime',           name: 'Слайм',             icons: ['🟢', '🟩', '💚', '🫧', '🧪', '🦠', '☢️', '🧫', '❇️', '🌑'], color: '#4ade80', adjectives: ADJ, artSrc: '/monsters/slime.jpg' },
-  { id: 'rat',             name: 'Крысолюд',          icons: ['🐀', '🐁', '🦷', '🐭', '👁️', '🦴', '⚫', '🩸', '💀', '👑'], color: '#a8a29e', adjectives: ADJ },
+  { id: 'rat',             name: 'Крысолюд',          icons: ['🐀', '🐁', '🦷', '🐭', '👁️', '🦴', '⚫', '🩸', '💀', '👑'], color: '#a8a29e', adjectives: ADJ, artSrc: '/monsters/rat.jpg' },
   { id: 'goblin',          name: 'Гоблин',            icons: ['👺', '🗡️', '🏹', '💣', '🛡️', '🔥', '👑', '⚡', '💥', '💀'], color: '#84cc16', adjectives: ADJ, artSrc: '/monsters/goblin.jpg' },
   { id: 'skeleton',        name: 'Скелет',            icons: ['💀', '🦴', '⚔️', '🛡️', '🏹', '🔮', '👑', '🕯️', '☠️', '🌑'], color: '#e7e5e4', adjectives: ADJ, artSrc: '/monsters/skeleton.jpg' },
   { id: 'zombie',          name: 'Зомби',             icons: ['🧟', '🧟‍♂️', '🧟‍♀️', '🪦', '☣️', '🧠', '👑', '🩸', '☠️', '🌑'], color: '#65a30d', adjectives: ADJ, artSrc: '/monsters/zombie.jpg' },
   { id: 'spider',          name: 'Паук',              icons: ['🕷️', '🕸️', '🦂', '👁️', '🥚', '💀', '👑', '🟣', '🔮', '🌑'], color: '#7c3aed', adjectives: ADJ, artSrc: '/monsters/spider.jpg' },
   { id: 'wolf',            name: 'Волк',              icons: ['🐺', '🦷', '🌕', '❄️', '🔥', '⚡', '👑', '🌌', '🌠', '🌑'], color: '#64748b', adjectives: ADJ, artSrc: '/monsters/wolf.jpg' },
   { id: 'orc',             name: 'Орк',               icons: ['👹', '🪓', '🛡️', '🏹', '💪', '🔥', '👑', '⚔️', '🌋', '🌑'], color: '#16a34a', adjectives: ADJ, artSrc: '/monsters/orc.jpg' },
-  { id: 'bandit',          name: 'Бандит',            icons: ['🥷', '🗡️', '💰', '🏴‍☠️', '⚔️', '🎯', '👑', '💣', '⚡', '🌑'], color: '#b45309', adjectives: ADJ },
+  { id: 'bandit',          name: 'Бандит',            icons: ['🥷', '🗡️', '💰', '🏴‍☠️', '⚔️', '🎯', '👑', '💣', '⚡', '🌑'], color: '#b45309', adjectives: ADJ, artSrc: '/monsters/bandit.jpg' },
   { id: 'ghost',           name: 'Призрак',           icons: ['👻', '🕯️', '⚪', '🌫️', '😱', '💀', '👑', '❄️', '🌌', '🌑'], color: '#93c5fd', adjectives: ADJ, artSrc: '/monsters/ghost.jpg' },
   { id: 'vampire',         name: 'Вампир',            icons: ['🧛', '🧛‍♂️', '🦇', '🩸', '🍷', '🌹', '👑', '🩸', '🔮', '🌑'], color: '#dc2626', adjectives: ADJ, artSrc: '/monsters/vampire.jpg' },
   { id: 'golem',           name: 'Голем',             icons: ['🗿', '🪨', '⛰️', '💎', '🔥', '❄️', '👑', '⚡', '🌋', '🌑'], color: '#78716c', adjectives: ADJ, artSrc: '/monsters/golem.jpg' },
-  { id: 'cultist',         name: 'Культист',          icons: ['🕯️', '🔮', '📿', '☠️', '🩸', '👁️', '👑', '🖤', '🌌', '🌑'], color: '#9333ea', adjectives: ADJ },
+  { id: 'cultist',         name: 'Культист',          icons: ['🕯️', '🔮', '📿', '☠️', '🩸', '👁️', '👑', '🖤', '🌌', '🌑'], color: '#9333ea', adjectives: ADJ, artSrc: '/monsters/cultist.jpg' },
   { id: 'demon',           name: 'Демон',             icons: ['😈', '🔥', '👿', '⚔️', '💀', '🌋', '👑', '🩸', '⚡', '🌑'], color: '#ef4444', adjectives: ADJ, artSrc: '/monsters/demon.jpg' },
   { id: 'elemental_fire',  name: 'Элементаль огня',   icons: ['🔥', '🎇', '☄️', '🌋', '💥', '⚡', '👑', '☀️', '🌟', '🌑'], color: '#f97316', adjectives: ADJ, artSrc: '/monsters/fire_elemental.jpg' },
   { id: 'elemental_ice',   name: 'Элементаль льда',   icons: ['❄️', '🧊', '💠', '🌨️', '⛄', '💎', '👑', '🌐', '🌌', '🌑'], color: '#38bdf8', adjectives: ADJ },
@@ -83,10 +83,17 @@ export function makeMonster(familyId: string, tier: number, opts?: { boss?: bool
   const tierMult = 1 + t * 0.35;
   const bossMult = isBoss ? 6 : isMini ? 2.6 : 1;
   let artSrc = fam.artSrc;
-  if (isBoss && familyId === 'spider') artSrc = '/monsters/spider_queen.jpg';
-  if (isBoss && familyId === 'goblin') artSrc = '/monsters/goblin_king.jpg';
-  if (isBoss && familyId === 'ghost') artSrc = '/monsters/ghost.jpg';
-  if (isBoss && familyId === 'elemental_fire') artSrc = '/monsters/fire_elemental.jpg';
+  if (opts?.name === 'Арахна Матка' || (isBoss && familyId === 'spider')) {
+    artSrc = '/monsters/spider_queen.jpg';
+  } else if (opts?.name === 'Король Гоблинов Гнус' || (isBoss && familyId === 'goblin')) {
+    artSrc = '/monsters/goblin_king.jpg';
+  } else if (opts?.name === 'Каменный Голем Грак' || (isBoss && familyId === 'golem')) {
+    artSrc = '/monsters/golem.jpg';
+  } else if (opts?.name === 'Болотный Варатракс' || (isBoss && familyId === 'hydra')) {
+    artSrc = '/monsters/hydra.jpg';
+  } else if (opts?.name === 'Султан Песков Иблис' || (isBoss && familyId === 'elemental_fire')) {
+    artSrc = '/monsters/fire_elemental.jpg';
+  }
 
   return {
     id: `${familyId}_${t}_${isBoss ? 'b' : isMini ? 'm' : 'n'}`,

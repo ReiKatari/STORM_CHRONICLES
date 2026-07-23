@@ -59,6 +59,13 @@ export default function CombatCanvas() {
     getImageAsset('/monsters/minotaur.jpg');
     getImageAsset('/monsters/wolf.jpg');
     getImageAsset('/monsters/zombie.jpg');
+    getImageAsset('/monsters/spider_queen.jpg');
+    getImageAsset('/monsters/goblin_king.jpg');
+    getImageAsset('/monsters/fire_elemental.jpg');
+    getImageAsset('/monsters/ghost.jpg');
+    getImageAsset('/monsters/rat.jpg');
+    getImageAsset('/monsters/bandit.jpg');
+    getImageAsset('/monsters/cultist.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
@@ -235,13 +242,104 @@ export default function CombatCanvas() {
 
       // Distant horizon glow
       const horizonG = ctx.createRadialGradient(W / 2, H * 0.6, 10, W / 2, H * 0.6, W * 0.6);
-      horizonG.addColorStop(0, 'rgba(56,189,248,0.15)');
+      horizonG.addColorStop(0, `${accentColor}33`);
       horizonG.addColorStop(1, 'transparent');
       ctx.fillStyle = horizonG;
       ctx.fillRect(0, 0, W, H);
 
-      // Floor ground
       const groundY = H * 0.68;
+      const zoneId = s.zoneId;
+
+      // ===== DRAW UNIQUE ZONE ENVIRONMENT LANDSCAPE =====
+      if (zoneId === 'forest') {
+        // Dark Forest Pine Tree Silhouettes
+        ctx.fillStyle = '#06201b';
+        const numTrees = 8;
+        for (let i = 0; i < numTrees; i++) {
+          const tx = (i / (numTrees - 1)) * W;
+          const th = 80 + (i % 3) * 20;
+          ctx.beginPath();
+          ctx.moveTo(tx, groundY);
+          ctx.lineTo(tx - 25, groundY);
+          ctx.lineTo(tx, groundY - th);
+          ctx.lineTo(tx + 25, groundY);
+          ctx.fill();
+        }
+        // Glowing Spore Particles
+        for (let i = 0; i < 5; i++) {
+          const sx = (W * 0.1) + ((i * 180 + time.current * 20) % (W * 0.8));
+          const sy = groundY - 30 - Math.sin(time.current + i) * 20;
+          ctx.fillStyle = '#4ade80';
+          ctx.shadowColor = '#4ade80';
+          ctx.shadowBlur = 10;
+          ctx.beginPath(); ctx.arc(sx, sy, 3, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      } else if (zoneId === 'hills') {
+        // Rolling Hills Curves
+        ctx.fillStyle = '#15803d';
+        ctx.beginPath();
+        ctx.moveTo(0, groundY);
+        ctx.quadraticCurveTo(W * 0.25, groundY - 35, W * 0.5, groundY - 15);
+        ctx.quadraticCurveTo(W * 0.75, groundY + 10, W, groundY - 25);
+        ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
+      } else if (zoneId === 'mine') {
+        // Cavern Roof Stalactites & Wall Crystals
+        ctx.fillStyle = '#292524';
+        for (let i = 0; i < 7; i++) {
+          const cx = (i / 6) * W;
+          ctx.beginPath();
+          ctx.moveTo(cx - 15, 0); ctx.lineTo(cx + 15, 0); ctx.lineTo(cx, 40 + (i % 4) * 15); ctx.fill();
+        }
+        // Glowing Wall Crystals
+        ctx.fillStyle = '#c084fc';
+        ctx.shadowColor = '#c084fc';
+        ctx.shadowBlur = 12;
+        [0.15, 0.4, 0.7, 0.88].forEach(pct => {
+          ctx.beginPath(); ctx.arc(W * pct, groundY - 20, 5, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.shadowBlur = 0;
+      } else if (zoneId === 'swamp') {
+        // Murky Swamp Water Mist
+        const swampG = ctx.createLinearGradient(0, groundY - 30, 0, groundY);
+        swampG.addColorStop(0, 'transparent');
+        swampG.addColorStop(1, 'rgba(54, 83, 20, 0.6)');
+        ctx.fillStyle = swampG;
+        ctx.fillRect(0, groundY - 30, W, 30);
+      } else if (zoneId === 'desert') {
+        // Sand Dunes & Pyramid Horizon
+        ctx.fillStyle = '#b45309';
+        ctx.beginPath();
+        ctx.moveTo(W * 0.6, groundY);
+        ctx.lineTo(W * 0.75, groundY - 50);
+        ctx.lineTo(W * 0.9, groundY);
+        ctx.fill();
+      } else if (zoneId === 'volcano' || zoneId === 'demons') {
+        // Molten Lava River
+        const lavaG = ctx.createLinearGradient(0, groundY, W, groundY);
+        lavaG.addColorStop(0, '#ef4444');
+        lavaG.addColorStop(0.5, '#f97316');
+        lavaG.addColorStop(1, '#ef4444');
+        ctx.fillStyle = lavaG;
+        ctx.fillRect(W * 0.4, groundY + 15, W * 0.2, 10);
+      } else if (zoneId === 'frost' || zoneId === 'ice') {
+        // Aurora Borealis Sky Glow
+        const auroraG = ctx.createLinearGradient(0, 0, W, 0);
+        auroraG.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
+        auroraG.addColorStop(0.5, 'rgba(74, 222, 128, 0.35)');
+        auroraG.addColorStop(1, 'rgba(168, 85, 247, 0.25)');
+        ctx.fillStyle = auroraG;
+        ctx.fillRect(0, 20, W, 70);
+      } else if (zoneId === 'abyss') {
+        // Void Space Nebula & Rift
+        const riftG = ctx.createRadialGradient(W / 2, H * 0.35, 10, W / 2, H * 0.35, 120);
+        riftG.addColorStop(0, 'rgba(168, 85, 247, 0.4)');
+        riftG.addColorStop(1, 'transparent');
+        ctx.fillStyle = riftG;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // Floor ground
       const groundG = ctx.createLinearGradient(0, groundY, 0, H);
       groundG.addColorStop(0, zone?.theme?.ground || 'rgba(15, 23, 42, 0.9)');
       groundG.addColorStop(1, zone?.theme?.groundDark || 'rgba(2, 6, 23, 0.98)');
