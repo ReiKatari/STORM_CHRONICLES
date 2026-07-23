@@ -5,6 +5,19 @@ import { RUNES, type RuneDef } from '@/game/runes';
 import { rarityById } from '@/game/items';
 import type { Item } from '@/game/types';
 
+function getTargetCraftingTime(): number {
+  try {
+    const saved = localStorage.getItem('storm_crafting_target');
+    if (saved) {
+      const val = parseInt(saved, 10);
+      if (!isNaN(val) && val > Date.now()) return val;
+    }
+  } catch { /* ignore */ }
+  const target = Date.now() + 180000;
+  try { localStorage.setItem('storm_crafting_target', target.toString()); } catch { /* ignore */ }
+  return target;
+}
+
 export default function CraftingModal({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<'craft' | 'salvage' | 'sockets'>('craft');
   const level = useGame(s => s.level);
@@ -15,10 +28,12 @@ export default function CraftingModal({ onClose }: { onClose: () => void }) {
 
   const [selectedItemForRune, setSelectedItemForRune] = useState<Item | null>(null);
 
-  // 3-Minute Recipe Rotation Timer (180 seconds)
-  const [recipeTimer, setRecipeTimer] = useState<number>(180);
+  // 3-Minute Persistent Recipe Rotation Timer (180 seconds)
+  const [recipeTimer, setRecipeTimer] = useState<number>(() => {
+    const t = getTargetCraftingTime();
+    return Math.max(0, Math.ceil((t - Date.now()) / 1000));
+  });
   const [activeRecipes, setActiveRecipes] = useState<CraftingRecipe[]>(() => {
-    // Pick 5 random recipes initially
     const shuffled = [...CRAFTING_RECIPES].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 5);
   });
@@ -26,19 +41,20 @@ export default function CraftingModal({ onClose }: { onClose: () => void }) {
   const refreshRecipes = () => {
     const shuffled = [...CRAFTING_RECIPES].sort(() => Math.random() - 0.5);
     setActiveRecipes(shuffled.slice(0, 5));
-    setRecipeTimer(180);
+    const nextTarget = Date.now() + 180000;
+    try { localStorage.setItem('storm_crafting_target', nextTarget.toString()); } catch { /* ignore */ }
   };
 
-  // Live countdown timer for 3-minute recipe rotation
+  // Live persistent countdown timer for 3-minute recipe rotation
   useEffect(() => {
     const timerId = setInterval(() => {
-      setRecipeTimer(prev => {
-        if (prev <= 1) {
-          refreshRecipes();
-          return 180;
-        }
-        return prev - 1;
-      });
+      const target = getTargetCraftingTime();
+      const diff = Math.max(0, Math.ceil((target - Date.now()) / 1000));
+      setRecipeTimer(diff);
+
+      if (diff <= 0) {
+        refreshRecipes();
+      }
     }, 1000);
     return () => clearInterval(timerId);
   }, []);

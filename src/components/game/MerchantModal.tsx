@@ -4,6 +4,19 @@ import { generateItem, rarityById } from '@/game/items';
 import type { Item } from '@/game/types';
 import { fmt } from '@/game/engine';
 
+function getTargetMerchantTime(): number {
+  try {
+    const saved = localStorage.getItem('storm_merchant_target');
+    if (saved) {
+      const val = parseInt(saved, 10);
+      if (!isNaN(val) && val > Date.now()) return val;
+    }
+  } catch { /* ignore */ }
+  const target = Date.now() + 180000;
+  try { localStorage.setItem('storm_merchant_target', target.toString()); } catch { /* ignore */ }
+  return target;
+}
+
 export default function MerchantModal({ onClose }: { onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<'armorer' | 'alchemist' | 'bounty'>('armorer');
 
@@ -12,8 +25,11 @@ export default function MerchantModal({ onClose }: { onClose: () => void }) {
   const inventory = useGame(s => s.inventory);
   const sellJunk = useGame(s => s.sellJunk);
 
-  // 3-Minute Refresh State (180 seconds)
-  const [stockTimer, setStockTimer] = useState<number>(180);
+  // 3-Minute Persistent Refresh State (180 seconds)
+  const [stockTimer, setStockTimer] = useState<number>(() => {
+    const t = getTargetMerchantTime();
+    return Math.max(0, Math.ceil((t - Date.now()) / 1000));
+  });
   const [shopStock, setShopStock] = useState<Item[]>(() => [
     generateItem(level, 'rare'),
     generateItem(level + 1, 'rare'),
@@ -32,19 +48,20 @@ export default function MerchantModal({ onClose }: { onClose: () => void }) {
       generateItem(level + 5, 'legendary'),
       generateItem(level + 7, 'mythic'),
     ]);
-    setStockTimer(180);
+    const nextTarget = Date.now() + 180000;
+    try { localStorage.setItem('storm_merchant_target', nextTarget.toString()); } catch { /* ignore */ }
   };
 
-  // Live countdown timer for 3-minute stock rotation
+  // Live persistent countdown timer for 3-minute stock rotation
   useEffect(() => {
     const timerId = setInterval(() => {
-      setStockTimer(prev => {
-        if (prev <= 1) {
-          refreshStock();
-          return 180;
-        }
-        return prev - 1;
-      });
+      const target = getTargetMerchantTime();
+      const diff = Math.max(0, Math.ceil((target - Date.now()) / 1000));
+      setStockTimer(diff);
+
+      if (diff <= 0) {
+        refreshStock();
+      }
     }, 1000);
     return () => clearInterval(timerId);
   }, [level]);

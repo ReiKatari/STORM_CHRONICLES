@@ -13,9 +13,25 @@ interface RandomEvent {
   actionB: () => void;
 }
 
+function getTargetEventTime(): number {
+  try {
+    const saved = localStorage.getItem('storm_abyss_event_target');
+    if (saved) {
+      const val = parseInt(saved, 10);
+      if (!isNaN(val) && val > Date.now()) return val;
+    }
+  } catch { /* ignore */ }
+  const target = Date.now() + 300000;
+  try { localStorage.setItem('storm_abyss_event_target', target.toString()); } catch { /* ignore */ }
+  return target;
+}
+
 export default function EventsPanel() {
   const [currentEvent, setCurrentEvent] = useState<RandomEvent | null>(null);
-  const [eventTimer, setEventTimer] = useState<number>(300); // 5 minutes = 300s
+  const [eventTimer, setEventTimer] = useState<number>(() => {
+    const t = getTargetEventTime();
+    return Math.max(0, Math.ceil((t - Date.now()) / 1000));
+  });
 
   const level = useGame(s => s.level);
   const gold = useGame(s => s.gold);
@@ -149,7 +165,7 @@ export default function EventsPanel() {
         name: 'Источник Юности Бездны',
         desc: 'Чистейшая астральная вода бьет из-под кристаллической скалы.',
         icon: '🪞',
-        choiceA: '💧 Испить воды (100% HP & Мана)',
+        choiceA: '💧 Испить воды (100% HP И Мана)',
         choiceB: '🔮 Набрать эликсир (+2 стата)',
         actionA: () => {
           useGame.setState(s => ({
@@ -230,19 +246,21 @@ export default function EventsPanel() {
 
     const pick = events[Math.floor(Math.random() * events.length)];
     setCurrentEvent(pick);
-    setEventTimer(300); // Reset 5-min timer
+
+    const nextTarget = Date.now() + 300000;
+    try { localStorage.setItem('storm_abyss_event_target', nextTarget.toString()); } catch { /* ignore */ }
   };
 
-  // Automated 5-minute event generator (300 seconds)
+  // Automated persistent 5-minute event generator (300 seconds)
   useEffect(() => {
     const timerId = setInterval(() => {
-      setEventTimer(prev => {
-        if (prev <= 1) {
-          generateRandomEvent();
-          return 300;
-        }
-        return prev - 1;
-      });
+      const target = getTargetEventTime();
+      const diff = Math.max(0, Math.ceil((target - Date.now()) / 1000));
+      setEventTimer(diff);
+
+      if (diff <= 0) {
+        generateRandomEvent();
+      }
     }, 1000);
     return () => clearInterval(timerId);
   }, []);
