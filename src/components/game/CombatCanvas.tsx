@@ -207,16 +207,21 @@ export default function CombatCanvas() {
       }
 
       // ===== DRAW BACKGROUND =====
+      const skyTop = zone?.theme?.skyTop || '#0f172a';
+      const skyBottom = zone?.theme?.skyBottom || '#1e293b';
+      const accentColor = zone?.theme?.ground || '#38bdf8';
+      const particleColor = zone?.theme?.particles || 'rgba(56,189,248,0.5)';
+
       const grad = ctx.createLinearGradient(0, 0, 0, H);
-      grad.addColorStop(0, zone.bgTop);
-      grad.addColorStop(0.65, zone.bgBot);
+      grad.addColorStop(0, skyTop);
+      grad.addColorStop(0.65, skyBottom);
       grad.addColorStop(1, '#0f172a');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
 
       // Distant horizon glow
       const horizonG = ctx.createRadialGradient(W / 2, H * 0.6, 10, W / 2, H * 0.6, W * 0.6);
-      horizonG.addColorStop(0, `${zone.accentColor}33`);
+      horizonG.addColorStop(0, 'rgba(56,189,248,0.15)');
       horizonG.addColorStop(1, 'transparent');
       ctx.fillStyle = horizonG;
       ctx.fillRect(0, 0, W, H);
@@ -224,13 +229,13 @@ export default function CombatCanvas() {
       // Floor ground
       const groundY = H * 0.68;
       const groundG = ctx.createLinearGradient(0, groundY, 0, H);
-      groundG.addColorStop(0, 'rgba(15, 23, 42, 0.9)');
-      groundG.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
+      groundG.addColorStop(0, zone?.theme?.ground || 'rgba(15, 23, 42, 0.9)');
+      groundG.addColorStop(1, zone?.theme?.groundDark || 'rgba(2, 6, 23, 0.98)');
       ctx.fillStyle = groundG;
       ctx.fillRect(0, groundY, W, H - groundY);
 
       // Ground border line
-      ctx.strokeStyle = `${zone.accentColor}55`;
+      ctx.strokeStyle = accentColor;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(0, groundY);
@@ -251,7 +256,7 @@ export default function CombatCanvas() {
         p.x += (p.vx + Math.sin(time.current + p.phase) * 10) * dt;
         p.y += p.vy * dt;
         if (p.y < 0) { p.y = H; p.x = Math.random() * W; }
-        ctx.fillStyle = zone.particleColor;
+        ctx.fillStyle = particleColor;
         ctx.globalAlpha = p.alpha * (0.6 + Math.sin(time.current * 2 + p.phase) * 0.4);
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
