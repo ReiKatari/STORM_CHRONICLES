@@ -86,6 +86,7 @@ export default function CombatCanvas() {
     getImageAsset('/backgrounds/mine.jpg');
     getImageAsset('/backgrounds/swamp.jpg');
     getImageAsset('/backgrounds/desert.jpg');
+    getImageAsset('/backgrounds/vault.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
@@ -266,8 +267,8 @@ export default function CombatCanvas() {
         ? '/backgrounds/volcano.jpg'
         : (zoneId === 'abyss' || zoneId === 'void' || zoneId === 'space')
         ? '/backgrounds/abyss.jpg'
-        : zoneId === 'mine'
-        ? '/backgrounds/mine.jpg'
+        : (zoneId === 'mine' || zoneId === 'hidden_vault')
+        ? '/backgrounds/vault.jpg'
         : zoneId === 'swamp'
         ? '/backgrounds/swamp.jpg'
         : zoneId === 'desert'
@@ -276,7 +277,7 @@ export default function CombatCanvas() {
       const bgImg = getImageAsset(bgPath);
       if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
         ctx.save();
-        ctx.globalAlpha = 0.65;
+        ctx.globalAlpha = 0.90;
         ctx.drawImage(bgImg, 0, 0, W, H);
         ctx.restore();
       }
@@ -379,16 +380,17 @@ export default function CombatCanvas() {
         ctx.fillRect(0, 0, W, H);
       }
 
-      // Floor ground
-      const groundG = ctx.createLinearGradient(0, groundY, 0, H);
-      groundG.addColorStop(0, zone?.theme?.ground || 'rgba(15, 23, 42, 0.9)');
-      groundG.addColorStop(1, zone?.theme?.groundDark || 'rgba(2, 6, 23, 0.98)');
+      // Floor ground (subtle shadow gradient over background artwork)
+      const groundG = ctx.createLinearGradient(0, groundY - 20, 0, H);
+      groundG.addColorStop(0, 'transparent');
+      groundG.addColorStop(0.3, 'rgba(15, 23, 42, 0.35)');
+      groundG.addColorStop(1, 'rgba(2, 6, 23, 0.65)');
       ctx.fillStyle = groundG;
-      ctx.fillRect(0, groundY, W, H - groundY);
+      ctx.fillRect(0, groundY - 20, W, H - groundY + 20);
 
       // Ground border line
-      ctx.strokeStyle = accentColor;
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = `${accentColor}88`;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(0, groundY);
       ctx.lineTo(W, groundY);

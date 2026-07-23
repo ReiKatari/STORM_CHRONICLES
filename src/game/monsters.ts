@@ -83,16 +83,39 @@ export function makeMonster(familyId: string, tier: number, opts?: { boss?: bool
   const tierMult = 1 + t * 0.35;
   const bossMult = isBoss ? 6 : isMini ? 2.6 : 1;
   let artSrc = fam.artSrc;
-  if (opts?.name === 'Арахна Матка' || (isBoss && familyId === 'spider')) {
+  const mName = opts?.name ?? '';
+  if (mName.includes('Дракон') || mName.includes('Аурум') || (isBoss && familyId === 'dragon')) {
+    artSrc = '/monsters/dragon.jpg';
+  } else if (mName.includes('Мимик') || (isBoss && familyId === 'mimic')) {
+    artSrc = '/monsters/mimic.jpg';
+  } else if (mName.includes('Иггдрасиль') || mName.includes('Древень') || (isBoss && familyId === 'treant')) {
+    artSrc = '/monsters/treant.jpg';
+  } else if (mName.includes('Арахна') || mName.includes('Арахнид') || (isBoss && familyId === 'spider')) {
     artSrc = '/monsters/spider_queen.jpg';
-  } else if (opts?.name === 'Король Гоблинов Гнус' || (isBoss && familyId === 'goblin')) {
+  } else if (mName.includes('Гоблин') || (isBoss && familyId === 'goblin')) {
     artSrc = '/monsters/goblin_king.jpg';
-  } else if (opts?.name === 'Каменный Голем Грак' || (isBoss && familyId === 'golem')) {
+  } else if (mName.includes('Голем') || (isBoss && familyId === 'golem')) {
     artSrc = '/monsters/golem.jpg';
-  } else if (opts?.name === 'Болотный Варатракс' || (isBoss && familyId === 'hydra')) {
+  } else if (mName.includes('Варатракс') || mName.includes('Гидра') || (isBoss && familyId === 'hydra')) {
     artSrc = '/monsters/hydra.jpg';
-  } else if (opts?.name === 'Султан Песков Иблис' || (isBoss && familyId === 'elemental_fire')) {
+  } else if (mName.includes('Песков') || mName.includes('Иблис') || (isBoss && familyId === 'elemental_fire')) {
     artSrc = '/monsters/fire_elemental.jpg';
+  } else if (mName.includes('Магмус') || mName.includes('Архидемон') || (isBoss && familyId === 'archdemon')) {
+    artSrc = '/monsters/archdemon.jpg';
+  } else if (mName.includes('Малзахар') || mName.includes('Лич') || (isBoss && familyId === 'lich')) {
+    artSrc = '/monsters/lich.jpg';
+  } else if (mName.includes('Дракула') || mName.includes('Вампир') || (isBoss && familyId === 'vampire')) {
+    artSrc = '/monsters/vampire.jpg';
+  } else if (mName.includes('Ньярлатхотеп') || mName.includes('Абаддон') || (isBoss && familyId === 'abyss')) {
+    artSrc = '/monsters/abyss.jpg';
+  } else if (mName.includes('Виверна') || (isBoss && familyId === 'wyvern')) {
+    artSrc = '/monsters/wyvern.jpg';
+  } else if (mName.includes('Химера') || (isBoss && familyId === 'chimera')) {
+    artSrc = '/monsters/chimera.jpg';
+  } else if (mName.includes('Феникс') || (isBoss && familyId === 'phoenix')) {
+    artSrc = '/monsters/phoenix.jpg';
+  } else if (mName.includes('Василиск') || (isBoss && familyId === 'basilisk')) {
+    artSrc = '/monsters/basilisk.jpg';
   }
 
   return {
