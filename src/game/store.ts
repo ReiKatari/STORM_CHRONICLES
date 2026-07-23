@@ -143,6 +143,7 @@ const SAVE_KEY = 'rogalik_save_v4';
 let isResettingGame = false;
 
 function pushFx(fx: FxEvent[], e: Omit<FxEvent, 'id'>) {
+  if (!fx || !Array.isArray(fx)) return;
   fx.push({ ...e, id: fxId++ });
   if (fx.length > 60) fx.splice(0, fx.length - 60);
 }
@@ -444,127 +445,101 @@ export const useGame = create<GameState>((set, get) => {
 
     tick: (dt: number) => {
       try {
-        let s = get();
-        if (!s.classId || !s.characterName) {
+        const s = get();
+        if (!s.classId || !s.characterName) return;
+
+        // Ensure active valid monster
+        if (!s.monster || !s.monster.hp || isNaN(s.monster.hp) || s.monster.hp <= 0) {
+          set({ monster: spawnFor(s.zoneId || 'hills', s.stage || 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, s.dungeon || null) });
           return;
         }
 
-      // Ensure active valid monster
-      if (!s.monster || !s.monster.hp || isNaN(s.monster.hp) || s.monster.hp <= 0) {
-        set({ monster: spawnFor(s.zoneId || 'hills', s.stage || 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, s.dungeon || null) });
-        return;
-      }
+        const d = s.derived || computeDerived(s.level || 1, s.stats, s.equipment || {}, s.talents || {});
+        let hp = Math.min(d.maxHp, (s.hp ?? d.maxHp) + d.regen * dt);
+        let mana = Math.min(d.maxMana, (s.mana ?? d.maxMana) + d.manaRegen * dt);
 
-      const d = s.derived || computeDerived(s.level || 1, s.stats, s.equipment || {}, s.talents || {});
+        const newCds: Record<string, number> = {};
+        if (s.skillCds) {
+          Object.entries(s.skillCds).forEach(([k, v]) => {
+            if (v && v > 0) newCds[k] = Math.max(0, v - dt);
+          });
+        }
 
-      // regen & cooldowns
-      let hp = Math.min(d.maxHp, (s.hp ?? d.maxHp) + d.regen * dt);
-      let mana = Math.min(d.maxMana, (s.mana ?? d.maxMana) + d.manaRegen * dt);
-
-      // skill CDs decrease
-      const newCds: Record<string, number> = {};
-      if (s.skillCds && typeof s.skillCds === 'object') {
-        Object.entries(s.skillCds).forEach(([k, v]) => {
-          if (v && v > 0) newCds[k] = Math.max(0, v - dt);
-        });
-      }
-
-      // autoCast skills execution
-      const cls = getClassById(s.classId);
-      const autoCast = s.autoCast || {};
-      const skillRanks = s.skillRanks || {};
-      const fxQueue = s.fxQueue || [];
-      let monsterKilled = false;
-
-      if (cls && Array.isArray(cls.skills)) {
-        for (const sk of cls.skills) {
-          if (autoCast[sk.id] && (skillRanks[sk.id] ?? 0) > 0 && (newCds[sk.id] ?? 0) === 0) {
-            if (mana >= sk.manaCost) {
-              mana -= sk.manaCost;
-              newCds[sk.id] = sk.cooldown * (1 - d.cdReduction / 100);
-
-              // Execute Skill Damage/Heal
-              let skillDmg = Math.round(d.skillPower * 2.2);
-              if (sk.id.includes('heal') || sk.id.includes('meditate') || sk.id.includes('rejuvenation')) {
-                hp = Math.min(d.maxHp, hp + Math.round(d.maxHp * 0.35));
-                pushFx(fxQueue, { type: 'heal', text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
-              } else {
-                let currentM = get().monster;
-                if (currentM) {
-                  let mHp = currentM.hp - skillDmg;
-                  pushFx(fxQueue, { type: 'skill', text: `✨ ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
+        // Auto-cast skills
+        const cls = getClassById(s.classId);
+        if (cls && Array.isArray(cls.skills)) {
+          for (const sk of cls.skills) {
+            if (s.autoCast && s.autoCast[sk.id] && (s.skillRanks[sk.id] ?? 0) > 0 && (newCds[sk.id] ?? 0) === 0) {
+              if (mana >= sk.manaCost) {
+                mana -= sk.manaCost;
+                newCds[sk.id] = sk.cooldown * (1 - d.cdReduction / 100);
+                let skillDmg = Math.round(d.skillPower * 2.2);
+                if (sk.id.includes('heal') || sk.id.includes('meditate') || sk.id.includes('rejuvenation')) {
+                  hp = Math.min(d.maxHp, hp + Math.round(d.maxHp * 0.35));
+                  pushFx(s.fxQueue, { type: 'heal', text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
+                } else if (s.monster) {
+                  let mHp = s.monster.hp - skillDmg;
+                  pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
                   if (mHp <= 0) {
-                    onKill(currentM);
-                    monsterKilled = true;
-                    break;
+                    onKill(s.monster);
+                    set({ hp, mana, skillCds: newCds });
+                    return;
                   } else {
-                    set({ monster: { ...currentM, hp: mHp } });
+                    set({ monster: { ...s.monster, hp: mHp } });
                   }
                 }
               }
             }
           }
         }
-      }
 
-      if (monsterKilled) {
-        set({ hp, mana, skillCds: newCds, fxQueue: [...fxQueue] });
-        return;
-      }
+        // Player auto-attack
+        let monster = { ...s.monster };
+        const speed = (!d || isNaN(d.attackSpeed) || d.attackSpeed <= 0) ? 1.5 : d.attackSpeed;
+        let atkTimer = (s.playerAtk ?? 0) + dt * speed;
 
-      // player auto-attack
-      let currentM = get().monster;
-      if (!currentM) return;
+        if (atkTimer >= 1.0) {
+          atkTimer -= 1.0;
+          const isCrit = Math.random() * 100 < d.critChance;
+          const rawDmg = Math.floor(d.dmgMin + Math.random() * (d.dmgMax - d.dmgMin + 1));
+          const dealt = Math.round(rawDmg * (isCrit ? d.critMult : 1.0));
 
-      const speed = (!d || isNaN(d.attackSpeed) || d.attackSpeed <= 0) ? 1.2 : d.attackSpeed;
-      const prevAtk = (isNaN(s.playerAtk) || s.playerAtk === undefined) ? 0 : s.playerAtk;
-      let atkTimer = prevAtk + dt * speed;
-      let monster = { ...currentM };
+          if (isCrit) sound.playCrit(); else sound.playHit();
+          monster.hp -= dealt;
+          pushFx(s.fxQueue, { type: isCrit ? 'crit' : 'monsterHit', value: dealt, text: isCrit ? `💥 КРИТ ${fmt(dealt)}` : `${fmt(dealt)}`, color: isCrit ? '#facc15' : '#f87171' });
 
-      if (atkTimer >= 1.0) {
-        atkTimer -= 1.0;
-        const isCrit = Math.random() * 100 < d.critChance;
-        const rawDmg = Math.floor(d.dmgMin + Math.random() * (d.dmgMax - d.dmgMin + 1));
-        const dealt = Math.round(rawDmg * (isCrit ? d.critMult : 1.0));
-
-        if (isCrit) sound.playCrit(); else sound.playHit();
-        monster.hp -= dealt;
-        pushFx(fxQueue, { type: isCrit ? 'crit' : 'monsterHit', value: dealt, text: isCrit ? `💥 КРИТ ${fmt(dealt)}` : `${fmt(dealt)}`, color: isCrit ? '#facc15' : '#f87171' });
-
-        if (monster.hp <= 0) {
-          onKill(monster);
-          set({ playerAtk: 0, hp, mana, skillCds: newCds, fxQueue: [...fxQueue] });
-          return;
-        }
-      }
-
-      // monster attack timer
-      let mTimer = (isNaN(monster.attackTimer) || monster.attackTimer === undefined ? 0 : monster.attackTimer) + dt;
-      if (mTimer >= 1.8) {
-        mTimer = 0;
-        if (Math.random() * 100 >= d.dodge) {
-          const mDmg = mitigate(monster.dmg, d.armor);
-          hp -= mDmg;
-          pushFx(fxQueue, { type: 'playerHit', value: mDmg, text: `-${fmt(mDmg)}`, color: '#ef4444' });
-          if (hp <= 0) {
-            // player death reset to stage start
-            hp = d.maxHp;
-            const log = s.log || [];
-            pushLog(log, `☠️ Вы погибли от рук ${monster.def.name}. Отступление на этап 1!`, '#ef4444');
-            set({ stage: 1, stageKills: 0, dungeon: null, monster: spawnFor(s.zoneId || 'hills', 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, null), hp, mana: d.maxMana, playerAtk: 0, fxQueue: [...fxQueue] });
+          if (monster.hp <= 0) {
+            onKill(monster);
+            set({ playerAtk: 0, hp, mana, skillCds: newCds });
             return;
           }
-        } else {
-          pushFx(fxQueue, { type: 'dodge', text: '💨 Уворот!', color: '#38bdf8' });
         }
-      }
-      monster.attackTimer = mTimer;
 
-      set({ hp, mana, playerAtk: atkTimer, monster, skillCds: newCds, fxQueue: [...fxQueue] });
-    } catch (err) {
-      console.error('Error in combat tick loop:', err);
-    }
-  },
+        // Monster attack timer
+        let mTimer = (monster.attackTimer ?? 0) + dt;
+        if (mTimer >= 1.8) {
+          mTimer = 0;
+          if (Math.random() * 100 >= d.dodge) {
+            const mDmg = mitigate(monster.dmg, d.armor);
+            hp -= mDmg;
+            pushFx(s.fxQueue, { type: 'playerHit', value: mDmg, text: `-${fmt(mDmg)}`, color: '#ef4444' });
+            if (hp <= 0) {
+              hp = d.maxHp;
+              pushLog(s.log, `☠️ Вы погибли от рук ${monster.def.name}. Отступление на этап 1!`, '#ef4444');
+              set({ stage: 1, stageKills: 0, dungeon: null, monster: spawnFor(s.zoneId || 'hills', 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, null), hp, mana: d.maxMana, playerAtk: 0 });
+              return;
+            }
+          } else {
+            pushFx(s.fxQueue, { type: 'dodge', text: '💨 Уворот!', color: '#38bdf8' });
+          }
+        }
+        monster.attackTimer = mTimer;
+
+        set({ hp, mana, playerAtk: atkTimer, monster, skillCds: newCds });
+      } catch (err) {
+        console.error('Combat tick error:', err);
+      }
+    },
 
     equipBestAll: () => {
       const s = get();
