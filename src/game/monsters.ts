@@ -51,7 +51,7 @@ export const FAMILIES: FamilyDef[] = [
 
   // New Monster Families T30-T50
   { id: 'lich',            name: 'Лич',               icons: ['🧙‍♂️', '💀', '🔮', '🕯️', '⚡', '📜', '👑', '🟣', '🌌', '🌑'], color: '#06b6d4', adjectives: ADJ, artSrc: '/monsters/lich.jpg' },
-  { id: 'gargoyle',        name: 'Гаргулья',          icons: ['🗿', '🦅', '🦇', '🪨', '⛓️', '👁️', '👑', '⚡', '🌟', '🌑'], color: '#64748b', adjectives: ADJ, g: 'f' },
+  { id: 'gargoyle',        name: 'Гаргулья',          icons: ['🗿', '🦅', '🦇', '🪨', '⛓️', '👁️', '👑', '⚡', '🌟', '🌑'], color: '#64748b', adjectives: ADJ, g: 'f', artSrc: '/monsters/gargoyle.jpg' },
   { id: 'minotaur',        name: 'Минотавр',          icons: ['🐂', '🪓', '🛡️', '🪵', '🌋', '🔥', '👑', '⚔️', '💥', '🌑'], color: '#b45309', adjectives: ADJ, artSrc: '/monsters/minotaur.jpg' },
   { id: 'hydra',           name: 'Гидра',             icons: ['🐍', '🐉', '🌊', '🧪', '💚', '🔥', '👑', '⚡', '💥', '🌑'], color: '#059669', adjectives: ADJ, g: 'f', artSrc: '/monsters/hydra.jpg' },
   { id: 'siren',           name: 'Сирена',            icons: ['🧜‍♀️', '🐚', '🌊', '🔮', '🎵', '💫', '👑', '✨', '🌐', '🌑'], color: '#0284c7', adjectives: ADJ, g: 'f' },
