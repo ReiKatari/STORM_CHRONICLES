@@ -306,11 +306,8 @@ export default function CombatCanvas() {
       // Pedestal Ellipse Shadow
       ctx.save();
       ctx.translate(px + lunge, py + 36);
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
       ctx.beginPath(); ctx.ellipse(0, 0, 65, 14, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = heroColor;
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.ellipse(0, 0, 60, 12, 0, 0, Math.PI * 2); ctx.stroke();
       ctx.restore();
 
       // Shield Aura Ring
@@ -332,30 +329,11 @@ export default function CombatCanvas() {
       ctx.translate(px + lunge, py + bob - 20);
       ctx.scale(breatheScaleX, breatheScaleY);
 
-      // Rotating Class Crest Halo Ring
-      ctx.save();
-      ctx.rotate(time.current * 0.6);
-      ctx.strokeStyle = `${heroColor}aa`;
-      ctx.lineWidth = 2.5;
-      ctx.setLineDash([10, 8]);
-      ctx.beginPath();
-      ctx.arc(0, 0, 68, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-
       const heroImg = heroClass?.artSrc ? getImageAsset(heroClass.artSrc) : null;
       const size = 160;
 
       if (heroImg) {
         ctx.save();
-        ctx.shadowColor = heroColor;
-        ctx.shadowBlur = 28;
-        ctx.strokeStyle = heroColor;
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(0, 0, size / 2 + 5, 0, Math.PI * 2);
-        ctx.stroke();
-
         ctx.beginPath();
         ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
         ctx.clip();
@@ -443,22 +421,7 @@ export default function CombatCanvas() {
           const petY = py + Math.sin(time.current * 4.5) * 10 - 25;
 
           ctx.save();
-          // Pulsing Outer Celestial Aura Ring
-          const pRing = petSize + 12 + Math.sin(time.current * 5) * 4;
-          const pGrad = ctx.createRadialGradient(petX, petY, 2, petX, petY, pRing);
-          pGrad.addColorStop(0, `${petDef.color}bb`);
-          pGrad.addColorStop(0.6, `${petDef.color}44`);
-          pGrad.addColorStop(1, 'transparent');
-          ctx.fillStyle = pGrad;
-          ctx.beginPath(); ctx.arc(petX, petY, pRing, 0, Math.PI * 2); ctx.fill();
-
-          ctx.strokeStyle = petDef.color;
-          ctx.lineWidth = evoTier === 3 ? 3.5 : 2.5;
-          ctx.shadowColor = petDef.color;
-          ctx.shadowBlur = 22;
-          ctx.beginPath(); ctx.arc(petX, petY, petSize, 0, Math.PI * 2); ctx.stroke();
-
-          // Pet Icon Sprite
+          // Pet Icon Sprite (Clean without colored stroke circles)
           ctx.font = `${petSize + 12}px 'Century Gothic', CenturyGothic, sans-serif`;
           ctx.textAlign = 'center';
           ctx.fillText(petDef.icon, petX, petY + petSize * 0.35);
@@ -502,11 +465,8 @@ export default function CombatCanvas() {
       // Monster Pedestal
       ctx.save();
       ctx.translate(mx + mHitShake, my + 38);
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
       ctx.beginPath(); ctx.ellipse(0, 0, isBoss ? 100 : 75, 18, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = mDef.color;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.ellipse(0, 0, isBoss ? 92 : 68, 15, 0, 0, Math.PI * 2); ctx.stroke();
       ctx.restore();
 
       // Monster Character
@@ -518,20 +478,12 @@ export default function CombatCanvas() {
         ctx.filter = 'brightness(2.8)';
       }
 
-      // Check image artwork (Enlarged Monster Sprite Sizes: Normal = 185px, Boss = 240px)
+      // Check image artwork (Clean image without colored stroke outlines)
       const mImg = mDef.artSrc ? getImageAsset(mDef.artSrc) : null;
       const mSize = isBoss ? 240 : 185;
 
       if (mImg) {
         ctx.save();
-        ctx.shadowColor = mDef.color;
-        ctx.shadowBlur = isBoss ? 32 : 20;
-        ctx.strokeStyle = mDef.color;
-        ctx.lineWidth = isBoss ? 4.5 : 3;
-        ctx.beginPath();
-        ctx.arc(0, -mSize / 4, mSize / 2 + 4, 0, Math.PI * 2);
-        ctx.stroke();
-
         ctx.beginPath();
         ctx.arc(0, -mSize / 4, mSize / 2, 0, Math.PI * 2);
         ctx.clip();

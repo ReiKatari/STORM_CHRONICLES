@@ -435,8 +435,14 @@ export const useGame = create<GameState>((set, get) => {
 
     tick: (dt: number) => {
     try {
-      const s = get();
-      if (!s.characterName || !s.classId) return;
+      let s = get();
+      if (!s.classId || !s.characterName) {
+        useGame.setState({
+          classId: s.classId || 'paladin',
+          characterName: s.characterName || 'Герой'
+        });
+        s = get();
+      }
 
       // Ensure active valid monster
       if (!s.monster || !s.monster.hp || isNaN(s.monster.hp) || s.monster.hp <= 0) {
