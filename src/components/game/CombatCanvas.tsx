@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from '@/game/store';
-import { zoneById, FAMILIES } from '@/game/monsters';
+import { zoneById } from '@/game/monsters';
 import { getClassById } from '@/game/classes';
 import type { FxEvent } from '@/game/types';
 
@@ -9,6 +9,12 @@ interface Particle {
   life: number; maxLife: number; size: number;
   color: string; gravity: number; kind: 'spark' | 'ember' | 'snow' | 'text' | 'emoji' | 'ring' | 'bolt' | 'slash';
   text?: string; angle?: number;
+}
+
+interface HeroParticle {
+  x: number; y: number; vx: number; vy: number;
+  life: number; maxLife: number; size: number;
+  color: string; icon?: string;
 }
 
 interface AmbientP { x: number; y: number; vy: number; vx: number; size: number; alpha: number; phase: number }
@@ -27,12 +33,12 @@ function getImageAsset(src: string): HTMLImageElement | null {
 export default function CombatCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particles = useRef<Particle[]>([]);
+  const heroParticles = useRef<HeroParticle[]>([]);
   const ambient = useRef<AmbientP[]>([]);
   const tiles = useRef<Tile[]>([]);
   const shake = useRef(0);
   const playerLunge = useRef(0);
   const monsterHit = useRef(0);
-  const monsterDeath = useRef(0);
   const lastZone = useRef('');
   const time = useRef(0);
 
@@ -251,7 +257,7 @@ export default function CombatCanvas() {
       });
       ctx.globalAlpha = 1.0;
 
-      // Ambient particles (embers/snow/dust)
+      // Ambient particles
       ambient.current.forEach(p => {
         p.x += (p.vx + Math.sin(time.current + p.phase) * 10) * dt;
         p.y += p.vy * dt;
@@ -267,22 +273,69 @@ export default function CombatCanvas() {
       // ===== DRAW HERO PLAYER =====
       const px = W * 0.25;
       const py = H * 0.68;
-      const bob = Math.sin(time.current * 3) * 3;
-      const lunge = playerLunge.current > 0 ? Math.sin((playerLunge.current / 0.22) * Math.PI) * 28 : 0;
+      const bob = Math.sin(time.current * 3.5) * 4;
+      const breatheScaleX = 1 + Math.sin(time.current * 4) * 0.03;
+      const breatheScaleY = 1 - Math.sin(time.current * 4) * 0.03;
+
+      const lunge = playerLunge.current > 0 ? Math.sin((playerLunge.current / 0.22) * Math.PI) * 32 : 0;
       const weaponItem = s.equipment['weapon'];
       const weaponIcon = weaponItem?.icon ?? '⚔️';
-
-      // Hero Pedestal Ring
       const heroColor = heroClass?.color ?? '#facc15';
+
+      // Spawn Class Aura Particles
+      if (Math.random() < 0.35) {
+        heroParticles.current.push({
+          x: px + (Math.random() - 0.5) * 40,
+          y: py - 10 + (Math.random() - 0.5) * 20,
+          vx: (Math.random() - 0.5) * 15,
+          vy: -25 - Math.random() * 20,
+          life: 0,
+          maxLife: 0.8 + Math.random() * 0.6,
+          size: 2 + Math.random() * 3,
+          color: heroColor,
+          icon: heroClass?.icon,
+        });
+      }
+
+      // Draw Hero Class Aura Particles
+      for (let i = heroParticles.current.length - 1; i >= 0; i--) {
+        const hp = heroParticles.current[i];
+        hp.life += dt;
+        if (hp.life >= hp.maxLife) { heroParticles.current.splice(i, 1); continue; }
+        hp.x += hp.vx * dt;
+        hp.y += hp.vy * dt;
+        const progress = hp.life / hp.maxLife;
+
+        ctx.save();
+        ctx.globalAlpha = (1 - progress) * 0.7;
+        ctx.fillStyle = hp.color;
+        ctx.shadowColor = hp.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(hp.x, hp.y, hp.size * (1 - progress * 0.4), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Hero Pedestal Aura Rings
       ctx.save();
       ctx.translate(px + lunge, py + 24);
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.beginPath(); ctx.ellipse(0, 0, 44, 12, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0, 0, 46, 13, 0, 0, Math.PI * 2); ctx.fill();
+
+      // Pulsing outer aura ring
+      const ringSize = 42 + Math.sin(time.current * 3) * 4;
+      const ringG = ctx.createRadialGradient(0, 0, 5, 0, 0, ringSize);
+      ringG.addColorStop(0, `${heroColor}66`);
+      ringG.addColorStop(1, 'transparent');
+      ctx.fillStyle = ringG;
+      ctx.beginPath(); ctx.ellipse(0, 0, ringSize, 12, 0, 0, Math.PI * 2); ctx.fill();
+
       ctx.strokeStyle = heroColor;
       ctx.lineWidth = 2;
       ctx.shadowColor = heroColor;
-      ctx.shadowBlur = 10;
-      ctx.beginPath(); ctx.ellipse(0, 0, 40 + Math.sin(time.current * 2) * 2, 10, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.ellipse(0, 0, ringSize, 10, 0, 0, Math.PI * 2); ctx.stroke();
       ctx.shadowBlur = 0;
       ctx.restore();
 
@@ -293,9 +346,9 @@ export default function CombatCanvas() {
         ctx.strokeStyle = 'rgba(253,230,138,0.9)';
         ctx.lineWidth = 3;
         ctx.shadowColor = '#fde68a';
-        ctx.shadowBlur = 14;
+        ctx.shadowBlur = 16;
         ctx.beginPath();
-        ctx.arc(0, -20, 50 + Math.sin(time.current * 4) * 4, 0, Math.PI * 2);
+        ctx.arc(0, -20, 52 + Math.sin(time.current * 4) * 5, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
       }
@@ -303,19 +356,31 @@ export default function CombatCanvas() {
       // Hero Character Portrait Avatar Sprite
       ctx.save();
       ctx.translate(px + lunge, py + bob - 20);
+      ctx.scale(breatheScaleX, breatheScaleY);
+
+      // Rotating Class Crest Halo Ring
+      ctx.save();
+      ctx.rotate(time.current * 0.6);
+      ctx.strokeStyle = `${heroColor}88`;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.arc(0, 0, 42, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
 
       const heroImg = heroClass?.artSrc ? getImageAsset(heroClass.artSrc) : null;
-      const size = 68;
+      const size = 70;
 
       if (heroImg) {
-        // Outer glowing aura
+        // Multi-layer glowing aura
         ctx.save();
         ctx.shadowColor = heroColor;
-        ctx.shadowBlur = 16;
+        ctx.shadowBlur = 20;
         ctx.strokeStyle = heroColor;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(0, 0, size / 2 + 3, 0, Math.PI * 2);
+        ctx.arc(0, 0, size / 2 + 4, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
 
@@ -328,16 +393,23 @@ export default function CombatCanvas() {
         ctx.restore();
       } else {
         // Emoji fallback
-        ctx.font = "58px 'Century Gothic', CenturyGothic, sans-serif";
+        ctx.font = "60px 'Century Gothic', CenturyGothic, sans-serif";
         ctx.textAlign = 'center';
         ctx.fillText(heroClass?.icon ?? '🧝', 0, 15);
       }
 
-      // Floating Weapon
-      const wBob = Math.cos(time.current * 4) * 3;
-      ctx.font = "24px 'Century Gothic', CenturyGothic, sans-serif";
+      // Floating Weapon with Attack Swing Arc
+      const wBob = Math.cos(time.current * 4) * 4;
+      const wRot = playerLunge.current > 0 ? Math.sin((playerLunge.current / 0.22) * Math.PI) * -0.8 : 0;
+      ctx.save();
+      ctx.translate(42, -10 + wBob);
+      ctx.rotate(wRot);
+      ctx.font = "26px 'Century Gothic', CenturyGothic, sans-serif";
       ctx.textAlign = 'center';
-      ctx.fillText(weaponIcon, 40, -10 + wBob);
+      ctx.shadowColor = heroColor;
+      ctx.shadowBlur = 8;
+      ctx.fillText(weaponIcon, 0, 0);
+      ctx.restore();
 
       ctx.restore();
 
@@ -346,12 +418,12 @@ export default function CombatCanvas() {
       ctx.fillStyle = '#fef08a';
       ctx.font = "bold 11px 'Century Gothic', CenturyGothic, sans-serif";
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
-      ctx.shadowBlur = 4;
-      ctx.fillText(`${s.characterName || 'Герой'} · Ур. ${s.level}`, px, py - 68);
+      ctx.shadowColor = 'rgba(0,0,0,0.9)';
+      ctx.shadowBlur = 5;
+      ctx.fillText(`${s.characterName || 'Герой'} · Ур. ${s.level}`, px, py - 70);
       ctx.fillStyle = heroColor;
-      ctx.font = "bold 9px 'Century Gothic', CenturyGothic, sans-serif";
-      ctx.fillText(heroClass?.name ?? 'Искатель', px, py - 56);
+      ctx.font = "bold 10px 'Century Gothic', CenturyGothic, sans-serif";
+      ctx.fillText(`${heroClass?.icon ?? ''} ${heroClass?.name ?? 'Искатель'}`, px, py - 56);
       ctx.restore();
 
       // Player HP/Mana Bar
