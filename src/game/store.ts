@@ -142,9 +142,11 @@ function spawnFor(zoneId: string, stage: number, mastery: number, dungeon: Dunge
 const SAVE_KEY = 'rogalik_save_v4';
 let isResettingGame = false;
 
+let fxCounter = 0;
 function pushFx(fx: FxEvent[], e: Omit<FxEvent, 'id'>) {
   if (!fx || !Array.isArray(fx)) return;
-  fx.push({ ...e, id: fxId++ });
+  const uniqueId = Date.now() * 1000 + (fxCounter++ % 1000);
+  fx.push({ ...e, id: uniqueId });
   if (fx.length > 60) fx.splice(0, fx.length - 60);
 }
 function pushLog(log: LogEntry[], text: string, color = '#e2e8f0') {

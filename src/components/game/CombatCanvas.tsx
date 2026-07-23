@@ -46,7 +46,7 @@ export default function CombatCanvas() {
   const lastZone = useRef<string>('');
   const tiles = useRef<TileDecor[]>([]);
   const ambient = useRef<{ x: number; y: number; vx: number; vy: number; size: number; alpha: number; phase: number }[]>([]);
-  const lastProcessedFxId = useRef<number>(0);
+  const processedFxIds = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     // Preload background assets
@@ -178,15 +178,18 @@ export default function CombatCanvas() {
       const zone = zoneById(s.zoneId);
       const heroClass = s.classId ? getClassById(s.classId) : null;
 
-      // Handle Fx Queue without state update (tracking lastProcessedFxId)
+      // Handle Fx Queue (using Set tracking to guarantee no skipped animation events)
       if (s.fxQueue && s.fxQueue.length > 0) {
         const rect = canvas.getBoundingClientRect();
         s.fxQueue.forEach(fx => {
-          if (fx.id > lastProcessedFxId.current) {
+          if (!processedFxIds.current.has(fx.id)) {
+            processedFxIds.current.add(fx.id);
             spawnFx(fx, rect.width, rect.height);
-            lastProcessedFxId.current = fx.id;
           }
         });
+        if (processedFxIds.current.size > 200) {
+          processedFxIds.current.clear();
+        }
       }
 
       // Re-init ambient if zone changed
