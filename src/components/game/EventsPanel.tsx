@@ -224,16 +224,10 @@ export default function EventsPanel() {
               ЭКСПЕДИЦИИ И СОБЫТИЯ БЕЗДНЫ
             </h3>
             <span className="text-[10px] text-purple-300 font-mono font-bold">
-              ⏱️ Авто-событие через: <b className="text-amber-300">{formatTimer(eventTimer)}</b>
+              ⏱️ Следующее событие Бездны через: <b className="text-amber-300 font-extrabold">{formatTimer(eventTimer)}</b>
             </span>
           </div>
         </div>
-        <button
-          onClick={generateRandomEvent}
-          className="text-[10px] font-black px-3 py-1 rounded-xl bg-purple-950 hover:bg-purple-900 border border-purple-500/50 text-purple-200 transition-all active:scale-95 shadow"
-        >
-          ⚡ Исследовать
-        </button>
       </div>
 
       {currentEvent ? (
@@ -269,7 +263,7 @@ export default function EventsPanel() {
         </div>
       ) : (
         <div className="p-3 text-center text-[11px] text-slate-400 italic bg-slate-950/60 rounded-2xl border border-dashed border-slate-800">
-          🔍 Астральные сканеры ищут аномалии... Следующее авто-событие через <b className="text-amber-300 font-mono not-italic">{formatTimer(eventTimer)}</b> или нажмите «Исследовать».
+          🔮 Автоматический сканер аномалий включен. Следующее событие появится через <b className="text-amber-300 font-mono not-italic">{formatTimer(eventTimer)}</b>.
         </div>
       )}
     </div>

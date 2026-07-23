@@ -49,6 +49,7 @@ const PAPERDOLL_LAYOUT: {
 export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind: SlotKind) => void }) {
   const equipment = useGame(s => s.equipment);
   const unequip = useGame(s => s.unequip);
+  const equipBestAll = useGame(s => (s as unknown as { equipBestAll: () => void }).equipBestAll);
   const setSlotFilter = useGame(s => s.setSlotFilter);
   const selectedSlotFilter = useGame(s => s.selectedSlotFilter);
   const [hoverSlot, setHoverSlot] = useState<{ id: SlotId; rect: DOMRect } | null>(null);
@@ -87,24 +88,24 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
             e.preventDefault();
             if (item) unequip(slot.id);
           }}
-          className={`w-full flex items-center gap-1.5 rounded-lg border px-1.5 py-1 text-left transition-all hover:scale-[1.03] bg-slate-900/90 ${
+          className={`w-full flex items-center gap-1.5 rounded-xl border px-2 py-1.5 text-left transition-all hover:scale-[1.03] bg-slate-950/90 ${
             isSelected ? 'ring-2 ring-amber-400 border-amber-400 shadow-lg' : ''
           }`}
           style={{
             borderColor: r ? r.color : isSelected ? '#facc15' : '#334155',
-            boxShadow: r ? `0 0 8px ${r.glow}` : undefined,
+            boxShadow: r ? `0 0 10px ${r.glow}` : undefined,
           }}
           title={item ? `${item.name}\n(ЛКМ — фильтр инвентаря, ПКМ — снять)` : `${slot.name} (ЛКМ — фильтр инвентаря)`}
         >
           <div
-            className="w-7 h-7 rounded border flex items-center justify-center text-sm shrink-0 bg-slate-950"
+            className="w-8 h-8 rounded-lg border flex items-center justify-center text-base shrink-0 bg-slate-900 shadow"
             style={{ borderColor: r ? r.color : '#475569' }}
           >
             {item ? item.icon : slot.icon}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[8px] text-slate-400 leading-none truncate">{slot.name}</div>
-            <div className="text-[10px] font-bold text-white truncate leading-tight mt-0.5">
+            <div className="text-[9px] text-slate-400 font-bold leading-none truncate">{slot.name}</div>
+            <div className="text-[11px] font-black text-white truncate leading-tight mt-0.5" style={{ color: r ? r.color : '#ffffff' }}>
               {item ? item.name : '—'}
             </div>
           </div>
@@ -114,45 +115,54 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
   };
 
   return (
-    <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-3.5 shadow-2xl backdrop-blur-md font-sans">
+    <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-4 shadow-2xl backdrop-blur-md font-sans space-y-3">
       {/* Panel Header */}
-      <div className="flex items-center justify-between mb-2.5 border-b border-slate-800 pb-2">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
         <div className="flex items-center gap-2">
-          <span className="text-lg">🛡️</span>
-          <h3 className="font-black text-sm text-slate-100 uppercase tracking-wider">Кукла Снаряжения</h3>
+          <span className="text-xl p-1 bg-amber-500/10 rounded-lg border border-amber-500/30">🛡️</span>
+          <div>
+            <h3 className="font-black text-sm text-slate-100 uppercase tracking-wider">Кукла Снаряжения</h3>
+            <span className="text-[10px] text-slate-400 font-mono">
+              Общая мощь: <b className="text-amber-300 font-black text-xs">⚡{fmt(totalScore)}</b>
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={equipBestAll}
+            className="text-[10px] px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black border border-emerald-400/50 shadow-lg transition-all active:scale-95 flex items-center gap-1"
+            title="Автоматически надевает предметы с наибольшей мощью из инвентаря в каждый слот"
+          >
+            <span>⚡ Надеть всё лучшее</span>
+          </button>
           <button
             onClick={handleUnequipAll}
-            className="text-[9px] px-2 py-1 rounded-lg bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-200 border border-slate-700 font-bold transition-all active:scale-95"
+            className="text-[10px] px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-200 border border-slate-700 font-bold transition-all active:scale-95"
             title="Снять все надетые предметы в инвентарь"
           >
             Снять всё
           </button>
-          <span className="text-[10px] text-slate-400 font-mono">
-            Мощь: <b className="text-amber-300 font-black text-xs font-mono">⚡{fmt(totalScore)}</b>
-          </span>
         </div>
       </div>
 
       {/* Stats Summary Bar */}
-      <div className="grid grid-cols-3 gap-1.5 mb-2.5 bg-slate-950/80 p-2 rounded-xl border border-slate-800 text-[10px] text-center font-bold font-mono">
-        <div className="text-red-400">⚔️ +{fmt(totalDmg)} <span className="text-[8px] text-slate-400 font-sans block">Урон</span></div>
-        <div className="text-sky-400">🛡️ +{fmt(totalArmor)} <span className="text-[8px] text-slate-400 font-sans block">Броня</span></div>
-        <div className="text-emerald-400">❤️ +{fmt(totalHp)} <span className="text-[8px] text-slate-400 font-sans block">HP</span></div>
+      <div className="grid grid-cols-3 gap-2 bg-slate-950/90 p-2.5 rounded-2xl border border-slate-800 text-xs text-center font-black font-mono">
+        <div className="text-red-400">⚔️ +{fmt(totalDmg)} <span className="text-[9px] text-slate-400 font-sans block font-semibold">Урон</span></div>
+        <div className="text-sky-400">🛡️ +{fmt(totalArmor)} <span className="text-[9px] text-slate-400 font-sans block font-semibold">Броня</span></div>
+        <div className="text-emerald-400">❤️ +{fmt(totalHp)} <span className="text-[9px] text-slate-400 font-sans block font-semibold">HP</span></div>
       </div>
 
       {/* Paperdoll Slot Grid */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <div className="flex justify-center">{renderSlotBtn(PAPERDOLL_LAYOUT.top[0])}</div>
-        <div className="flex gap-1.5">{PAPERDOLL_LAYOUT.bodyUpper.map(renderSlotBtn)}</div>
-        <div className="flex gap-1.5">{PAPERDOLL_LAYOUT.bodyMid.map(renderSlotBtn)}</div>
-        <div className="flex gap-1.5">{PAPERDOLL_LAYOUT.bodyLower.map(renderSlotBtn)}</div>
+        <div className="flex gap-2">{PAPERDOLL_LAYOUT.bodyUpper.map(renderSlotBtn)}</div>
+        <div className="flex gap-2">{PAPERDOLL_LAYOUT.bodyMid.map(renderSlotBtn)}</div>
+        <div className="flex gap-2">{PAPERDOLL_LAYOUT.bodyLower.map(renderSlotBtn)}</div>
 
         {/* Jewelry section */}
         <div className="pt-2 border-t border-slate-800/80">
-          <div className="text-[9px] text-slate-400 font-bold mb-1">Бижутерия & Аксессуары:</div>
-          <div className="grid grid-cols-5 gap-1">
+          <div className="text-[10px] text-slate-400 font-bold mb-1.5 uppercase tracking-wider">Бижутерия & Аксессуары:</div>
+          <div className="grid grid-cols-5 gap-1.5">
             {PAPERDOLL_LAYOUT.jewelry.map(slot => {
               const item = equipment[slot.id];
               const r = item ? rarityById(item.rarity) : null;
@@ -173,12 +183,12 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
                       e.preventDefault();
                       if (item) unequip(slot.id);
                     }}
-                    className={`w-full aspect-square rounded-xl border flex items-center justify-center text-lg transition-all hover:scale-105 bg-slate-950 ${
+                    className={`w-full aspect-square rounded-2xl border flex items-center justify-center text-xl transition-all hover:scale-105 bg-slate-950 ${
                       isSelected ? 'ring-2 ring-amber-400 border-amber-400 shadow-md' : ''
                     }`}
                     style={{
                       borderColor: r ? r.color : isSelected ? '#facc15' : '#334155',
-                      boxShadow: r ? `0 0 8px ${r.glow}` : undefined,
+                      boxShadow: r ? `0 0 10px ${r.glow}` : undefined,
                     }}
                     title={item ? `${item.name}\n(ЛКМ — фильтр, ПКМ — снять)` : slot.name}
                   >
