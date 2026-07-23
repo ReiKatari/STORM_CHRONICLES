@@ -55,8 +55,8 @@ export const FAMILIES: FamilyDef[] = [
   { id: 'minotaur',        name: 'Минотавр',          icons: ['🐂', '🪓', '🛡️', '🪵', '🌋', '🔥', '👑', '⚔️', '💥', '🌑'], color: '#b45309', adjectives: ADJ, artSrc: '/monsters/minotaur.jpg' },
   { id: 'hydra',           name: 'Гидра',             icons: ['🐍', '🐉', '🌊', '🧪', '💚', '🔥', '👑', '⚡', '💥', '🌑'], color: '#059669', adjectives: ADJ, g: 'f', artSrc: '/monsters/hydra.jpg' },
   { id: 'siren',           name: 'Сирена',            icons: ['🧜‍♀️', '🐚', '🌊', '🔮', '🎵', '💫', '👑', '✨', '🌐', '🌑'], color: '#0284c7', adjectives: ADJ, g: 'f' },
-  { id: 'treant',          name: 'Древень',           icons: ['🪵', '🌳', '🌲', '🌿', '🍄', '🍃', '👑', '🌱', '✨', '🌑'], color: '#15803d', adjectives: ADJ },
-  { id: 'wyvern',          name: 'Виверна',           icons: ['🦎', '🦅', '💨', '⚡', '🐉', '🔥', '👑', '🌟', '🌌', '🌑'], color: '#ea580c', adjectives: ADJ, g: 'f' },
+  { id: 'treant',          name: 'Древень',           icons: ['🪵', '🌳', '🌲', '🌿', '🍄', '🍃', '👑', '🌱', '✨', '🌑'], color: '#15803d', adjectives: ADJ, artSrc: '/monsters/treant.jpg' },
+  { id: 'wyvern',          name: 'Виверна',           icons: ['🦎', '🦅', '💨', '⚡', '🐉', '🔥', '👑', '🌟', '🌌', '🌑'], color: '#ea580c', adjectives: ADJ, g: 'f', artSrc: '/monsters/wyvern.jpg' },
   { id: 'necromancer',     name: 'Некромант',         icons: ['💀', '🧙‍♂️', '📜', '🕯️', '🩸', '🔮', '👑', '🟣', '🌌', '🌑'], color: '#7e22ce', adjectives: ADJ },
   { id: 'shadow',          name: 'Тень',              icons: ['👤', '🖤', '🕶️', '🌑', '👁️', '🔮', '👑', '⚡', '🌌', '🪐'], color: '#334155', adjectives: ADJ, g: 'f' },
   { id: 'phoenix',         name: 'Феникс',            icons: ['🐦', '🔥', '☀️', '🎇', '🪶', '🌟', '👑', '✨', '⚡', '💥'], color: '#f59e0b', adjectives: ADJ },
@@ -68,8 +68,8 @@ export const FAMILIES: FamilyDef[] = [
   { id: 'sphinx',          name: 'Сфинкс',            icons: ['🦁', '🦅', '👑', '📜', '🔮', '☀️', '👑', '✨', '🌌', '🌑'], color: '#eab308', adjectives: ADJ },
   { id: 'djinn',           name: 'Джинн',             icons: ['🧞', '💨', '🌪️', '🏺', '⚡', '🔮', '👑', '✨', '🌌', '🌑'], color: '#38bdf8', adjectives: ADJ },
   { id: 'gorgon',          name: 'Горгона',           icons: ['🐍', '👁️', '🪨', '🏹', '🧪', '💀', '👑', '⚡', '💥', '🌑'], color: '#10b981', adjectives: ADJ, g: 'f' },
-  { id: 'chimera',         name: 'Химера',            icons: ['🦁', '🐐', '🐍', '🔥', '⚡', '💥', '👑', '🌟', '🌌', '🌑'], color: '#ef4444', adjectives: ADJ, g: 'f' },
-  { id: 'archdemon',       name: 'Архидемон',         icons: ['😈', '🌋', '🔥', '⚔️', '💀', '🩸', '👑', '🪐', '🌌', '🌑'], color: '#991b1b', adjectives: ADJ },
+  { id: 'chimera',         name: 'Химера',            icons: ['🦁', '🐐', '🐍', '🔥', '⚡', '💥', '👑', '🌟', '🌌', '🌑'], color: '#ef4444', adjectives: ADJ, g: 'f', artSrc: '/monsters/chimera.jpg' },
+  { id: 'archdemon',       name: 'Архидемон',         icons: ['😈', '🌋', '🔥', '⚔️', '💀', '🩸', '👑', '🪐', '🌌', '🌑'], color: '#991b1b', adjectives: ADJ, artSrc: '/monsters/archdemon.jpg' },
 ];
 
 // generate monster def for a family + tier + level scaling
