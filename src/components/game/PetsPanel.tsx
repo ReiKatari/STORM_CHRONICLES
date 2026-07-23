@@ -223,59 +223,76 @@ export default function PetsPanel() {
           </div>
         </div>
 
-        {/* Compact Side-by-side Abilities & Talents Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {/* Active Skills Card */}
-          <div className="p-2 rounded-xl border border-slate-800 bg-slate-900/70 space-y-1.5">
-            <span className="text-[10px] font-black text-slate-300 uppercase tracking-wider flex items-center gap-1">
-              <span>✨</span> Навыки Спутника
-            </span>
+        {/* Full-width Active Skills Section */}
+        <div className="p-2.5 rounded-xl border border-slate-800 bg-slate-900/70 space-y-2 w-full">
+          <span className="text-[11px] font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+            <span>✨</span> Навыки Спутника ({selectedPet.skills.length} активных умения)
+          </span>
+          <div className="grid grid-cols-1 gap-1.5">
             {selectedPet.skills.map(sk => (
-              <div key={sk.id} className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5">
-                  <span>{sk.icon}</span>
-                  <span className="font-bold text-slate-200 text-[10.5px]">{sk.name}</span>
+              <div key={sk.id} className="p-2 rounded-xl border border-slate-800 bg-slate-950 flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xl p-1 bg-slate-900 rounded-lg border border-slate-800 shrink-0">{sk.icon}</span>
+                  <div className="min-w-0">
+                    <div className="font-extrabold text-slate-100 text-[11px] leading-tight">{sk.name}</div>
+                    <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{sk.desc}</div>
+                  </div>
                 </div>
-                <span className="text-[9px] font-mono text-purple-300 bg-purple-950 px-1.5 py-0.2 rounded border border-purple-800">
-                  {sk.cooldown}s CD
+                <span className="text-[10px] font-mono font-black text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded-lg border border-purple-800/80 shrink-0">
+                  ⏱️ {sk.cooldown}s CD
                 </span>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Pet Talents Card */}
-          <div className="p-2 rounded-xl border border-slate-800 bg-slate-900/70 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-300 uppercase tracking-wider flex items-center gap-1">
-                <span>🌟</span> Таланты ({availablePetPoints} очк.)
-              </span>
-            </div>
+        {/* Full-width Pet Talents Section (Below Skills) */}
+        <div className="p-2.5 rounded-xl border border-slate-800 bg-slate-900/70 space-y-2 w-full">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <span className="text-[11px] font-black text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span>🌟</span> Таланты Спутника (Доступно: <b className="text-amber-300 font-mono">{availablePetPoints}</b> очков)
+            </span>
+          </div>
+          <div className="space-y-2 w-full">
             {selectedPet.branches.map(b => (
-              <div key={b.id} className="space-y-1">
-                {b.talents.map(t => {
-                  const rank = petTalents[t.id] ?? 0;
-                  const canLearn = availablePetPoints > 0 && rank < t.maxRank;
-                  return (
-                    <div key={t.id} className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 flex items-center justify-between gap-1 text-[10px]">
-                      <div className="flex items-center gap-1 truncate">
-                        <span>{t.icon}</span>
-                        <span className="font-bold text-slate-200 truncate">{t.name}</span>
-                        <span className="text-emerald-400 font-mono">({t.per(rank || 1)})</span>
+              <div key={b.id} className="space-y-1.5 bg-slate-950/90 p-2 rounded-xl border border-slate-800/80 w-full">
+                <div className="flex items-center gap-1.5 text-[10.5px] font-extrabold" style={{ color: b.color }}>
+                  <span>{b.icon}</span>
+                  <span>{b.name}</span>
+                  <span className="text-[9.5px] text-slate-400 font-normal">({b.desc})</span>
+                </div>
+                <div className="space-y-1">
+                  {b.talents.map(t => {
+                    const rank = petTalents[t.id] ?? 0;
+                    const canLearn = availablePetPoints > 0 && rank < t.maxRank;
+                    return (
+                      <div key={t.id} className="p-2 rounded-xl border border-slate-800 bg-slate-900 flex items-center justify-between gap-2 text-xs w-full">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-base p-1 bg-slate-950 rounded-lg border border-slate-800 shrink-0">{t.icon}</span>
+                          <div className="min-w-0">
+                            <div className="font-extrabold text-slate-100 text-[10.5px] leading-tight">{t.name}</div>
+                            <div className="text-[10px] text-emerald-400 font-mono font-bold mt-0.5">
+                              {t.per(rank || 1)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="font-mono text-purple-300 font-black text-xs px-2 py-0.5 bg-slate-950 rounded-lg border border-slate-800">
+                            {rank}/{t.maxRank}
+                          </span>
+                          {canLearn && (
+                            <button
+                              onClick={() => learnPetTalent(t.id, t.maxRank)}
+                              className="px-2.5 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-lg text-white font-black text-[10px] shadow active:scale-95 transition-all"
+                            >
+                              +1
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span className="font-mono text-purple-300 font-bold">{rank}/{t.maxRank}</span>
-                        {canLearn && (
-                          <button
-                            onClick={() => learnPetTalent(t.id, t.maxRank)}
-                            className="px-1.5 py-0.2 bg-purple-600 hover:bg-purple-500 rounded text-white font-black text-[9px]"
-                          >
-                            +1
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             ))}
           </div>
