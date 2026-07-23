@@ -448,7 +448,9 @@ export const useGame = create<GameState>((set, get) => {
 
       // autoCast skills execution
       const cls = getClassById(s.classId);
-      cls.skills.forEach(sk => {
+      let monsterKilled = false;
+
+      for (const sk of cls.skills) {
         if (s.autoCast[sk.id] && (s.skillRanks[sk.id] ?? 0) > 0 && (newCds[sk.id] ?? 0) === 0) {
           if (mana >= sk.manaCost) {
             mana -= sk.manaCost;
@@ -460,22 +462,30 @@ export const useGame = create<GameState>((set, get) => {
               hp = Math.min(d.maxHp, hp + Math.round(d.maxHp * 0.35));
               pushFx(s.fxQueue, { type: 'heal', text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
             } else {
-              let mHp = s.monster.hp - skillDmg;
+              let currentM = get().monster;
+              let mHp = currentM.hp - skillDmg;
               pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
               if (mHp <= 0) {
-                onKill(s.monster);
-                return;
+                onKill(currentM);
+                monsterKilled = true;
+                break;
               } else {
-                set({ monster: { ...s.monster, hp: mHp } });
+                set({ monster: { ...currentM, hp: mHp } });
               }
             }
           }
         }
-      });
+      }
+
+      if (monsterKilled) {
+        set({ hp, mana, skillCds: newCds });
+        return;
+      }
 
       // player auto-attack
+      let currentM = get().monster;
       let atkTimer = s.playerAtk + dt * d.attackSpeed;
-      let monster = { ...s.monster };
+      let monster = { ...currentM };
 
       if (atkTimer >= 1.0) {
         atkTimer -= 1.0;
@@ -515,6 +525,48 @@ export const useGame = create<GameState>((set, get) => {
       monster.attackTimer = mTimer;
 
       set({ hp, mana, playerAtk: atkTimer, monster, skillCds: newCds });
+    },
+
+    equipBestAll: () => {
+      const s = get();
+      const slotList: { slotId: SlotId; kind: string }[] = [
+        { slotId: 'helmet', kind: 'helmet' },
+        { slotId: 'shoulders', kind: 'shoulders' },
+        { slotId: 'armor', kind: 'armor' },
+        { slotId: 'cloak', kind: 'cloak' },
+        { slotId: 'weapon', kind: 'weapon' },
+        { slotId: 'pants', kind: 'pants' },
+        { slotId: 'banner', kind: 'banner' },
+        { slotId: 'gloves', kind: 'gloves' },
+        { slotId: 'kneepads', kind: 'kneepads' },
+        { slotId: 'boots', kind: 'boots' },
+        { slotId: 'amulet', kind: 'amulet' },
+        { slotId: 'ring1', kind: 'ring' },
+        { slotId: 'ring2', kind: 'ring' },
+        { slotId: 'earring1', kind: 'earring' },
+        { slotId: 'earring2', kind: 'earring' },
+      ];
+
+      let equipment = { ...s.equipment };
+      let inventory = [...s.inventory];
+
+      slotList.forEach(({ slotId, kind }) => {
+        const candidates = inventory.filter(i => i.slot === kind).sort((a, b) => b.score - a.score);
+        if (candidates.length === 0) return;
+
+        const best = candidates[0];
+        const equipped = equipment[slotId];
+
+        if (!equipped || best.score > equipped.score) {
+          inventory = inventory.filter(i => i.id !== best.id);
+          if (equipped) inventory.push(equipped);
+          equipment[slotId] = best;
+        }
+      });
+
+      const derived = computeDerived(s.level, s.stats, equipment, s.talents);
+      sound.playEquip();
+      set({ equipment, inventory, derived });
     },
 
     allocateStat: (st: StatId) => {
