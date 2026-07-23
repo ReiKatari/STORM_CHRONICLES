@@ -508,7 +508,7 @@ export const useGame = create<GameState>((set, get) => {
       }
 
       if (monsterKilled) {
-        set({ hp, mana, skillCds: newCds });
+        set({ hp, mana, skillCds: newCds, fxQueue: [...fxQueue] });
         return;
       }
 
@@ -516,7 +516,7 @@ export const useGame = create<GameState>((set, get) => {
       let currentM = get().monster;
       if (!currentM) return;
 
-      const speed = (!d || isNaN(d.attackSpeed) || d.attackSpeed <= 0) ? 1.0 : d.attackSpeed;
+      const speed = (!d || isNaN(d.attackSpeed) || d.attackSpeed <= 0) ? 1.2 : d.attackSpeed;
       const prevAtk = (isNaN(s.playerAtk) || s.playerAtk === undefined) ? 0 : s.playerAtk;
       let atkTimer = prevAtk + dt * speed;
       let monster = { ...currentM };
@@ -533,7 +533,7 @@ export const useGame = create<GameState>((set, get) => {
 
         if (monster.hp <= 0) {
           onKill(monster);
-          set({ playerAtk: 0, hp, mana, skillCds: newCds });
+          set({ playerAtk: 0, hp, mana, skillCds: newCds, fxQueue: [...fxQueue] });
           return;
         }
       }
@@ -551,7 +551,7 @@ export const useGame = create<GameState>((set, get) => {
             hp = d.maxHp;
             const log = s.log || [];
             pushLog(log, `☠️ Вы погибли от рук ${monster.def.name}. Отступление на этап 1!`, '#ef4444');
-            set({ stage: 1, stageKills: 0, dungeon: null, monster: spawnFor(s.zoneId || 'hills', 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, null), hp, mana: d.maxMana, playerAtk: 0 });
+            set({ stage: 1, stageKills: 0, dungeon: null, monster: spawnFor(s.zoneId || 'hills', 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, null), hp, mana: d.maxMana, playerAtk: 0, fxQueue: [...fxQueue] });
             return;
           }
         } else {
@@ -560,7 +560,7 @@ export const useGame = create<GameState>((set, get) => {
       }
       monster.attackTimer = mTimer;
 
-      set({ hp, mana, playerAtk: atkTimer, monster, skillCds: newCds });
+      set({ hp, mana, playerAtk: atkTimer, monster, skillCds: newCds, fxQueue: [...fxQueue] });
     } catch (err) {
       console.error('Error in combat tick loop:', err);
     }
