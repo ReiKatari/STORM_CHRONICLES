@@ -361,8 +361,8 @@ export const useGame = create<GameState>((set, get) => {
   }
 
   return {
-    characterName: '',
-    classId: '',
+    characterName: 'Алерия',
+    classId: 'paladin',
     level: 1,
     xp: 0,
     gold: 50,
@@ -449,8 +449,11 @@ export const useGame = create<GameState>((set, get) => {
 
     tick: (dt: number) => {
       try {
-        const s = get();
-        if (!s.classId || !s.characterName) return;
+        let s = get();
+        if (!s.classId || !s.characterName) {
+          get().initCharacter(s.characterName || 'Алерия', s.classId || 'paladin');
+          s = get();
+        }
 
         // Ensure active valid monster inline
         let currentM = s.monster ? { ...s.monster } : null;
