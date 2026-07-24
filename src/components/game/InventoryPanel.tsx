@@ -117,7 +117,7 @@ export default function InventoryPanel() {
       </div>
 
       {/* Compact Dynamic Inventory Grid */}
-      <div className="grid grid-cols-2 gap-2 overflow-y-auto flex-1 min-h-0 pr-1 content-start auto-rows-max">
+      <div className="grid grid-cols-2 gap-2 overflow-y-auto flex-1 min-h-0 p-1 content-start auto-rows-max">
         {filtered.length === 0 && (
           <div className="col-span-2 text-center text-slate-500 text-xs py-12 bg-slate-950/40 rounded-2xl border border-dashed border-slate-800">
             {selectedSlotFilter !== 'all'
@@ -150,10 +150,10 @@ export default function InventoryPanel() {
                     rect: e.currentTarget.getBoundingClientRect(),
                   });
                 }}
-                className={`flex items-center gap-2.5 rounded-xl border p-2 cursor-pointer transition-all hover:scale-[1.02] bg-slate-950/80 hover:bg-slate-900 ${
-                  pinned?.id === item.id ? 'ring-2 ring-purple-500' : ''
+                className={`flex items-center gap-2.5 rounded-xl border p-2 cursor-pointer transition-all bg-slate-950/80 hover:bg-slate-900 hover:border-amber-400 ${
+                  pinned?.id === item.id ? 'ring-2 ring-purple-500 border-purple-400' : ''
                 }`}
-                style={{ borderColor: r.color, boxShadow: `0 0 6px ${r.glow}` }}
+                style={{ borderColor: pinned?.id === item.id ? undefined : r.color, boxShadow: `0 0 6px ${r.glow}` }}
               >
                 {/* Icon */}
                 <div
@@ -204,7 +204,7 @@ export default function InventoryPanel() {
           <SmartItemTooltip
             item={item}
             equippedItem={eqItem}
-            targetRect={hover.rect}
+            anchorRect={hover.rect}
           />
         );
       })()}
@@ -218,27 +218,29 @@ export default function InventoryPanel() {
           <SmartItemTooltip
             item={item}
             equippedItem={eqItem}
-            targetRect={pinned.rect}
+            anchorRect={pinned.rect}
             onClose={() => setPinned(null)}
           >
-            <div className="flex gap-2 mt-2.5">
+            <div className="flex gap-2 mt-2 bg-slate-950 p-2 rounded-xl border border-slate-800 shadow-2xl">
               <button
                 onClick={() => {
                   equip(item.id);
                   setPinned(null);
                 }}
-                className="flex-1 text-xs py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold shadow-lg transition-all active:scale-95"
+                className="flex-1 text-xs py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1"
               >
-                ⚔️ Надеть
+                <span>🛡️</span>
+                <span>Надеть</span>
               </button>
               <button
                 onClick={() => {
                   sellItem(item.id);
                   setPinned(null);
                 }}
-                className="flex-1 text-xs py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-extrabold shadow-lg transition-all active:scale-95 font-mono"
+                className="flex-1 text-xs py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-extrabold shadow-lg transition-all active:scale-95 font-mono flex items-center justify-center gap-1"
               >
-                💰 {fmt(item.sellPrice)} g
+                <span>💰</span>
+                <span>Продать {fmt(item.sellPrice)}g</span>
               </button>
             </div>
           </SmartItemTooltip>
