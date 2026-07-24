@@ -47,8 +47,8 @@ function Header({
   const xp = useGame(s => s.xp);
   const gold = useGame(s => s.gold);
   const kills = useGame(s => s.kills);
-  const bossKills = useGame(s => s.bossKills);
   const xpPct = Math.min(100, (xp / xpForLevel(level)) * 100);
+  const [showSettings, setShowSettings] = useState(false);
 
   return (
     <header className="bg-slate-900/95 border-b border-slate-700/60 px-4 py-2.5 flex items-center gap-3 flex-wrap backdrop-blur-md sticky top-0 z-40 shadow-xl shrink-0 font-sans">
@@ -79,10 +79,10 @@ function Header({
             {fmt(xp)} / {fmt(xpForLevel(level))} XP ({xpPct.toFixed(1)}%)
           </span>
         </div>
-        <span className="text-[9px] text-slate-400 font-mono font-bold">МАКС {fmt(MAX_LEVEL)}</span>
+        <span className="text-[10px] text-slate-400 font-mono font-bold">МАКС {fmt(MAX_LEVEL)}</span>
       </div>
 
-      {/* Meta Stats, Merchant & Crafting Buttons */}
+      {/* Meta Stats, Merchant, Crafting, Characters & Settings */}
       <div className="flex items-center gap-2 ml-auto text-xs font-bold">
         <button
           onClick={onOpenCrafting}
@@ -100,41 +100,77 @@ function Header({
           <span>Торговля</span>
         </button>
 
-        {/* Quick Audio Controls Widget */}
-        <div className="flex items-center gap-1 bg-slate-950/90 px-2 py-1 rounded-xl border border-slate-800 shadow-md">
-          <button
-            onClick={() => useGame.getState().toggleSfx()}
-            className={`p-1.5 rounded-lg text-xs font-bold transition-all ${
-              useGame(s => s.sfxMuted) ? 'text-red-400 bg-red-950/50' : 'text-emerald-400 hover:bg-slate-800'
-            }`}
-            title="Эффекты звука (SFX)"
-          >
-            {useGame(s => s.sfxMuted) ? '🔇 SFX' : '🔊 SFX'}
-          </button>
-          <span className="text-slate-700">|</span>
-          <button
-            onClick={() => useGame.getState().toggleMusic()}
-            className={`p-1.5 rounded-lg text-xs font-bold transition-all ${
-              useGame(s => s.musicMuted) ? 'text-red-400 bg-red-950/50' : 'text-amber-300 hover:bg-slate-800'
-            }`}
-            title="Фоновая музыка (Music)"
-          >
-            {useGame(s => s.musicMuted) ? '🔇 МУЗ' : '🎵 МУЗ'}
-          </button>
-        </div>
-
         <span className="text-amber-300 font-mono font-extrabold bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
           💰 {fmt(gold)}
         </span>
         <span className="text-slate-300 font-mono font-extrabold bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
           ☠️ {fmt(kills)}
         </span>
+
+        {/* Visually Enhanced Characters Button */}
         <button
           onClick={onOpenReset}
-          className="text-[10px] px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 border border-slate-700 transition-all font-bold"
+          className="text-[11px] font-black px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 hover:from-purple-800 hover:to-indigo-800 border border-purple-500/60 text-purple-200 transition-all shadow-[0_0_12px_rgba(168,85,247,0.3)] active:scale-95 flex items-center gap-1.5 cursor-pointer"
+          title="Выбор и управление слотами персонажей"
         >
-          Персонажи
+          <span>👥</span>
+          <span>Персонажи</span>
         </button>
+
+        {/* Dropdown Settings Button */}
+        <div className="relative">
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="text-[11px] font-black px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 transition-all shadow-lg active:scale-95 flex items-center gap-1.5 cursor-pointer"
+            title="Настройки звука и музыки"
+          >
+            <span>⚙️</span>
+            <span>Настройки</span>
+          </button>
+
+          {showSettings && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-slate-950/95 border border-slate-700/80 rounded-2xl p-2.5 shadow-2xl backdrop-blur-md z-50 space-y-2 animate-fadeIn">
+              <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider px-1 pb-1 border-b border-slate-800 flex items-center gap-1">
+                <span>⚙️ Настройки Звука</span>
+              </div>
+
+              {/* Audio Toggle Buttons */}
+              <button
+                onClick={() => useGame.getState().toggleSfx()}
+                className={`w-full py-2 px-3 rounded-xl border font-extrabold text-xs transition-all flex items-center justify-between shadow cursor-pointer ${
+                  useGame(s => s.sfxMuted)
+                    ? 'bg-red-950/80 border-red-500/50 text-red-300'
+                    : 'bg-slate-900 border-emerald-500/50 text-emerald-300'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <span>{useGame(s => s.sfxMuted) ? '🔇' : '🔊'}</span>
+                  <span>ЗВУКИ</span>
+                </span>
+                <span className="text-[10px] font-mono font-bold">
+                  {useGame(s => s.sfxMuted) ? 'ВЫКЛ' : 'ВКЛ'}
+                </span>
+              </button>
+
+              <button
+                onClick={() => useGame.getState().toggleMusic()}
+                className={`w-full py-2 px-3 rounded-xl border font-extrabold text-xs transition-all flex items-center justify-between shadow cursor-pointer ${
+                  useGame(s => s.musicMuted)
+                    ? 'bg-red-950/80 border-red-500/50 text-red-300'
+                    : 'bg-slate-900 border-amber-500/50 text-amber-300'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <span>{useGame(s => s.musicMuted) ? '🔇' : '🎵'}</span>
+                  <span>МУЗЫКА</span>
+                </span>
+                <span className="text-[10px] font-mono font-bold">
+                  {useGame(s => s.musicMuted) ? 'ВЫКЛ' : 'ВКЛ'}
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
