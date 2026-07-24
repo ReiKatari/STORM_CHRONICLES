@@ -20,9 +20,9 @@ export default function EquipmentModal({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none flex items-start justify-start p-3 sm:p-5 top-12">
-      {/* Floating Equipment Box WITHOUT internal scrollbars */}
-      <div className="bg-slate-900/98 border border-slate-700/80 rounded-2xl max-w-md w-full p-3 shadow-2xl space-y-2 relative pointer-events-auto backdrop-blur-md animate-fadeIn overflow-visible">
+    <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center p-3 sm:p-5">
+      {/* Floating Equipment Box 2x Wider (860px) WITHOUT internal scrollbars */}
+      <div className="bg-slate-900/98 border border-slate-700/80 rounded-2xl max-w-4xl w-full p-4 shadow-2xl space-y-3 relative pointer-events-auto backdrop-blur-md animate-fadeIn overflow-visible">
         {/* Header & Close Button */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 px-1">
           <div className="flex items-center gap-2">
