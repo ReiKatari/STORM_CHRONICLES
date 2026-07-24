@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <linearGradient id="cardBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+
+    <pattern id="grid2" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#334155" stroke-opacity="0.1" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="320" fill="url(#bgGrad2)" rx="20" />
+  <rect width="1200" height="320" fill="url(#grid2)" rx="20" />
+  <rect x="2" y="2" width="1196" height="316" fill="none" stroke="#334155" stroke-opacity="0.4" stroke-width="2" rx="19" />
+
+  <!-- Section Title -->
+  <text x="50" y="45" font-family="system-ui, sans-serif" font-size="20" font-weight="900" fill="#ffffff" letter-spacing="1">
+    🔥 КЛЮЧЕВЫЕ СИСТЕМЫ И ИГРОВЫЕ МЕХАНИКИ
+  </text>
+  <text x="50" y="68" font-family="system-ui, sans-serif" font-size="13" font-weight="500" fill="#64748b">
+    Полностью синхронизированный клиент-сторадж на React 18, Zustand и HTML5 2D Canvas API
+  </text>
+
+  <!-- 4 Column Grid Cards -->
+  <g transform="translate(50, 95)">
+    <!-- Column 1: Canvas Combat -->
+    <g transform="translate(0, 0)">
+      <rect width="255" height="190" fill="#050811" stroke="#ef4444" stroke-opacity="0.3" stroke-width="1.5" rx="16" />
+      <circle cx="40" cy="40" r="20" fill="#ef4444" fill-opacity="0.15" />
+      <text x="28" y="47" font-family="system-ui, sans-serif" font-size="24">⚔️</text>
+      <text x="20" y="85" font-family="system-ui, sans-serif" font-size="15" font-weight="900" fill="#f87171">60 FPS Canvas FX</text>
+      <text x="20" y="110" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">Динамический 2D Canvas</text>
+      <text x="20" y="128" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">движок с физикой частиц,</text>
+      <text x="20" y="146" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">критами и вспышками.</text>
+      <rect x="20" y="160" width="85" height="18" fill="#ef4444" fill-opacity="0.2" rx="6" />
+      <text x="28" y="173" font-family="system-ui, sans-serif" font-size="10" font-weight="800" fill="#fca5a5">● CANVAS 2D</text>
+    </g>
+
+    <!-- Column 2: Paperdoll RPG -->
+    <g transform="translate(285, 0)">
+      <rect width="255" height="190" fill="#050811" stroke="#3b82f6" stroke-opacity="0.3" stroke-width="1.5" rx="16" />
+      <circle cx="40" cy="40" r="20" fill="#3b82f6" fill-opacity="0.15" />
+      <text x="28" y="47" font-family="system-ui, sans-serif" font-size="24">🛡️</text>
+      <text x="20" y="85" font-family="system-ui, sans-serif" font-size="15" font-weight="900" fill="#60a5fa">Paperdoll 15 Слотов</text>
+      <text x="20" y="110" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">Анатомическая кукла</text>
+      <text x="20" y="128" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">персонажа: оружие, броня,</text>
+      <text x="20" y="146" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">кольца, серьги, знамёна.</text>
+      <rect x="20" y="160" width="95" height="18" fill="#3b82f6" fill-opacity="0.2" rx="6" />
+      <text x="28" y="173" font-family="system-ui, sans-serif" font-size="10" font-weight="800" fill="#93c5fd">● 15 SLOTS RPG</text>
+    </g>
+
+    <!-- Column 3: Procedural Loot -->
+    <g transform="translate(570, 0)">
+      <rect width="255" height="190" fill="#050811" stroke="#f59e0b" stroke-opacity="0.3" stroke-width="1.5" rx="16" />
+      <circle cx="40" cy="40" r="20" fill="#f59e0b" fill-opacity="0.15" />
+      <text x="28" y="47" font-family="system-ui, sans-serif" font-size="24">💎</text>
+      <text x="20" y="85" font-family="system-ui, sans-serif" font-size="15" font-weight="900" fill="#fbbf24">1,000,000+ Лута</text>
+      <text x="20" y="110" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">Процедурная генерация</text>
+      <text x="20" y="128" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">7 рангов редкости с уникальными</text>
+      <text x="20" y="146" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">легендами предков.</text>
+      <rect x="20" y="160" width="105" height="18" fill="#f59e0b" fill-opacity="0.2" rx="6" />
+      <text x="28" y="173" font-family="system-ui, sans-serif" font-size="10" font-weight="800" fill="#fde047">● PROCEDURAL LOOT</text>
+    </g>
+
+    <!-- Column 4: Pets & Talents -->
+    <g transform="translate(855, 0)">
+      <rect width="245" height="190" fill="#050811" stroke="#a855f7" stroke-opacity="0.3" stroke-width="1.5" rx="16" />
+      <circle cx="40" cy="40" r="20" fill="#a855f7" fill-opacity="0.15" />
+      <text x="28" y="47" font-family="system-ui, sans-serif" font-size="24">🐉</text>
+      <text x="20" y="85" font-family="system-ui, sans-serif" font-size="15" font-weight="900" fill="#c084fc">Спутники &amp; Таланты</text>
+      <text x="20" y="110" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">5 уникальных питомцев с 3</text>
+      <text x="20" y="128" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">активными скиллами и ветками</text>
+      <text x="20" y="146" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">древа талантов героя.</text>
+      <rect x="20" y="160" width="105" height="18" fill="#a855f7" fill-opacity="0.2" rx="6" />
+      <text x="28" y="173" font-family="system-ui, sans-serif" font-size="10" font-weight="800" fill="#e9d5ff">● PETS &amp; TALENTS</text>
+    </g>
+  </g>
+</svg>
