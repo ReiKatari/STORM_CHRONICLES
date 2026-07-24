@@ -89,7 +89,7 @@ function Header({
           className="text-[11px] font-black px-3 py-1.5 rounded-xl bg-orange-950/80 hover:bg-orange-900 border border-orange-500/50 text-orange-200 transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
         >
           <span>🔨</span>
-          <span>Кузница и Крафт</span>
+          <span>Кузница</span>
         </button>
 
         <button
@@ -97,7 +97,34 @@ function Header({
           className="text-[11px] font-black px-3 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 text-amber-200 transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
         >
           <span>🏪</span>
-          <span>Торговля и NPC</span>
+          <span>Торговля</span>
+        </button>
+
+        {/* Audio Mute Controls */}
+        <button
+          onClick={() => useGame.getState().toggleSfx()}
+          className={`text-[10.5px] font-black px-2.5 py-1.5 rounded-xl border transition-all shadow-md flex items-center gap-1 ${
+            useGame(s => s.sfxMuted)
+              ? 'bg-red-950/80 border-red-500/50 text-red-300'
+              : 'bg-slate-950 border-slate-700 text-emerald-300'
+          }`}
+          title="Включить / Отключить эффекты звука (SFX)"
+        >
+          <span>{useGame(s => s.sfxMuted) ? '🔇' : '🔊'}</span>
+          <span>{useGame(s => s.sfxMuted) ? 'Звук: ВЫКЛ' : 'Звук: ВКЛ'}</span>
+        </button>
+
+        <button
+          onClick={() => useGame.getState().toggleMusic()}
+          className={`text-[10.5px] font-black px-2.5 py-1.5 rounded-xl border transition-all shadow-md flex items-center gap-1 ${
+            useGame(s => s.musicMuted)
+              ? 'bg-red-950/80 border-red-500/50 text-red-300'
+              : 'bg-slate-950 border-slate-700 text-amber-300'
+          }`}
+          title="Включить / Отключить фоновую музыку (Music)"
+        >
+          <span>{useGame(s => s.musicMuted) ? '🔇' : '🎵'}</span>
+          <span>{useGame(s => s.musicMuted) ? 'Музыка: ВЫКЛ' : 'Музыка: ВКЛ'}</span>
         </button>
 
         <span className="text-amber-300 font-mono font-extrabold bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
@@ -106,14 +133,11 @@ function Header({
         <span className="text-slate-300 font-mono font-extrabold bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
           ☠️ {fmt(kills)}
         </span>
-        <span className="text-orange-400 font-mono font-extrabold bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
-          👑 {fmt(bossKills)}
-        </span>
         <button
           onClick={onOpenReset}
           className="text-[10px] px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 border border-slate-700 transition-all font-bold"
         >
-          Сброс
+          Персонажи
         </button>
       </div>
     </header>
@@ -237,7 +261,13 @@ export default function App() {
       )}
 
       {showResetModal && (
-        <ResetConfirmModal onClose={() => setShowResetModal(false)} />
+        <ResetConfirmModal
+          onClose={() => setShowResetModal(false)}
+          onOpenCreation={() => {
+            setShowResetModal(false);
+            setShowCreationModal(true);
+          }}
+        />
       )}
 
       <div id="app-root" className="w-full max-w-[1920px] mx-auto min-h-screen relative flex flex-col px-2 sm:px-4">
