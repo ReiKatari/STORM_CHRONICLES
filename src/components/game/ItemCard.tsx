@@ -212,38 +212,38 @@ export function SmartItemTooltip({
   const containerRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: -9999, y: -9999 });
 
+  const left = anchorRect?.left ?? 0;
+  const top = anchorRect?.top ?? 0;
+  const width = anchorRect?.width ?? 0;
+  const height = anchorRect?.height ?? 0;
+  const itemId = item?.id ?? '';
+
   useEffect(() => {
     if (!anchorRect || !item) return;
 
-    const computePos = () => {
-      const el = containerRef.current;
-      const cardW = el ? el.offsetWidth : 280;
-      const cardH = el ? el.offsetHeight : 380;
+    const el = containerRef.current;
+    const cardW = el ? el.offsetWidth : 280;
+    const cardH = el ? el.offsetHeight : 380;
 
-      const minX = 12;
-      const maxX = Math.max(12, window.innerWidth - cardW - 12);
-      const minY = 12;
-      const maxY = Math.max(12, window.innerHeight - cardH - 12);
+    const minX = 12;
+    const maxX = Math.max(12, window.innerWidth - cardW - 12);
+    const minY = 12;
+    const maxY = Math.max(12, window.innerHeight - cardH - 12);
 
-      let x = anchorRect.left - cardW - 14;
-      if (x < minX) {
-        x = anchorRect.right + 14;
-      }
+    let x = left - cardW - 14;
+    if (x < minX) {
+      x = left + width + 14;
+    }
 
-      if (x > maxX) x = maxX;
-      if (x < minX) x = minX;
+    if (x > maxX) x = maxX;
+    if (x < minX) x = minX;
 
-      let y = anchorRect.top;
-      if (y > maxY) y = maxY;
-      if (y < minY) y = minY;
+    let y = top;
+    if (y > maxY) y = maxY;
+    if (y < minY) y = minY;
 
-      setPos({ x, y });
-    };
-
-    computePos();
-    const t = setTimeout(computePos, 10);
-    return () => clearTimeout(t);
-  }, [anchorRect, item]);
+    setPos({ x, y });
+  }, [left, top, width, height, itemId]);
 
   if (!anchorRect || !item) return null;
 
