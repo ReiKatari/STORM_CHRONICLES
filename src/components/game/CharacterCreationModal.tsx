@@ -139,9 +139,10 @@ export default function CharacterCreationModal({ onComplete }: { onComplete: () 
         <div className="pt-2">
           <button
             onClick={handleStart}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-400 hover:to-red-400 font-black text-slate-950 text-sm tracking-wider uppercase shadow-xl transition-all hover:scale-[1.01] active:scale-95"
+            className="w-full py-3 rounded-xl rpg-button-gold font-black text-sm tracking-wider uppercase flex items-center justify-center gap-2 shadow-2xl"
           >
-            ⚔️ Начать Наследие («{name}» — {selectedClass.name})
+            <span>⚔️</span>
+            <span>Начать Наследие («{name}» — {selectedClass.name})</span>
           </button>
         </div>
       </div>
