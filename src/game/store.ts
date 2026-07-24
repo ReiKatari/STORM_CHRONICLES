@@ -226,6 +226,9 @@ export const useGame = create<GameState>((set, get) => {
       addQuestProgress('level', '', level);
     } else {
       set({ xp });
+    }
+  }
+
   function triggerMonsterTurn(s: GameState, m: ActiveMonster, isBlocked = false) {
     if (!m || m.hp <= 0) return;
     const d = s.derived || computeDerived(s.level || 1, s.stats, s.equipment || {}, s.talents || {});
@@ -871,6 +874,7 @@ export const useGame = create<GameState>((set, get) => {
     setSlotFilter: (slot) => set({ selectedSlotFilter: slot }),
   };
 });
+// Store modules updated
 
 // ===================== LOAD SAVE =====================
 export function loadSave() {
