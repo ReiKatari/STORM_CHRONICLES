@@ -201,16 +201,139 @@ export default function CombatCanvas() {
             targetY: my - 40
           });
 
-          // 1. HOLY / LIGHT / PALADIN SKILLS
-          if (sId.includes('holy') || sId.includes('sun') || sId.includes('divine') || sId.includes('judgement') || sId.includes('pal_') || sId.includes('light') || col === '#facc15' || col === '#fde047') {
+          // ===== INDIVIDUAL 100% UNIQUE PALADIN SKILL ANIMATIONS =====
+          if (sId === 'pal_holy_light') {
             sound.playHoly();
-            P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.55, size: 90, color: '#fde047', gravity: 0, kind: 'pillar' });
-            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 210, color: '#facc15', gravity: 0, kind: 'ring' });
-            for (let i = 0; i < 40; i++) {
-              P.push({ x: mx + (Math.random() - 0.5) * 70, y: Math.random() * my, vx: (Math.random() - 0.5) * 15, vy: 380 + Math.random() * 280, life: 0, maxLife: 0.5, size: 4 + Math.random() * 7, color: '#fde047', gravity: 0, kind: 'spark' });
-            }
-            burst(mx, my - 30, 70, '#facc15', 380, 5, -60);
+            // Golden vertical healing beam over hero + bright golden shockwave over monster
+            P.push({ x: px, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.6, size: 70, color: '#fde047', gravity: 0, kind: 'pillar' });
+            P.push({ x: px, y: py - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 140, color: '#facc15', gravity: 0, kind: 'ring' });
+            burst(px, py - 40, 30, '#facc15', 250, 4, -40);
+            burst(mx, my - 40, 25, '#fde047', 200, 3.5);
+            floatText(px, py - 90, '✨ +HP СВЯТОЙ СВЕТ', '#fde047', 22);
+          }
+          else if (sId === 'pal_shield_bash') {
+            sound.playSlash();
+            // Cyan heavy shield barrier slamming monster with concussive ring
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 160, color: '#38bdf8', gravity: 0, kind: 'shield' });
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 180, color: '#38bdf8', gravity: 0, kind: 'ring' });
+            burst(mx, my - 40, 45, '#38bdf8', 350, 5, 20);
             shake.current = Math.max(shake.current, 14);
+          }
+          else if (sId === 'pal_judgement') {
+            sound.playHoly();
+            // Giant diagonal red/gold sword of judgement descending onto monster
+            P.push({ x: mx - 20, y: my - 80, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 160, color: '#ef4444', gravity: 0, kind: 'slash', angle: Math.PI / 4 });
+            P.push({ x: mx + 20, y: my - 80, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 160, color: '#facc15', gravity: 0, kind: 'slash', angle: -Math.PI / 4 });
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 220, color: '#ef4444', gravity: 0, kind: 'ring' });
+            burst(mx, my - 40, 60, '#facc15', 400, 5.5);
+            shake.current = Math.max(shake.current, 22);
+          }
+          else if (sId === 'pal_sun_ray') {
+            sound.playFireball();
+            // Intense bright yellow laser beam beaming horizontally from hero to monster
+            P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.65, size: 110, color: '#fde047', gravity: 0, kind: 'pillar' });
+            for (let i = 0; i < 50; i++) {
+              P.push({ x: px + (mx - px) * (i / 50), y: py - 40 + (Math.random() - 0.5) * 20, vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30, life: 0, maxLife: 0.4, size: 6, color: '#fde047', gravity: 0, kind: 'spark' });
+            }
+            burst(mx, my - 40, 70, '#fde047', 420, 6, -80);
+            shake.current = Math.max(shake.current, 18);
+          }
+          else if (sId === 'pal_consecration') {
+            sound.playFireball();
+            // Fiery orange flame pool under monster with rising embers
+            P.push({ x: mx, y: my - 20, vx: 0, vy: 0, life: 0, maxLife: 0.7, size: 240, color: '#fb923c', gravity: 0, kind: 'ring' });
+            for (let i = 0; i < 45; i++) {
+              P.push({ x: mx + (Math.random() - 0.5) * 120, y: my - 20, vx: (Math.random() - 0.5) * 20, vy: -180 - Math.random() * 220, life: 0, maxLife: 0.6, size: 5 + Math.random() * 5, color: '#fb923c', gravity: -20, kind: 'spark' });
+            }
+            shake.current = Math.max(shake.current, 12);
+          }
+          else if (sId === 'pal_divine_shield') {
+            sound.playHoly();
+            // Triple glowing golden sphere domes around player
+            P.push({ x: px, y: py - 40, vx: 0, vy: 0, life: 0, maxLife: 0.7, size: 170, color: '#fde68a', gravity: 0, kind: 'shield' });
+            P.push({ x: px, y: py - 40, vx: 0, vy: 0, life: 0, maxLife: 0.6, size: 210, color: '#facc15', gravity: 0, kind: 'ring' });
+            burst(px, py - 40, 40, '#fde68a', 280, 5);
+            floatText(px, py - 95, '🕊️ БОЖЕСТВЕННЫЙ ЩИТ!', '#fde68a', 24);
+          }
+          else if (sId === 'pal_blessing_might') {
+            sound.playHoly();
+            // Golden muscle strength aura over player
+            P.push({ x: px, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 60, color: '#eab308', gravity: 0, kind: 'pillar' });
+            burst(px, py - 40, 35, '#eab308', 320, 5.5);
+            floatText(px, py - 95, '💪 МАТЕРЯЛА СИЛА!', '#eab308', 24);
+          }
+          else if (sId === 'pal_hammer_wrath') {
+            sound.playSlash();
+            // Heavy thrown hammer impact with catastrophic shockwave ring
+            P.push({ x: mx - 30, y: my - 60, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 170, color: '#eab308', gravity: 0, kind: 'slash', angle: Math.PI / 3 });
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 250, color: '#facc15', gravity: 0, kind: 'ring' });
+            burst(mx, my - 40, 80, '#eab308', 480, 6.5);
+            shake.current = Math.max(shake.current, 25);
+          }
+          else if (sId === 'pal_radiant_beam') {
+            sound.playSpell();
+            // Electric radiant beam connecting player and monster
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 190, color: '#facc15', gravity: 0, kind: 'ring' });
+            for (let i = 0; i < 40; i++) {
+              P.push({ x: px + (mx - px) * Math.random(), y: py - 40 + (Math.random() - 0.5) * 40, vx: (Math.random() - 0.5) * 40, vy: (Math.random() - 0.5) * 40, life: 0, maxLife: 0.35, size: 4, color: '#facc15', gravity: 0, kind: 'spark' });
+            }
+            shake.current = Math.max(shake.current, 15);
+          }
+          else if (sId === 'pal_avenging_wrath') {
+            sound.playHoly();
+            // Golden wings particle explosion behind hero
+            P.push({ x: px - 40, y: py - 60, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 130, color: '#f59e0b', gravity: 0, kind: 'slash', angle: -Math.PI / 4 });
+            P.push({ x: px + 40, y: py - 60, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 130, color: '#f59e0b', gravity: 0, kind: 'slash', angle: Math.PI / 4 });
+            P.push({ x: px, y: py - 40, vx: 0, vy: 0, life: 0, maxLife: 0.55, size: 220, color: '#f59e0b', gravity: 0, kind: 'ring' });
+            burst(px, py - 40, 50, '#f59e0b', 380, 5.5);
+            floatText(px, py - 100, '👑 КРЫЛЬЯ ВОЗМЕЗДИЯ!', '#f59e0b', 26);
+          }
+          else if (sId === 'pal_bastion_faith') {
+            sound.playHoly();
+            // Translucent cyan fortress wall on hero
+            P.push({ x: px + 20, y: py - 40, vx: 0, vy: 0, life: 0, maxLife: 0.6, size: 180, color: '#38bdf8', gravity: 0, kind: 'shield' });
+            burst(px, py - 40, 40, '#38bdf8', 260, 4.5);
+          }
+          else if (sId === 'pal_lay_on_hands') {
+            sound.playHoly();
+            // Green/gold divine emerald fountain over hero
+            P.push({ x: px, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.65, size: 100, color: '#22c55e', gravity: 0, kind: 'pillar' });
+            P.push({ x: px, y: py - 40, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 200, color: '#22c55e', gravity: 0, kind: 'ring' });
+            burst(px, py - 40, 60, '#22c55e', 340, 6, -100);
+            floatText(px, py - 100, '💚 ВОЗЛОЖЕНИЕ РУК 100% HP', '#22c55e', 26);
+          }
+          else if (sId === 'pal_dawn_light') {
+            sound.playFireball();
+            // Blinding sunrise flash over monster
+            P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.6, size: 140, color: '#fbbf24', gravity: 0, kind: 'pillar' });
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 260, color: '#fbbf24', gravity: 0, kind: 'ring' });
+            burst(mx, my - 40, 75, '#fbbf24', 450, 6);
+            shake.current = Math.max(shake.current, 16);
+          }
+          else if (sId === 'pal_holy_shock') {
+            sound.playHoly();
+            // Holy thunderbolt shock
+            P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 80, color: '#facc15', gravity: 0, kind: 'pillar' });
+            burst(mx, my - 40, 50, '#facc15', 380, 5.5);
+            shake.current = Math.max(shake.current, 15);
+          }
+          else if (sId === 'pal_sun_god_aegis') {
+            sound.playHoly();
+            // Triple solar pillars surrounding monster
+            P.push({ x: mx - 40, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.6, size: 60, color: '#fbbf24', gravity: 0, kind: 'pillar' });
+            P.push({ x: mx + 40, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.6, size: 60, color: '#fbbf24', gravity: 0, kind: 'pillar' });
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 280, color: '#fde047', gravity: 0, kind: 'ring' });
+            burst(mx, my - 40, 85, '#fbbf24', 480, 6.5);
+            shake.current = Math.max(shake.current, 24);
+          }
+          else if (sId === 'pal_divine_apocalypse') {
+            sound.playHoly();
+            // Cataclysmic apocalypse explosion
+            P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.7, size: 160, color: '#fef08a', gravity: 0, kind: 'pillar' });
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.55, size: 320, color: '#fde047', gravity: 0, kind: 'ring' });
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 220, color: '#ef4444', gravity: 0, kind: 'ring' });
+            burst(mx, my - 40, 110, '#fde047', 550, 7.5);
+            shake.current = Math.max(shake.current, 32);
           }
           // 2. FIRE / METEOR / PYRO SKILLS
           else if (sId.includes('fire') || sId.includes('meteor') || sId.includes('flame') || sId.includes('pyro') || sId.includes('burn') || col === '#ef4444' || col === '#fb923c') {
