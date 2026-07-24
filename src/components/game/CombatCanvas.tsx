@@ -180,58 +180,65 @@ export default function CombatCanvas() {
 
           // 1. HOLY / LIGHT / PALADIN SKILLS
           if (sId.includes('holy') || sId.includes('sun') || sId.includes('divine') || sId.includes('judgement') || sId.includes('pal_') || sId.includes('light') || col === '#facc15' || col === '#fde047') {
-            P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.55, size: 80, color: '#fde047', gravity: 0, kind: 'pillar' });
-            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 200, color: '#facc15', gravity: 0, kind: 'ring' });
-            for (let i = 0; i < 35; i++) {
-              P.push({ x: mx + (Math.random() - 0.5) * 60, y: Math.random() * my, vx: (Math.random() - 0.5) * 12, vy: 350 + Math.random() * 260, life: 0, maxLife: 0.5, size: 4 + Math.random() * 6, color: '#fde047', gravity: 0, kind: 'spark' });
+            sound.playHoly();
+            P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.55, size: 90, color: '#fde047', gravity: 0, kind: 'pillar' });
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 210, color: '#facc15', gravity: 0, kind: 'ring' });
+            for (let i = 0; i < 40; i++) {
+              P.push({ x: mx + (Math.random() - 0.5) * 70, y: Math.random() * my, vx: (Math.random() - 0.5) * 15, vy: 380 + Math.random() * 280, life: 0, maxLife: 0.5, size: 4 + Math.random() * 7, color: '#fde047', gravity: 0, kind: 'spark' });
             }
-            burst(mx, my - 30, 60, '#facc15', 360, 4.5, -60);
-            shake.current = Math.max(shake.current, 12);
+            burst(mx, my - 30, 70, '#facc15', 380, 5, -60);
+            shake.current = Math.max(shake.current, 14);
           }
           // 2. FIRE / METEOR / PYRO SKILLS
           else if (sId.includes('fire') || sId.includes('meteor') || sId.includes('flame') || sId.includes('pyro') || sId.includes('burn') || col === '#ef4444' || col === '#fb923c') {
-            burst(mx, my - 40, 75, '#ef4444', 450, 6, 70);
-            burst(mx, my - 40, 50, '#f97316', 380, 5, -90);
-            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 220, color: '#ef4444', gravity: 0, kind: 'ring' });
-            P.push({ x: mx - 40, y: my - 60, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 100, color: '#f97316', gravity: 0, kind: 'slash', angle: Math.PI / 3 });
-            shake.current = Math.max(shake.current, 18);
+            sound.playFireball();
+            burst(mx, my - 40, 85, '#ef4444', 480, 6.5, 80);
+            burst(mx, my - 40, 60, '#f97316', 400, 5.5, -90);
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.48, size: 240, color: '#ef4444', gravity: 0, kind: 'ring' });
+            P.push({ x: mx - 45, y: my - 65, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 110, color: '#f97316', gravity: 0, kind: 'slash', angle: Math.PI / 3 });
+            shake.current = Math.max(shake.current, 20);
           }
           // 3. ICE / FROST / BLIZZARD SKILLS
           else if (sId.includes('frost') || sId.includes('ice') || sId.includes('blizzard') || sId.includes('cold') || col === '#38bdf8' || col === '#a5f3fc') {
-            burst(mx, my - 40, 70, '#38bdf8', 340, 5, -130);
-            burst(mx, my - 40, 45, '#a5f3fc', 400, 4, 30);
-            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 190, color: '#38bdf8', gravity: 0, kind: 'ring' });
-            shake.current = Math.max(shake.current, 10);
+            sound.playFrost();
+            burst(mx, my - 40, 80, '#38bdf8', 360, 5.5, -140);
+            burst(mx, my - 40, 50, '#a5f3fc', 420, 4.5, 30);
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.52, size: 200, color: '#38bdf8', gravity: 0, kind: 'ring' });
+            shake.current = Math.max(shake.current, 12);
           }
           // 4. SHADOW / NECRO / POISON SKILLS
           else if (sId.includes('shadow') || sId.includes('necro') || sId.includes('poison') || sId.includes('venom') || sId.includes('dark') || col === '#a855f7' || col === '#22c55e') {
-            burst(mx, my - 40, 65, col, 350, 5, 30);
-            P.push({ x: mx - 35, y: my - 65, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 110, color: col, gravity: 0, kind: 'slash', angle: Math.PI / 6 });
-            P.push({ x: mx + 25, y: my - 45, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 110, color: col, gravity: 0, kind: 'slash', angle: -Math.PI / 6 });
-            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 170, color: col, gravity: 0, kind: 'ring' });
-            shake.current = Math.max(shake.current, 12);
+            sound.playSpell();
+            burst(mx, my - 40, 75, col, 370, 5.5, 30);
+            P.push({ x: mx - 40, y: my - 70, vx: 0, vy: 0, life: 0, maxLife: 0.42, size: 120, color: col, gravity: 0, kind: 'slash', angle: Math.PI / 6 });
+            P.push({ x: mx + 30, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.42, size: 120, color: col, gravity: 0, kind: 'slash', angle: -Math.PI / 6 });
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.42, size: 180, color: col, gravity: 0, kind: 'ring' });
+            shake.current = Math.max(shake.current, 14);
           }
-          // 5. BERSERKER / WARRIOR / WHIRLWIND SKILLS
-          else if (sId.includes('ber') || sId.includes('cleave') || sId.includes('whirl') || sId.includes('execute') || sId.includes('slash') || sId.includes('rage')) {
-            burst(mx, my - 40, 75, '#dc2626', 420, 6, 40);
-            P.push({ x: mx - 40, y: my - 70, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 130, color: '#dc2626', gravity: 0, kind: 'slash', angle: Math.PI / 4 });
-            P.push({ x: mx + 40, y: my - 30, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 130, color: '#ef4444', gravity: 0, kind: 'slash', angle: -Math.PI / 4 });
-            shake.current = Math.max(shake.current, 20);
+          // 5. BERSERKER / WARRIOR / WHIRLWIND / MONK SKILLS
+          else if (sId.includes('ber') || sId.includes('cleave') || sId.includes('whirl') || sId.includes('execute') || sId.includes('slash') || sId.includes('rage') || sId.includes('mnk') || sId.includes('eng')) {
+            sound.playSlash();
+            burst(mx, my - 40, 85, '#dc2626', 450, 6.5, 40);
+            P.push({ x: mx - 45, y: my - 75, vx: 0, vy: 0, life: 0, maxLife: 0.42, size: 140, color: '#dc2626', gravity: 0, kind: 'slash', angle: Math.PI / 4 });
+            P.push({ x: mx + 45, y: my - 35, vx: 0, vy: 0, life: 0, maxLife: 0.42, size: 140, color: '#ef4444', gravity: 0, kind: 'slash', angle: -Math.PI / 4 });
+            shake.current = Math.max(shake.current, 22);
           }
-          // 6. RANGER / NATURE / ARROW SKILLS
-          else if (sId.includes('range') || sId.includes('arrow') || sId.includes('shot') || sId.includes('nature') || sId.includes('druid')) {
-            for (let i = 0; i < 3; i++) {
-              P.push({ x: px + 40 + i * 15, y: py - 50 + i * 10, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 85, color: '#4ade80', gravity: 0, kind: 'slash', angle: 0 });
+          // 6. RANGER / NATURE / ARROW / DRUID SKILLS
+          else if (sId.includes('range') || sId.includes('arrow') || sId.includes('shot') || sId.includes('nature') || sId.includes('druid') || sId.includes('dru_')) {
+            sound.playSpell();
+            for (let i = 0; i < 4; i++) {
+              P.push({ x: px + 40 + i * 15, y: py - 50 + i * 10, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 95, color: '#4ade80', gravity: 0, kind: 'slash', angle: 0 });
             }
-            burst(mx, my - 40, 55, '#4ade80', 360, 4.5);
-            shake.current = Math.max(shake.current, 11);
+            burst(mx, my - 40, 65, '#4ade80', 380, 5);
+            shake.current = Math.max(shake.current, 13);
           }
-          // 7. DEFAULT ALL CLASS SKILLS
+          // 7. DEFAULT ALL OTHER SKILLS
           else {
-            burst(mx, my - 40, 60, col, 380, 5);
-            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 160, color: col, gravity: 0, kind: 'ring' });
-            P.push({ x: mx - 30, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 90, color: col, gravity: 0, kind: 'slash', angle: Math.PI / 4 });
-            shake.current = Math.max(shake.current, 10);
+            sound.playSpell();
+            burst(mx, my - 40, 70, col, 400, 5.5);
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.42, size: 170, color: col, gravity: 0, kind: 'ring' });
+            P.push({ x: mx - 35, y: my - 55, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 100, color: col, gravity: 0, kind: 'slash', angle: Math.PI / 4 });
+            shake.current = Math.max(shake.current, 12);
           }
           break;
         }

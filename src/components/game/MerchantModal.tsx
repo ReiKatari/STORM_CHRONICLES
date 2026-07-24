@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useGame } from '@/game/store';
-import { generateItem, rarityById } from '@/game/items';
+import { generateItem, rarityById, POTIONS_CATALOG, type PotionItemDef } from '@/game/items';
 import type { Item, SlotId, SlotKind } from '@/game/types';
 import { fmt, computeDerived } from '@/game/engine';
 
@@ -481,46 +481,77 @@ export default function MerchantModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* TAB 2: ALCHEMIST POTIONS */}
+          {/* TAB 2: ALCHEMIST POTIONS SHOP */}
           {activeTab === 'alchemist' && (
             <div className="space-y-3">
-              <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/40 space-y-1">
-                <div className="font-extrabold text-xs text-emerald-300">🧪 Лавка Зелий и Эликсиров Восстановления</div>
-                <div className="text-[10px] text-slate-300">Алхимик мгновенно восполняет показатели Вашего героя за золото.</div>
+              <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 space-y-1">
+                <div className="font-extrabold text-xs text-emerald-300 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <span>🧪</span>
+                    <span>Алхимическая Лаборатория и Магазин Эликсиров Элиэлы</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-400 font-mono">Доступно: {POTIONS_CATALOG.length} рецептов и зелий</span>
+                </div>
+                <div className="text-[11px] text-slate-300">
+                  Выбирайте зелья для восстановления здоровья, маны, щитов, баффов урона, ускорения и астрального синтеза! Покупка добавляет предмет в Ваш инвентарь (или используйте Drag & Drop для хотбара!).
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl border border-slate-800 bg-slate-950 flex flex-col justify-between space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-3xl">🧪</span>
-                    <div>
-                      <div className="font-extrabold text-xs text-emerald-400">Зелье Полного Исцеления HP</div>
-                      <div className="text-[10px] text-slate-400">Восстанавливает 100% максимального здоровья</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleBuyPotion('hp', level * 25)}
-                    className="py-2 px-3 rpg-button text-emerald-300 font-black text-xs rounded-xl"
-                  >
-                    Купить за 💰 {fmt(level * 25)} g
-                  </button>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                {POTIONS_CATALOG.map(pot => {
+                  const r = rarityById(pot.rarity);
+                  const price = pot.sellPrice * 3;
+                  const canBuy = gold >= price && inventory.length < 72;
 
-                <div className="p-3 rounded-xl border border-slate-800 bg-slate-950 flex flex-col justify-between space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-3xl">💧</span>
-                    <div>
-                      <div className="font-extrabold text-xs text-sky-400">Эликсир Астральной Маны</div>
-                      <div className="text-[10px] text-slate-400">Восстанавливает 100% максимальной маны</div>
+                  const handleBuyPotionToInv = () => {
+                    if (!canBuy) return;
+                    useGame.setState(s => {
+                      const potItem: Item = {
+                        id: `pot_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+                        name: pot.name,
+                        slot: 'consumable' as any,
+                        rarity: pot.rarity,
+                        ilvl: level,
+                        icon: pot.icon,
+                        base: {},
+                        affixes: [],
+                        sellPrice: pot.sellPrice,
+                        score: 20,
+                      };
+                      return {
+                        gold: s.gold - price,
+                        inventory: [...s.inventory, potItem],
+                        log: [...s.log, { id: Date.now(), text: `🧪 Куплено зелье: ${pot.name} (-${fmt(price)}g)`, color: '#4ade80', time: Date.now() }]
+                      };
+                    });
+                  };
+
+                  return (
+                    <div
+                      key={pot.id}
+                      className="p-2.5 rounded-xl border bg-slate-950 flex flex-col justify-between space-y-2 shadow-md hover:border-emerald-500/60 transition-all"
+                      style={{ borderColor: `${r.color}55` }}
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className="text-2xl p-1.5 bg-slate-900 rounded-lg border border-slate-800 shrink-0">{pot.icon}</span>
+                        <div className="min-w-0">
+                          <div className="font-extrabold text-xs truncate" style={{ color: r.color }}>{pot.name}</div>
+                          <div className="text-[9.5px] text-slate-400 font-mono mt-0.5">{r.name}</div>
+                          <div className="text-[10px] text-slate-300 mt-1 leading-snug line-clamp-2">{pot.desc}</div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={handleBuyPotionToInv}
+                        disabled={!canBuy}
+                        className="w-full py-1.5 px-2 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-black text-xs transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-1 font-mono shadow"
+                      >
+                        <span>💰</span>
+                        <span>{fmt(price)} g</span>
+                      </button>
                     </div>
-                  </div>
-                  <button
-                    onClick={() => handleBuyPotion('mana', level * 20)}
-                    className="py-2 px-3 rpg-button text-sky-300 font-black text-xs rounded-xl"
-                  >
-                    Купить за 💰 {fmt(level * 20)} g
-                  </button>
-                </div>
+                  );
+                })}
               </div>
             </div>
           )}
