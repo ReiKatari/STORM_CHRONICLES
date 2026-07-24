@@ -142,9 +142,16 @@ export default function CombatCanvas() {
           monsterHit.current = 0.25; playerLunge.current = 0.25;
           break;
         case 'skill':
-          burst(mx, my - 40, 26, fx.color ?? '#c084fc', 260);
-          floatText(mx, my - 100, fx.text ?? '', fx.color ?? '#c084fc', 22);
+          burst(mx, my - 40, 32, fx.color ?? '#c084fc', 290, 4);
+          P.push({ x: mx - 20, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.30, size: 65, color: fx.color ?? '#c084fc', gravity: 0, kind: 'slash' });
+          floatText(mx, my - 105, fx.text ?? '', fx.color ?? '#c084fc', 24);
+          shake.current = Math.max(shake.current, 5);
           monsterHit.current = 0.22; playerLunge.current = 0.20;
+          break;
+        case 'petHit':
+          burst(mx - 30, my - 40, 22, fx.color ?? '#38bdf8', 240, 3);
+          floatText(mx - 20, my - 90, fx.text ?? '🐾 ПИТОМЕЦ', fx.color ?? '#38bdf8', 22);
+          monsterHit.current = 0.18;
           break;
         case 'playerHit':
           burst(px, py - 30, 14, '#ef4444', 200);

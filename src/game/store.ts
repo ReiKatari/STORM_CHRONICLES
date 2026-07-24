@@ -471,11 +471,11 @@ export const useGame = create<GameState>((set, get) => {
         const cls = getClassById(s.classId);
         if (cls && Array.isArray(cls.skills)) {
           for (const sk of cls.skills) {
-            if (s.autoCast && s.autoCast[sk.id] && (s.skillRanks[sk.id] ?? 0) > 0 && (newCds[sk.id] ?? 0) === 0) {
+            if ((s.autoCast ? s.autoCast[sk.id] !== false : true) && (s.skillRanks[sk.id] ?? 0) > 0 && (newCds[sk.id] ?? 0) === 0) {
               if (mana >= sk.manaCost) {
                 mana -= sk.manaCost;
                 newCds[sk.id] = sk.cooldown * (1 - d.cdReduction / 100);
-                let skillDmg = Math.round(d.skillPower * 2.2);
+                let skillDmg = Math.round(d.skillPower * 2.5);
                 if (sk.id.includes('heal') || sk.id.includes('meditate') || sk.id.includes('rejuvenation')) {
                   hp = Math.min(d.maxHp, hp + Math.round(d.maxHp * 0.35));
                   pushFx(s.fxQueue, { type: 'heal', text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
@@ -491,6 +491,30 @@ export const useGame = create<GameState>((set, get) => {
                   }
                 }
               }
+            }
+          }
+        }
+
+        // Active Pet Companion Auto-Attack & Auto-Skills
+        if (s.activePetId) {
+          const petDef = PETS.find(p => p.id === s.activePetId);
+          if (petDef) {
+            const petLvl = s.petLvl ?? 1;
+            const petDmg = Math.round((d.dmgMin + d.dmgMax) * 0.4 * (1 + petLvl * 0.05));
+            const petAtkTimer = ((s as any).petAtkTimer ?? 0) + dt;
+            if (petAtkTimer >= 1.8 && s.monster) {
+              const mHp = s.monster.hp - petDmg;
+              pushFx(s.fxQueue, { type: 'petHit', value: petDmg, text: `🐾 ${petDef.icon} ${fmt(petDmg)}`, color: petDef.color });
+              (s as any).petAtkTimer = 0;
+              if (mHp <= 0) {
+                onKill(s.monster);
+                set({ hp, mana, skillCds: newCds });
+                return;
+              } else {
+                set({ monster: { ...s.monster, hp: mHp } });
+              }
+            } else {
+              (s as any).petAtkTimer = petAtkTimer;
             }
           }
         }
