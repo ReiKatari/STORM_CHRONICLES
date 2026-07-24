@@ -884,9 +884,9 @@ export const useGame = create<GameState>((set, get) => {
       const d = s.derived || computeDerived(s.level || 1, s.stats, s.equipment || {}, s.talents || {});
       const blockShield = Math.round((d.maxHp || 100) * 0.35);
       const newShield = (s.shield ?? 0) + blockShield;
-      sound.playLevelUp();
-      pushFx(s.fxQueue, { type: 'heal', text: `🛡️ БЛОК +${fmt(blockShield)} Щит!`, color: '#facc15' });
-      pushLog(s.log, `🛡️ Ваша стойка Блока поглотит урон! (+${fmt(blockShield)} HP щита)`, '#facc15');
+      sound.playBlock();
+      pushFx(s.fxQueue, { type: 'block', value: blockShield, text: `🛡️ СТАЛЬНОЙ БЛОК (+${fmt(blockShield)})`, color: '#38bdf8' });
+      pushLog(s.log, `🛡️ Ваша стойка Блока поглотит урон! (+${fmt(blockShield)} HP щита)`, '#38bdf8');
       set({ shield: newShield, fxQueue: [...s.fxQueue] });
 
       if (s.monster && s.monster.hp > 0) {
@@ -898,7 +898,7 @@ export const useGame = create<GameState>((set, get) => {
       const s = get();
       sound.playLoot();
       pushLog(s.log, `🏃 Вы успешно уклонились и убежали на Этап 1!`, '#38bdf8');
-      pushFx(s.fxQueue, { type: 'dodge', text: '🏃 Убежал на этап 1!', color: '#38bdf8' });
+      pushFx(s.fxQueue, { type: 'flee', text: '🏃 ПОБЕГ НА ЭТАП 1!', color: '#38bdf8' });
       set({
         stage: 1,
         stageKills: 0,
