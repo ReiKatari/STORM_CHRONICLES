@@ -630,34 +630,39 @@ export default function CombatCanvas() {
     <div className="relative w-full h-[380px] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl group font-sans">
       <canvas ref={canvasRef} className="w-full h-full block" />
 
-      {/* COMPACT TOP-CENTER OVERLAY COMBAT ACTION BUTTONS */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-slate-950/85 p-1.5 rounded-2xl border border-slate-700/80 shadow-2xl backdrop-blur-md">
-        <button
-          onClick={manualAttack}
-          className="rpg-button-gold px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1 shadow-lg active:scale-95 transition-all hover:scale-105"
-          title="Нанести удар оружием по монстру"
-        >
-          <span className="text-xs">⚔️</span>
-          <span>Удар</span>
-        </button>
+      {/* COMPACT TOP-CENTER OVERLAY COMBAT ACTION BUTTONS & TURN BADGE */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1">
+        <div className="text-[9px] font-black uppercase text-amber-300 tracking-wider bg-slate-950/90 px-2.5 py-0.5 rounded-full border border-amber-500/40 shadow-lg font-mono">
+          ⚔️ РУЧНОЙ БОЙ • ВАШ ХОД
+        </div>
+        <div className="flex items-center gap-1.5 bg-slate-950/90 p-1.5 rounded-2xl border border-slate-700/80 shadow-2xl backdrop-blur-md">
+          <button
+            onClick={manualAttack}
+            className="rpg-button-gold px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 shadow-lg active:scale-95 transition-all hover:scale-105"
+            title="Нанести удар оружием по монстру"
+          >
+            <span className="text-sm">⚔️</span>
+            <span>Удар</span>
+          </button>
 
-        <button
-          onClick={manualBlock}
-          className="rpg-button-primary px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1 shadow-lg active:scale-95 transition-all hover:scale-105"
-          title="Получить щит и встать в защитную стойку"
-        >
-          <span className="text-xs">🛡️</span>
-          <span>Блок</span>
-        </button>
+          <button
+            onClick={manualBlock}
+            className="rpg-button-primary px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 shadow-lg active:scale-95 transition-all hover:scale-105"
+            title="Получить щит и заблокировать 75% урона ответного удара"
+          >
+            <span className="text-sm">🛡️</span>
+            <span>Блок</span>
+          </button>
 
-        <button
-          onClick={manualFlee}
-          className="rpg-button-danger px-3 py-1 rounded-xl text-[11px] font-black flex items-center gap-1 shadow-lg active:scale-95 transition-all hover:scale-105"
-          title="Отступить из боя на 1 этап локации"
-        >
-          <span className="text-xs">🏃</span>
-          <span>Убежать</span>
-        </button>
+          <button
+            onClick={manualFlee}
+            className="rpg-button-danger px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 shadow-lg active:scale-95 transition-all hover:scale-105"
+            title="Отступить из боя на 1 этап локации"
+          >
+            <span className="text-sm">🏃</span>
+            <span>Убежать</span>
+          </button>
+        </div>
       </div>
     </div>
   );
