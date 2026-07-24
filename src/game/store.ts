@@ -301,6 +301,22 @@ export const useGame = create<GameState>((set, get) => {
       return;
     }
 
+    // Multi-phase Boss Checks
+    if (m.def.isBoss && m.hp > 0 && m.maxHp > 0) {
+      const hpPct = m.hp / m.maxHp;
+      if (hpPct <= 0.50 && hpPct > 0.20 && !(m as any).phase2Triggered) {
+        (m as any).phase2Triggered = true;
+        sound.playBoss();
+        pushLog(s.log, `👑 ФАЗА 2 БОССА: ${m.def.name} ПРИЗЫВАЕТ ТЕНЕВЫХ СЛУГ И ЩИТ!`, '#eab308');
+        pushFx(s.fxQueue, { type: 'bossSpawn', text: '👑 ФАЗА 2: ЩИТ!', color: '#eab308' });
+      } else if (hpPct <= 0.20 && !(m as any).phase3Triggered) {
+        (m as any).phase3Triggered = true;
+        sound.playBoss();
+        pushLog(s.log, `🔥 ФАЗА 3 БОССА: ${m.def.name} ВПАДАЕТ В ЯРОСТЬ! (+100% Скорости)`, '#ef4444');
+        pushFx(s.fxQueue, { type: 'bossSpawn', text: '🔥 ФАЗА 3: ЯРОСТЬ!', color: '#ef4444' });
+      }
+    }
+
     const rawDmg = isBlocked ? m.dmg * 0.25 : m.dmg;
     const mDmg = mitigate(rawDmg, d.armor);
 

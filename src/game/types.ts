@@ -285,3 +285,92 @@ export interface LogEntry {
   color: string;
   time: number;
 }
+
+// ===================== LABYRINTH TYPES =====================
+
+export type LabyrinthRoomType = 'start' | 'empty' | 'combat' | 'trap' | 'chest' | 'shrine' | 'boss';
+
+export interface LabyrinthRoom {
+  x: number;
+  y: number;
+  type: LabyrinthRoomType;
+  visited: boolean;
+  cleared: boolean;
+  title: string;
+  desc: string;
+  icon: string;
+}
+
+export interface LabyrinthState {
+  size: number;
+  currentX: number;
+  currentY: number;
+  rooms: Record<string, LabyrinthRoom>;
+  clearedRoomsCount: number;
+  totalRooms: number;
+  completed: boolean;
+}
+
+// ===================== TOWER OF TRIALS TYPES =====================
+
+export interface TowerModifier {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  color: string;
+}
+
+export interface TowerFloorState {
+  floor: number;
+  maxFloorReached: number;
+  currentModifier: TowerModifier | null;
+  active: boolean;
+}
+
+// ===================== RUNE SOCKETING TYPES =====================
+
+export interface RuneDef {
+  id: string;
+  name: string;
+  icon: string;
+  rarity: RarityId;
+  bonusDesc: string;
+  stat: StatId | 'dmg' | 'armor' | 'hp' | 'crit';
+  value: number;
+}
+
+export interface RuneWordDef {
+  id: string;
+  name: string;
+  icon: string;
+  runes: string[]; // rune IDs required
+  effectDesc: string;
+  bonusDmgPct?: number;
+  bonusArmorPct?: number;
+  bonusCritPct?: number;
+}
+
+// Extend Item with sockets & inserted runes
+export interface SocketedItem extends Item {
+  sockets?: number;
+  insertedRunes?: string[]; // array of rune IDs
+  activeRuneWord?: RuneWordDef;
+}
+
+// ===================== TREASURE MAP TYPES =====================
+
+export interface TreasureMapVault {
+  id: string;
+  title: string;
+  difficulty: number;
+  chestLocked: boolean;
+  pinsCount: number;
+  solvedPins: number;
+  rewards: {
+    gold: number;
+    xp: number;
+    runes: string[];
+    itemRarity: RarityId;
+  };
+}

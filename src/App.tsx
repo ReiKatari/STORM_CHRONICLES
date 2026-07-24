@@ -17,6 +17,10 @@ import CharacterCreationModal from '@/components/game/CharacterCreationModal';
 import EquipmentModal from '@/components/game/EquipmentModal';
 import MerchantModal from '@/components/game/MerchantModal';
 import CraftingModal from '@/components/game/CraftingModal';
+import LabyrinthModal from '@/components/game/LabyrinthModal';
+import TowerModal from '@/components/game/TowerModal';
+import RuneSocketingModal from '@/components/game/RuneSocketingModal';
+import TreasureVaultModal from '@/components/game/TreasureVaultModal';
 
 import ResetConfirmModal from '@/components/game/ResetConfirmModal';
 
@@ -33,10 +37,18 @@ const TABS: { id: Tab; name: string; icon: string }[] = [
 function Header({
   onOpenMerchant,
   onOpenCrafting,
+  onOpenLabyrinth,
+  onOpenTower,
+  onOpenRunes,
+  onOpenTreasure,
   onOpenReset,
 }: {
   onOpenMerchant: () => void;
   onOpenCrafting: () => void;
+  onOpenLabyrinth: () => void;
+  onOpenTower: () => void;
+  onOpenRunes: () => void;
+  onOpenTreasure: () => void;
   onOpenReset: () => void;
 }) {
   const name = useGame(s => s.characterName);
@@ -53,7 +65,7 @@ function Header({
   const [showSettings, setShowSettings] = useState(false);
 
   return (
-    <header className="bg-slate-900/95 border-b border-slate-700/60 px-4 py-2.5 flex items-center gap-3 flex-wrap backdrop-blur-md sticky top-0 z-40 shadow-xl shrink-0 font-sans">
+    <header className="bg-slate-900/95 border-b border-slate-700/60 px-4 py-2.5 flex items-center gap-2 flex-wrap backdrop-blur-md sticky top-0 z-40 shadow-xl shrink-0 font-sans">
       {/* Hero Name & Class Badge */}
       <div className="flex items-center gap-2.5">
         <span className="text-3xl p-1 bg-slate-950 rounded-xl border border-slate-800">{heroClass?.icon || '⚔️'}</span>
@@ -71,8 +83,8 @@ function Header({
       </div>
 
       {/* Level & XP Bar */}
-      <div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-md">
-        <span className="text-xs font-black font-mono text-amber-300 bg-amber-500/15 border border-amber-500/40 rounded-xl px-2.5 py-1 shadow-sm">
+      <div className="flex items-center gap-2 flex-1 min-w-[180px] max-w-sm">
+        <span className="text-xs font-black font-mono text-amber-300 bg-amber-500/15 border border-amber-500/40 rounded-xl px-2 py-1 shadow-sm">
           Ур. {fmt(level)}
         </span>
         <div className="flex-1 h-4 bg-slate-950 rounded-full overflow-hidden border border-slate-800 relative p-0.5 shadow-inner">
@@ -81,14 +93,49 @@ function Header({
             {fmt(xp)} / {fmt(xpForLevel(level))} XP ({xpPct.toFixed(1)}%)
           </span>
         </div>
-        <span className="text-[10px] text-slate-400 font-mono font-bold">МАКС {fmt(MAX_LEVEL)}</span>
       </div>
 
-      {/* Meta Stats, Merchant, Crafting, Characters & Settings */}
-      <div className="flex items-center gap-2 ml-auto text-xs font-bold">
+      {/* Action Buttons Bar */}
+      <div className="flex items-center gap-1.5 ml-auto text-xs font-bold flex-wrap">
+        <button
+          onClick={onOpenLabyrinth}
+          className="text-[11px] font-black px-2.5 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 text-amber-300 transition-all shadow active:scale-95 flex items-center gap-1"
+          title="Процедурный 5x5 Лабиринт Бездны"
+        >
+          <span>🏰</span>
+          <span>Лабиринт</span>
+        </button>
+
+        <button
+          onClick={onOpenTower}
+          className="text-[11px] font-black px-2.5 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 text-purple-300 transition-all shadow active:scale-95 flex items-center gap-1"
+          title="Бесконечная Башня Испытаний с модификаторами этажей"
+        >
+          <span>⚔️</span>
+          <span>Башня</span>
+        </button>
+
+        <button
+          onClick={onOpenRunes}
+          className="text-[11px] font-black px-2.5 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/50 text-indigo-300 transition-all shadow active:scale-95 flex items-center gap-1"
+          title="Астральные Руны и Рунические Слова"
+        >
+          <span>🔮</span>
+          <span>Руны</span>
+        </button>
+
+        <button
+          onClick={onOpenTreasure}
+          className="text-[11px] font-black px-2.5 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 transition-all shadow active:scale-95 flex items-center gap-1"
+          title="Карты сокровищ и мини-игра на взлом тайников"
+        >
+          <span>🗺️</span>
+          <span>Клад</span>
+        </button>
+
         <button
           onClick={onOpenCrafting}
-          className="text-[11px] font-black px-3 py-1.5 rounded-xl bg-orange-950/80 hover:bg-orange-900 border border-orange-500/50 text-orange-200 transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
+          className="text-[11px] font-black px-2.5 py-1.5 rounded-xl bg-orange-950/80 hover:bg-orange-900 border border-orange-500/50 text-orange-200 transition-all shadow active:scale-95 flex items-center gap-1"
         >
           <span>🔨</span>
           <span>Кузница</span>
@@ -96,13 +143,13 @@ function Header({
 
         <button
           onClick={onOpenMerchant}
-          className="text-[11px] font-black px-3 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 text-amber-200 transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
+          className="text-[11px] font-black px-2.5 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 text-amber-200 transition-all shadow active:scale-95 flex items-center gap-1"
         >
           <span>🏪</span>
           <span>Торговля</span>
         </button>
 
-        <span className="text-amber-300 font-mono font-extrabold bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
+        <span className="text-amber-300 font-mono font-extrabold bg-slate-950 px-2 py-1 rounded-xl border border-slate-800 text-[11px]">
           💰 {fmt(gold)}
         </span>
         <span className="text-slate-300 font-mono font-extrabold bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
@@ -228,6 +275,10 @@ export default function App() {
   const [showPaperdollModal, setShowPaperdollModal] = useState(false);
   const [showMerchantModal, setShowMerchantModal] = useState(false);
   const [showCraftingModal, setShowCraftingModal] = useState(false);
+  const [showLabyrinthModal, setShowLabyrinthModal] = useState(false);
+  const [showTowerModal, setShowTowerModal] = useState(false);
+  const [showRuneModal, setShowRuneModal] = useState(false);
+  const [showTreasureModal, setShowTreasureModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
 
   const characterName = useGame(s => s.characterName);
@@ -294,6 +345,22 @@ export default function App() {
         <CraftingModal onClose={() => setShowCraftingModal(false)} />
       )}
 
+      {showLabyrinthModal && (
+        <LabyrinthModal onClose={() => setShowLabyrinthModal(false)} />
+      )}
+
+      {showTowerModal && (
+        <TowerModal onClose={() => setShowTowerModal(false)} />
+      )}
+
+      {showRuneModal && (
+        <RuneSocketingModal onClose={() => setShowRuneModal(false)} />
+      )}
+
+      {showTreasureModal && (
+        <TreasureVaultModal onClose={() => setShowTreasureModal(false)} />
+      )}
+
       {showResetModal && (
         <ResetConfirmModal
           onClose={() => setShowResetModal(false)}
@@ -308,6 +375,10 @@ export default function App() {
         <Header
           onOpenMerchant={() => setShowMerchantModal(true)}
           onOpenCrafting={() => setShowCraftingModal(true)}
+          onOpenLabyrinth={() => setShowLabyrinthModal(true)}
+          onOpenTower={() => setShowTowerModal(true)}
+          onOpenRunes={() => setShowRuneModal(true)}
+          onOpenTreasure={() => setShowTreasureModal(true)}
           onOpenReset={() => setShowResetModal(true)}
         />
         <main className="p-3 grid gap-3.5 xl:grid-cols-[360px_1fr_460px] lg:grid-cols-[320px_1fr] flex-1 min-h-0 items-start">
