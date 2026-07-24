@@ -484,7 +484,7 @@ export const useGame = create<GameState>((set, get) => {
                   pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
                   if (currentM.hp <= 0) {
                     onKill(currentM);
-                    set({ hp, mana, skillCds: newCds });
+                    set({ hp, mana, skillCds: newCds, fxQueue: [...s.fxQueue] });
                     return;
                   }
                 }
@@ -506,7 +506,7 @@ export const useGame = create<GameState>((set, get) => {
               (s as any).petAtkTimer = 0;
               if (currentM.hp <= 0) {
                 onKill(currentM);
-                set({ hp, mana, skillCds: newCds });
+                set({ hp, mana, skillCds: newCds, fxQueue: [...s.fxQueue] });
                 return;
               }
             } else {
@@ -531,7 +531,7 @@ export const useGame = create<GameState>((set, get) => {
 
           if (currentM.hp <= 0) {
             onKill(currentM);
-            set({ playerAtk: 0, hp, mana, skillCds: newCds });
+            set({ playerAtk: 0, hp, mana, skillCds: newCds, fxQueue: [...s.fxQueue] });
             return;
           }
         }
@@ -558,7 +558,7 @@ export const useGame = create<GameState>((set, get) => {
           currentM.attackTimer = mTimer;
         }
 
-        set({ hp, mana, playerAtk: atkTimer, monster: currentM, skillCds: newCds });
+        set({ hp, mana, playerAtk: atkTimer, monster: currentM, skillCds: newCds, fxQueue: [...s.fxQueue] });
       } catch (err) {
         console.error('Combat tick error:', err);
       }
