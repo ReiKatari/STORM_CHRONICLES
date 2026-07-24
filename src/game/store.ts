@@ -226,6 +226,50 @@ export const useGame = create<GameState>((set, get) => {
       addQuestProgress('level', '', level);
     } else {
       set({ xp });
+  function triggerMonsterTurn(s: GameState, m: ActiveMonster, isBlocked = false) {
+    if (!m || m.hp <= 0) return;
+    const d = s.derived || computeDerived(s.level || 1, s.stats, s.equipment || {}, s.talents || {});
+
+    // Check Dodge
+    if (Math.random() * 100 < d.dodge) {
+      pushFx(s.fxQueue, { type: 'dodge', text: '💨 Уворот!', color: '#38bdf8' });
+      return;
+    }
+
+    const rawDmg = isBlocked ? m.dmg * 0.25 : m.dmg;
+    const mDmg = mitigate(rawDmg, d.armor);
+
+    let remDmg = mDmg;
+    let currShield = s.shield ?? 0;
+    if (currShield > 0) {
+      const absorbed = Math.min(currShield, remDmg);
+      currShield -= absorbed;
+      remDmg -= absorbed;
+    }
+
+    let hp = Math.max(0, s.hp - remDmg);
+    if (isBlocked) {
+      pushFx(s.fxQueue, { type: 'playerHit', value: mDmg, text: `🛡️ -${fmt(mDmg)}`, color: '#facc15' });
+    } else {
+      pushFx(s.fxQueue, { type: 'playerHit', value: mDmg, text: `-${fmt(mDmg)}`, color: '#ef4444' });
+    }
+
+    if (hp <= 0) {
+      hp = d.maxHp;
+      pushLog(s.log, `☠️ Вы погибли от рук ${m.def.name}. Отступление на этап 1!`, '#ef4444');
+      set({
+        stage: 1,
+        stageKills: 0,
+        dungeon: null,
+        monster: spawnFor(s.zoneId || 'hills', 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, null),
+        hp,
+        mana: d.maxMana,
+        shield: 0,
+        playerAtk: 0,
+        fxQueue: [...s.fxQueue]
+      });
+    } else {
+      set({ hp, shield: currShield, fxQueue: [...s.fxQueue] });
     }
   }
 
@@ -472,106 +516,7 @@ export const useGame = create<GameState>((set, get) => {
           });
         }
 
-        // Auto-cast skills
-        const cls = getClassById(s.classId);
-        if (cls && Array.isArray(cls.skills)) {
-          for (const sk of cls.skills) {
-            if ((s.autoCast ? s.autoCast[sk.id] !== false : true) && (s.skillRanks[sk.id] ?? 0) > 0 && (newCds[sk.id] ?? 0) === 0) {
-              if (mana >= sk.manaCost) {
-                mana -= sk.manaCost;
-                newCds[sk.id] = sk.cooldown * (1 - d.cdReduction / 100);
-                let skillDmg = Math.round(d.skillPower * 2.5);
-                if (sk.id.includes('heal') || sk.id.includes('meditate') || sk.id.includes('rejuvenation')) {
-                  hp = Math.min(d.maxHp, hp + Math.round(d.maxHp * 0.35));
-                  pushFx(s.fxQueue, { type: 'heal', text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
-                } else if (currentM) {
-                  currentM.hp -= skillDmg;
-                  pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
-                  if (currentM.hp <= 0) {
-                    onKill(currentM);
-                    set({ hp, mana, skillCds: newCds, fxQueue: [...s.fxQueue] });
-                    return;
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        // Active Pet Companion Auto-Attack & Auto-Skills
-        if (s.activePetId && currentM) {
-          const petDef = PETS.find(p => p.id === s.activePetId);
-          if (petDef) {
-            const petLvl = s.petLvl ?? 1;
-            const petDmg = Math.round((d.dmgMin + d.dmgMax) * 0.4 * (1 + petLvl * 0.05));
-            const petAtkTimer = ((s as any).petAtkTimer ?? 0) + dt;
-            if (petAtkTimer >= 1.8) {
-              currentM.hp -= petDmg;
-              pushFx(s.fxQueue, { type: 'petHit', value: petDmg, text: `🐾 ${petDef.icon} ${fmt(petDmg)}`, color: petDef.color });
-              (s as any).petAtkTimer = 0;
-              if (currentM.hp <= 0) {
-                onKill(currentM);
-                set({ hp, mana, skillCds: newCds, fxQueue: [...s.fxQueue] });
-                return;
-              }
-            } else {
-              (s as any).petAtkTimer = petAtkTimer;
-            }
-          }
-        }
-
-        // Player auto-attack
-        const speed = (!d || isNaN(d.attackSpeed) || d.attackSpeed <= 0) ? 1.5 : d.attackSpeed;
-        let atkTimer = (s.playerAtk ?? 0) + dt * speed;
-
-        if (atkTimer >= 1.0) {
-          atkTimer -= 1.0;
-          const isCrit = Math.random() * 100 < (d.critChance || 5);
-          const rawDmg = Math.floor((d.dmgMin || 15) + Math.random() * ((d.dmgMax || 25) - (d.dmgMin || 15) + 1));
-          const dealt = Math.round(rawDmg * (isCrit ? (d.critMult || 1.5) : 1.0));
-
-          if (isCrit) sound.playCrit(); else sound.playHit();
-          currentM.hp -= dealt;
-          pushFx(s.fxQueue, { type: isCrit ? 'crit' : 'monsterHit', value: dealt, text: isCrit ? `💥 КРИТ ${fmt(dealt)}` : `${fmt(dealt)}`, color: isCrit ? '#facc15' : '#f87171' });
-
-          if (currentM.hp <= 0) {
-            onKill(currentM);
-            set({ playerAtk: 0, hp, mana, skillCds: newCds, fxQueue: [...s.fxQueue] });
-            return;
-          }
-        }
-
-        // Monster attack timer
-        if (currentM) {
-          let mTimer = (currentM.attackTimer ?? 0) + dt;
-          if (mTimer >= 1.8) {
-            mTimer = 0;
-            if (Math.random() * 100 >= d.dodge) {
-              const mDmg = mitigate(currentM.dmg, d.armor);
-              let remDmg = mDmg;
-              let currShield = s.shield ?? 0;
-              if (currShield > 0) {
-                const absorbed = Math.min(currShield, remDmg);
-                currShield -= absorbed;
-                remDmg -= absorbed;
-              }
-              hp -= remDmg;
-              pushFx(s.fxQueue, { type: 'playerHit', value: mDmg, text: `-${fmt(mDmg)}`, color: '#ef4444' });
-              if (hp <= 0) {
-                hp = d.maxHp;
-                pushLog(s.log, `☠️ Вы погибли от рук ${currentM.def.name}. Отступление на этап 1!`, '#ef4444');
-                set({ stage: 1, stageKills: 0, dungeon: null, monster: spawnFor(s.zoneId || 'hills', 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, null), hp, mana: d.maxMana, shield: 0, playerAtk: 0 });
-                return;
-              }
-              set({ shield: currShield });
-            } else {
-              pushFx(s.fxQueue, { type: 'dodge', text: '💨 Уворот!', color: '#38bdf8' });
-            }
-          }
-          currentM.attackTimer = mTimer;
-        }
-
-        set({ hp, mana, playerAtk: atkTimer, monster: currentM, skillCds: newCds, fxQueue: [...s.fxQueue] });
+        set({ hp, mana, monster: currentM, skillCds: newCds });
       } catch (err) {
         console.error('Combat tick error:', err);
       }
@@ -727,7 +672,7 @@ export const useGame = create<GameState>((set, get) => {
     castSkill: (id: string) => {
       const s = get();
       const cls = getClassById(s.classId);
-      const sk = cls.skills.find(x => x.id === id);
+      const sk = cls?.skills.find(x => x.id === id);
       if (!sk || (s.skillRanks[id] ?? 0) <= 0 || (s.skillCds[id] ?? 0) > 0) return;
       if (s.mana < sk.manaCost) return;
 
@@ -738,16 +683,21 @@ export const useGame = create<GameState>((set, get) => {
       if (id.includes('heal') || id.includes('meditate') || id.includes('rejuvenation')) {
         const hp = Math.min(d.maxHp, s.hp + Math.round(d.maxHp * 0.35));
         pushFx(s.fxQueue, { type: 'heal', text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
-        set({ mana, hp, skillCds });
-      } else {
+        set({ mana, hp, skillCds, fxQueue: [...s.fxQueue] });
+        if (s.monster && s.monster.hp > 0) {
+          triggerMonsterTurn(get(), s.monster, false);
+        }
+      } else if (s.monster) {
         const skillDmg = Math.round(d.skillPower * 2.5);
-        const mHp = s.monster.hp - skillDmg;
+        const mHp = Math.max(0, s.monster.hp - skillDmg);
         pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
         if (mHp <= 0) {
           onKill(s.monster);
-          set({ mana, skillCds });
+          set({ mana, skillCds, fxQueue: [...s.fxQueue] });
         } else {
-          set({ mana, skillCds, monster: { ...s.monster, hp: mHp } });
+          const updatedM = { ...s.monster, hp: mHp };
+          set({ mana, skillCds, monster: updatedM, fxQueue: [...s.fxQueue] });
+          triggerMonsterTurn(get(), updatedM, false);
         }
       }
     },
@@ -828,7 +778,18 @@ export const useGame = create<GameState>((set, get) => {
 
       const isCrit = Math.random() * 100 < critChance;
       const rawDmg = Math.floor(dmgMin + Math.random() * (dmgMax - dmgMin + 1));
-      const dealt = Math.max(1, Math.round(rawDmg * (isCrit ? critMult : 1.0)));
+      let dealt = Math.max(1, Math.round(rawDmg * (isCrit ? critMult : 1.0)));
+
+      // Active Pet companion attack bonus
+      if (s.activePetId) {
+        const petDef = PETS.find(p => p.id === s.activePetId);
+        if (petDef) {
+          const petLvl = s.petLvl ?? 1;
+          const petDmg = Math.round((dmgMin + dmgMax) * 0.4 * (1 + petLvl * 0.05));
+          dealt += petDmg;
+          pushFx(s.fxQueue, { type: 'petHit', value: petDmg, text: `🐾 ${petDef.icon} +${fmt(petDmg)}`, color: petDef.color });
+        }
+      }
 
       if (isCrit) sound.playCrit(); else sound.playHit();
       m.hp = Math.max(0, m.hp - dealt);
@@ -845,6 +806,7 @@ export const useGame = create<GameState>((set, get) => {
         set({ playerAtk: 1.0, fxQueue: [...s.fxQueue] });
       } else {
         set({ monster: { ...m }, playerAtk: 1.0, fxQueue: [...s.fxQueue] });
+        triggerMonsterTurn(get(), m, false);
       }
     },
 
@@ -857,6 +819,10 @@ export const useGame = create<GameState>((set, get) => {
       pushFx(s.fxQueue, { type: 'heal', text: `🛡️ БЛОК +${fmt(blockShield)} Щит!`, color: '#facc15' });
       pushLog(s.log, `🛡️ Ваша стойка Блока поглотит урон! (+${fmt(blockShield)} HP щита)`, '#facc15');
       set({ shield: newShield, fxQueue: [...s.fxQueue] });
+
+      if (s.monster && s.monster.hp > 0) {
+        triggerMonsterTurn(get(), s.monster, true);
+      }
     },
 
     manualFlee: () => {
