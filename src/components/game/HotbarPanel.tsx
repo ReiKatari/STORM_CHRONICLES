@@ -104,7 +104,7 @@ export default function HotbarPanel() {
                   castSkill(sk.id);
                 }
               }}
-              className={`relative h-12 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 ${
+              className={`relative h-15 sm:h-16 rounded-xl border flex flex-col items-center justify-between p-1 cursor-pointer transition-all hover:scale-105 active:scale-95 ${
                 cd > 0
                   ? 'border-slate-800 bg-slate-950/80 opacity-60'
                   : sk && rank > 0
@@ -117,30 +117,40 @@ export default function HotbarPanel() {
               }}
             >
               {/* Key Badge */}
-              <span className="absolute top-0.5 left-1 text-[8px] font-black font-mono text-slate-300 bg-slate-950/80 px-1 rounded border border-slate-800">
+              <span className="absolute top-0.5 left-1 text-[8px] font-black font-mono text-slate-300 bg-slate-950/80 px-1 rounded border border-slate-800 z-10">
                 {key}
               </span>
 
-              {/* Slot Icon & Compact Skill Name */}
+              {/* Slot Icon & 2-Line Skill/Item Name */}
               {isHpPot ? (
-                <div className="flex flex-col items-center leading-none mt-1">
+                <div className="flex flex-col items-center justify-center w-full h-full pt-1.5">
                   <span className="text-base">🧪</span>
-                  <span className="text-[8px] font-black text-emerald-300 truncate max-w-[44px] mt-0.5">Зелье HP</span>
+                  <div className="text-[8px] font-black text-emerald-300 text-center leading-[1.1] h-4 flex items-center justify-center mt-0.5">
+                    Зелье<br/>HP
+                  </div>
                 </div>
               ) : isManaPot ? (
-                <div className="flex flex-col items-center leading-none mt-1">
+                <div className="flex flex-col items-center justify-center w-full h-full pt-1.5">
                   <span className="text-base">💧</span>
-                  <span className="text-[8px] font-black text-sky-300 truncate max-w-[44px] mt-0.5">Эликсир</span>
+                  <div className="text-[8px] font-black text-sky-300 text-center leading-[1.1] h-4 flex items-center justify-center mt-0.5">
+                    Эликсир<br/>Маны
+                  </div>
                 </div>
               ) : sk ? (
-                <div className="flex flex-col items-center leading-none mt-1">
+                <div className="flex flex-col items-center justify-center w-full h-full pt-1.5">
                   <span className="text-base">{sk.icon}</span>
-                  <span className="text-[8px] font-black text-slate-200 truncate max-w-[46px] mt-0.5" style={{ color: sk.color }}>
-                    {sk.name}
-                  </span>
+                  <div className="text-[8px] font-black text-slate-200 text-center leading-[1.1] h-4 flex items-center justify-center mt-0.5" style={{ color: sk.color }}>
+                    {sk.name.includes(' ') ? (
+                      <>{sk.name.split(' ')[0]}<br/>{sk.name.split(' ').slice(1).join(' ')}</>
+                    ) : (
+                      sk.name
+                    )}
+                  </div>
                 </div>
               ) : (
-                <span className="text-slate-600 text-[9px] font-bold mt-2">пусто</span>
+                <div className="flex flex-col items-center justify-center w-full h-full pt-2">
+                  <span className="text-slate-600 text-[9px] font-bold">пусто</span>
+                </div>
               )}
 
               {/* Cooldown Overlay */}
