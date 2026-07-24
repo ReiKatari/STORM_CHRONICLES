@@ -154,6 +154,7 @@ export default function CombatCanvas() {
 
           // 1. HOLY / LIGHT SKILLS (Paladin / Priest / Judgement)
           if (sId.includes('holy') || sId.includes('sun') || sId.includes('divine') || sId.includes('judgement') || sId.includes('pal_') || col === '#facc15' || col === '#fde047') {
+            sound.playHoly();
             for (let i = 0; i < 18; i++) {
               P.push({ x: mx + (Math.random() - 0.5) * 45, y: Math.random() * my, vx: (Math.random() - 0.5) * 10, vy: 280 + Math.random() * 220, life: 0, maxLife: 0.45, size: 3 + Math.random() * 5, color: '#fde047', gravity: 0, kind: 'spark' });
             }
@@ -163,6 +164,7 @@ export default function CombatCanvas() {
           }
           // 2. FIRE / METEOR SKILLS (Mage / Elementalist)
           else if (sId.includes('fire') || sId.includes('meteor') || sId.includes('flame') || col === '#ef4444' || col === '#fb923c') {
+            sound.playFireball();
             burst(mx, my - 40, 55, '#ef4444', 400, 5, 60);
             burst(mx, my - 40, 35, '#f97316', 340, 4, -90);
             P.push({ x: mx - 40, y: my - 60, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 95, color: '#fb923c', gravity: 0, kind: 'slash' });
@@ -170,6 +172,7 @@ export default function CombatCanvas() {
           }
           // 3. ICE / FROST SKILLS (Frost Nova / Ice Touch)
           else if (sId.includes('frost') || sId.includes('ice') || col === '#38bdf8' || col === '#a5f3fc') {
+            sound.playFrost();
             burst(mx, my - 40, 50, '#38bdf8', 280, 3, -130);
             burst(mx, my - 40, 30, '#a5f3fc', 360, 4, 30);
             P.push({ x: mx - 30, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 80, color: '#a5f3fc', gravity: 0, kind: 'slash' });
@@ -177,6 +180,7 @@ export default function CombatCanvas() {
           }
           // 4. SHADOW / POISON / ASSASSIN SKILLS
           else if (sId.includes('shadow') || sId.includes('poison') || sId.includes('ass') || col === '#a855f7' || col === '#22c55e') {
+            sound.playSlash();
             burst(mx, my - 40, 45, col, 300, 3, 30);
             P.push({ x: mx - 25, y: my - 55, vx: 0, vy: 0, life: 0, maxLife: 0.32, size: 85, color: col, gravity: 0, kind: 'slash' });
             P.push({ x: mx + 15, y: my - 35, vx: 0, vy: 0, life: 0, maxLife: 0.32, size: 85, color: col, gravity: 0, kind: 'slash' });
