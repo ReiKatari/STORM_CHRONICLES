@@ -311,7 +311,9 @@ export default function CombatCanvas() {
       // ===== DRAW PLAYER =====
       const px = W * 0.25;
       const py = H * 0.68;
-      const lunge = playerLunge.current > 0 ? Math.sin((playerLunge.current / 0.18) * Math.PI) * 75 : 0;
+      const attackPhase = (s.playerAtk ?? 0) % 1.0;
+      const atkLunge = Math.sin(attackPhase * Math.PI) * 65;
+      const lunge = (playerLunge.current > 0 ? Math.sin((playerLunge.current / 0.18) * Math.PI) * 75 : 0) + atkLunge;
       const bob = Math.sin(time.current * 3) * 4;
       const breatheScaleX = 1 + Math.sin(time.current * 2.5) * 0.02;
       const breatheScaleY = 1 - Math.sin(time.current * 2.5) * 0.02;

@@ -76,7 +76,7 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
     return (
       <div
         key={slot.id}
-        className="relative group flex-1 min-w-0"
+        className="relative group w-[300px] shrink-0"
         onMouseEnter={e => {
           setHoverSlot({ id: slot.id, rect: e.currentTarget.getBoundingClientRect() });
         }}
@@ -88,7 +88,7 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
             e.preventDefault();
             if (item) unequip(slot.id);
           }}
-          className={`w-full flex items-center gap-2.5 rounded-2xl border p-2.5 sm:p-3 text-left transition-all hover:scale-[1.02] bg-slate-950/95 shadow-md ${
+          className={`w-[300px] flex items-center gap-3 rounded-2xl border p-3 text-left transition-all hover:scale-[1.02] bg-slate-950/95 shadow-md ${
             isSelected ? 'ring-2 ring-amber-400 border-amber-400 shadow-xl' : ''
           }`}
           style={{
@@ -98,14 +98,14 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
           title={item ? `${item.name}\n(ЛКМ — фильтр инвентаря, ПКМ — снять)` : `${slot.name} (Пусто - ЛКМ — фильтр инвентаря)`}
         >
           <div
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center text-xl shrink-0 bg-slate-900 shadow-md"
+            className="w-10 h-10 rounded-xl border flex items-center justify-center text-xl shrink-0 bg-slate-900 shadow-md"
             style={{ borderColor: r ? r.color : '#475569' }}
           >
             {item ? item.icon : slot.icon}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] sm:text-[11px] text-slate-400 font-extrabold uppercase leading-tight truncate">{slot.name}</div>
-            <div className="text-xs sm:text-[13px] font-black truncate leading-tight mt-0.5" style={{ color: r ? r.color : '#64748b' }}>
+            <div className="text-[11px] text-slate-400 font-extrabold uppercase leading-tight truncate">{slot.name}</div>
+            <div className="text-[13px] font-black truncate leading-tight mt-0.5" style={{ color: r ? r.color : '#64748b' }}>
               {item ? item.name : 'Пусто'}
             </div>
           </div>
@@ -120,7 +120,7 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
   };
 
   return (
-    <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-4 sm:p-5 shadow-2xl backdrop-blur-md font-sans space-y-3.5 w-full min-w-[340px] md:min-w-[420px]">
+    <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-4 sm:p-5 shadow-2xl backdrop-blur-md font-sans space-y-4 w-full">
       {/* Panel Header */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
         <div className="flex items-center gap-2">
@@ -157,30 +157,40 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
         <div className="text-emerald-400">❤️ +{fmt(totalHp)} <span className="text-[9px] text-slate-400 font-sans block font-semibold">HP</span></div>
       </div>
 
-      {/* Main Body Armor Paperdoll Slot Grid */}
-      <div className="space-y-2">
-        <div className="flex justify-center">{renderSlotBtn(PAPERDOLL_LAYOUT.top[0])}</div>
-        <div className="flex gap-2">{PAPERDOLL_LAYOUT.bodyUpper.map(renderSlotBtn)}</div>
-        <div className="flex gap-2">{PAPERDOLL_LAYOUT.bodyMid.map(renderSlotBtn)}</div>
-        <div className="flex gap-2">{PAPERDOLL_LAYOUT.bodyLower.map(renderSlotBtn)}</div>
+      {/* Main Body Armor Paperdoll Slot Grid - 300px Slot Widths & Centered Helmet/Amulet */}
+      <div className="space-y-3 w-full overflow-x-auto pb-2 scrollbar-none">
+        {/* Helmet (Centered 300px Slot) */}
+        <div className="flex justify-center w-full">{renderSlotBtn(PAPERDOLL_LAYOUT.top[0])}</div>
+
+        {/* Body Upper (Shoulders, Armor, Cloak) */}
+        <div className="flex flex-wrap justify-center gap-3 w-full">{PAPERDOLL_LAYOUT.bodyUpper.map(renderSlotBtn)}</div>
+
+        {/* Body Mid (Weapon, Pants, Banner) */}
+        <div className="flex flex-wrap justify-center gap-3 w-full">{PAPERDOLL_LAYOUT.bodyMid.map(renderSlotBtn)}</div>
+
+        {/* Body Lower (Gloves, Kneepads, Boots) */}
+        <div className="flex flex-wrap justify-center gap-3 w-full">{PAPERDOLL_LAYOUT.bodyLower.map(renderSlotBtn)}</div>
 
         {/* Unified Jewelry Section */}
-        <div className="pt-2.5 border-t border-slate-800/80 space-y-1.5">
-          <div className="text-[10px] text-slate-300 font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+        <div className="pt-3 border-t border-slate-800/80 space-y-3 w-full">
+          <div className="text-[10.5px] text-slate-300 font-black uppercase tracking-wider flex items-center justify-center gap-1.5">
             <span>💎</span>
             <span>БИЖУТЕРИЯ И АКСЕССУАРЫ</span>
           </div>
 
-          <div className="space-y-2">
-            <div>{renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[0])}</div>
-            <div className="grid grid-cols-2 gap-2">
-              {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[1])}
-              {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[2])}
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[3])}
-              {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[4])}
-            </div>
+          {/* Amulet (Centered 300px Slot) */}
+          <div className="flex justify-center w-full">{renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[0])}</div>
+
+          {/* Rings (Centered 300px Slots) */}
+          <div className="flex flex-wrap justify-center gap-3 w-full">
+            {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[1])}
+            {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[2])}
+          </div>
+
+          {/* Earrings (Centered 300px Slots) */}
+          <div className="flex flex-wrap justify-center gap-3 w-full">
+            {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[3])}
+            {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[4])}
           </div>
         </div>
       </div>
