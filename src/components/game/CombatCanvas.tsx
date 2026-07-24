@@ -46,6 +46,7 @@ export default function CombatCanvas() {
   const particles = useRef<Particle[]>([]);
   const shake = useRef<number>(0);
   const playerLunge = useRef<number>(0);
+  const petLunge = useRef<number>(0);
   const monsterHit = useRef<number>(0);
   const time = useRef<number>(0);
   const lastZone = useRef<string>('');
@@ -222,9 +223,14 @@ export default function CombatCanvas() {
           break;
         }
         case 'petHit':
-          burst(mx - 30, my - 40, 24, fx.color ?? '#38bdf8', 260, 3);
-          floatText(mx - 20, my - 90, fx.text ?? '🐾 ПИТОМЕЦ', fx.color ?? '#38bdf8', 24);
-          monsterHit.current = 0.20;
+          setTimeout(() => {
+            sound.playSpell();
+            burst(mx - 30, my - 40, 26, fx.color ?? '#38bdf8', 280, 3.5, -40);
+            P.push({ x: mx - 25, y: my - 45, vx: 0, vy: 0, life: 0, maxLife: 0.32, size: 70, color: fx.color ?? '#38bdf8', gravity: 0, kind: 'slash', angle: Math.PI / 3 });
+            floatText(mx - 20, my - 90, fx.text ?? '🐾 ПИТОМЕЦ', fx.color ?? '#38bdf8', 24);
+            monsterHit.current = 0.20;
+            petLunge.current = 0.25;
+          }, 160);
           break;
         case 'playerHit':
           burst(px, py - 30, 18, '#ef4444', 220);
@@ -256,6 +262,7 @@ export default function CombatCanvas() {
       time.current += dt;
 
       playerLunge.current = Math.max(0, playerLunge.current - dt);
+      petLunge.current = Math.max(0, petLunge.current - dt);
       monsterHit.current = Math.max(0, monsterHit.current - dt);
       shake.current = Math.max(0, shake.current - dt * 25);
 
@@ -510,9 +517,9 @@ export default function CombatCanvas() {
           const evoBadge = evoTier === 3 ? '👑' : evoTier === 2 ? '🔥' : '🐣';
           const petSize = evoTier === 3 ? 48 : evoTier === 2 ? 40 : 32;
 
-          // Pet Companion Position with Attack Strike Animation
-          const petStrike = playerLunge.current > 0 ? Math.sin((playerLunge.current / 0.22) * Math.PI) * 60 : 0;
-          const petX = px - 110 + lunge * 0.7 + petStrike;
+          // Pet Companion Position with Staggered Attack Strike Animation (Attacks AFTER Player!)
+          const petStrike = petLunge.current > 0 ? Math.sin((petLunge.current / 0.25) * Math.PI) * 80 : 0;
+          const petX = px - 110 + petStrike;
           const petY = py + Math.sin(time.current * 4.5) * 10 - 25;
 
           ctx.save();
