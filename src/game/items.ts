@@ -438,3 +438,30 @@ export const AFFIX_LABELS: Record<string, { name: string; icon: string; suffix?:
   gold: { name: 'Бонус Золота', icon: '💰', suffix: '%' },
   xp: { name: 'Бонус Опыта', icon: '📈', suffix: '%' },
 };
+
+export interface PotionItemDef {
+  id: string;
+  name: string;
+  icon: string;
+  rarity: RarityId;
+  desc: string;
+  sellPrice: number;
+}
+
+export const POTIONS_CATALOG: PotionItemDef[] = [
+  { id: 'pot_hp_small', name: 'Малое Зелье Здоровья', icon: '🧪', rarity: 'common', desc: 'Восстанавливает +200 HP.', sellPrice: 15 },
+  { id: 'pot_hp_mid', name: 'Среднее Зелье Здоровья', icon: '🧪', rarity: 'uncommon', desc: 'Восстанавливает +500 HP.', sellPrice: 35 },
+  { id: 'pot_hp_grand', name: 'Великое Зелье Здоровья', icon: '🧪', rarity: 'rare', desc: 'Восстанавливает +100% HP и даёт +300 Щита.', sellPrice: 85 },
+  { id: 'pot_mana_small', name: 'Малый Эликсир Маны', icon: '🔮', rarity: 'common', desc: 'Восстанавливает +150 Маны.', sellPrice: 20 },
+  { id: 'pot_mana_grand', name: 'Астральный Эликсир Маны', icon: '🔮', rarity: 'rare', desc: 'Восстанавливает +100% Маны и сбрасывает КД.', sellPrice: 110 },
+  { id: 'pot_berserk', name: 'Настойка Яростного Берсерка', icon: '🍷', rarity: 'rare', desc: '+35% Урона и +20% Крита.', sellPrice: 150 },
+  { id: 'pot_ironhide', name: 'Завар Твёрдой Стали', icon: '🛡️', rarity: 'uncommon', desc: '+50% Брони.', sellPrice: 90 },
+  { id: 'pot_fortune', name: 'Зелье Удачной Зачистки', icon: '🍀', rarity: 'epic', desc: '+100% Золота и +75% Опыта.', sellPrice: 220 },
+  { id: 'pot_swift', name: 'Эликсир Стремительности', icon: '⚡', rarity: 'uncommon', desc: '+25% К Скорости Атаки.', sellPrice: 75 },
+  { id: 'pot_crit', name: 'Настойка Меткости', icon: '🎯', rarity: 'rare', desc: '+25% К Крит Шансу.', sellPrice: 130 },
+  { id: 'pot_astral', name: 'Катализатор Астральной Руды', icon: '💎', rarity: 'epic', desc: 'Дает +15 ед. Астральной Руды.', sellPrice: 300 },
+  { id: 'pot_titan', name: 'Эликсир Титанического Щита', icon: '🛡️', rarity: 'epic', desc: 'Наккладывает +600 ед. Астрального Щита.', sellPrice: 280 },
+  { id: 'pot_rejuvenation', name: 'Эликсир Омоложения', icon: '✨', rarity: 'rare', desc: 'Восстанавливает 100% HP и 100% Маны.', sellPrice: 160 },
+  { id: 'pot_vampirism', name: 'Тоник Вампиризма', icon: '🩸', rarity: 'rare', desc: '+20% Похищения жизни.', sellPrice: 140 },
+  { id: 'pot_alchemist_master', name: 'Высший Эликсир Алхимика', icon: '👑', rarity: 'legendary', desc: 'Полный комплекс усилений всех характеристик.', sellPrice: 500 },
+];

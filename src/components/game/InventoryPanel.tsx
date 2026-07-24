@@ -140,6 +140,10 @@ export default function InventoryPanel() {
               onMouseLeave={() => setHover(null)}
             >
               <div
+                draggable={true}
+                onDragStart={e => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({ type: 'item', itemId: item.id, icon: item.icon, name: item.name }));
+                }}
                 onClick={e => {
                   if (pinned?.id === item.id) {
                     setPinned(null);
@@ -150,7 +154,7 @@ export default function InventoryPanel() {
                     rect: e.currentTarget.getBoundingClientRect(),
                   });
                 }}
-                className={`flex items-center gap-2.5 rounded-xl border p-2 cursor-pointer transition-all bg-slate-950/80 hover:bg-slate-900 hover:border-amber-400 ${
+                className={`flex items-center gap-2.5 rounded-xl border p-2 cursor-grab active:cursor-grabbing transition-all bg-slate-950/80 hover:bg-slate-900 hover:border-amber-400 ${
                   pinned?.id === item.id ? 'ring-2 ring-purple-500 border-purple-400' : ''
                 }`}
                 style={{ borderColor: pinned?.id === item.id ? undefined : r.color, boxShadow: `0 0 6px ${r.glow}` }}

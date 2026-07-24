@@ -276,7 +276,6 @@ export default function App() {
           {/* LEFT COLUMN */}
           <div className="space-y-3 order-2 lg:order-1">
             <StatsPanel onOpenPaperdoll={handleOpenPaperdoll} />
-            <EventsPanel />
           </div>
 
           {/* CENTER */}
@@ -287,6 +286,7 @@ export default function App() {
             </div>
             <HotbarPanel />
             <BattleLog />
+            <EventsPanel />
 
             {/* mobile right panel */}
             <div className="xl:hidden h-[450px] flex flex-col">

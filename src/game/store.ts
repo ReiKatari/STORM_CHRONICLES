@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { ActiveMonster, BaseStats, DungeonRun, FxEvent, Item, LogEntry, QuestState, SlotId, StatId, SlotKind } from './types';
-import { generateItem, rarityById } from './items';
+import { generateItem, rarityById, POTIONS_CATALOG } from './items';
 import { DUNGEONS, makeMonster, ZONES, zoneById, dungeonById } from './monsters';
 import { QUESTS } from './quests';
 import { SKILLS, TALENTS } from './skills';
@@ -373,10 +373,10 @@ export const useGame = create<GameState>((set, get) => {
     let kills = (s.kills ?? 0) + 1;
     let bossKills = (s.bossKills ?? 0) + (m.def.isBoss ? 1 : 0);
 
-    // loot chance
-    const dropChance = 0.35 * (1 + d.dropBonus / 100) * (m.def.isBoss ? 2.5 : m.def.isMiniBoss ? 1.5 : 1);
+    // Reduced gear drop chance (22%)
+    const gearDropChance = 0.22 * (1 + (d.dropBonus || 0) / 100) * (m.def.isBoss ? 2.5 : m.def.isMiniBoss ? 1.5 : 1);
     const newInventory = [...s.inventory];
-    if (Math.random() < dropChance && newInventory.length < 72) {
+    if (Math.random() < gearDropChance && newInventory.length < 72) {
       const drop = generateItem(m.level, m.def.isBoss ? 'rare' : undefined);
       newInventory.push(drop);
       const r = rarityById(drop.rarity);
@@ -384,6 +384,28 @@ export const useGame = create<GameState>((set, get) => {
       pushLog(s.log, `✨ Выпал предмет: ${drop.name}`, r.color);
       pushFx(s.fxQueue, { type: 'loot', text: drop.name, color: r.color });
       addQuestProgress('loot', drop.rarity, 1);
+    }
+
+    // Increased Potion drop chance (38%)
+    const potionDropChance = 0.38 * (1 + (d.dropBonus || 0) / 100);
+    if (Math.random() < potionDropChance && newInventory.length < 72) {
+      const potDef = POTIONS_CATALOG[Math.floor(Math.random() * POTIONS_CATALOG.length)];
+      const potItem: Item = {
+        id: `pot_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        name: potDef.name,
+        slot: 'consumable' as any,
+        rarity: potDef.rarity,
+        ilvl: m.level,
+        icon: potDef.icon,
+        base: {},
+        affixes: [],
+        sellPrice: potDef.sellPrice,
+        score: 15,
+      };
+      newInventory.push(potItem);
+      sound.playLoot();
+      pushLog(s.log, `🧪 Выпало зелье: ${potItem.name}`, '#4ade80');
+      pushFx(s.fxQueue, { type: 'loot', text: potItem.name, color: '#4ade80' });
     }
 
     // secret zone drop chance

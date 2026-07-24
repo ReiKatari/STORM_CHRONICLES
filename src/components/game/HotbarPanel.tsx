@@ -87,19 +87,43 @@ export default function HotbarPanel() {
           const sk = heroClass.skills.find(x => x.id === boundId);
           const isHpPot = boundId === 'pot_hp';
           const isManaPot = boundId === 'pot_mana';
+          const customItem = boundId && boundId.startsWith('item_') ? useGame.getState().inventory.find(i => `item_${i.id}` === boundId) : null;
 
           const rank = sk ? (skillRanks[sk.id] ?? 0) : 0;
           const cd = sk ? (skillCds[sk.id] ?? 0) : 0;
           const isNoMana = sk && mana < sk.manaCost;
 
+          const handleDropSlot = (e: React.DragEvent) => {
+            e.preventDefault();
+            try {
+              const raw = e.dataTransfer.getData('application/json');
+              if (raw) {
+                const data = JSON.parse(raw);
+                if (data.type === 'skill' && data.skillId) {
+                  setBindings(prev => ({ ...prev, [key]: data.skillId }));
+                } else if (data.type === 'item' && data.itemId) {
+                  setBindings(prev => ({ ...prev, [key]: `item_${data.itemId}` }));
+                }
+              }
+            } catch { /* ignore */ }
+          };
+
           return (
             <div
               key={key}
+              onDragOver={e => e.preventDefault()}
+              onDrop={handleDropSlot}
               onClick={() => {
                 if (boundId === 'pot_hp') {
                   useGame.setState(s => ({ hp: Math.min(s.derived.maxHp, s.hp + Math.round(s.derived.maxHp * 0.4)) }));
                 } else if (boundId === 'pot_mana') {
                   useGame.setState(s => ({ mana: Math.min(s.derived.maxMana, s.mana + Math.round(s.derived.maxMana * 0.5)) }));
+                } else if (customItem) {
+                  useGame.setState(s => ({
+                    hp: Math.min(s.derived.maxHp, s.hp + 300),
+                    mana: Math.min(s.derived.maxMana, s.mana + 200),
+                    inventory: s.inventory.filter(i => i.id !== customItem.id)
+                  }));
                 } else if (sk) {
                   castSkill(sk.id);
                 }
@@ -109,6 +133,8 @@ export default function HotbarPanel() {
                   ? 'border-slate-800 bg-slate-950/80 opacity-60'
                   : sk && rank > 0
                   ? 'border-slate-600 bg-slate-800/90 shadow-md'
+                  : customItem
+                  ? 'border-emerald-500/60 bg-emerald-950/40 shadow-md'
                   : 'border-slate-800 bg-slate-950/40'
               }`}
               style={{
@@ -134,6 +160,13 @@ export default function HotbarPanel() {
                   <span className="text-base">💧</span>
                   <div className="text-[8px] font-black text-sky-300 text-center leading-[1.1] h-4 flex items-center justify-center mt-0.5">
                     Эликсир<br/>Маны
+                  </div>
+                </div>
+              ) : customItem ? (
+                <div className="flex flex-col items-center justify-center w-full h-full pt-1.5">
+                  <span className="text-base">{customItem.icon || '📦'}</span>
+                  <div className="text-[8px] font-black text-emerald-300 text-center leading-[1.1] h-4 flex items-center justify-center mt-0.5 truncate w-full px-0.5">
+                    {customItem.name}
                   </div>
                 </div>
               ) : sk ? (

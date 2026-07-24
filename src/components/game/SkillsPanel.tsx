@@ -162,11 +162,17 @@ export default function SkillsPanel() {
             return (
               <div
                 key={sk.id}
+                draggable={rank > 0}
+                onDragStart={e => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({ type: 'skill', skillId: sk.id, icon: sk.icon, name: sk.name }));
+                }}
                 className={`rounded-xl border p-3 transition-all relative overflow-hidden flex flex-col justify-between ${
+                  rank > 0 ? 'cursor-grab active:cursor-grabbing' : ''
+                } ${
                   !unlocked
                     ? 'border-slate-800/80 bg-slate-950/40 opacity-50'
                     : rank > 0
-                    ? 'border-slate-700/80 bg-slate-950/80 shadow-lg hover:border-slate-600'
+                    ? 'border-slate-700/80 bg-slate-950/80 shadow-lg hover:border-amber-400'
                     : 'border-slate-800 bg-slate-900/60'
                 }`}
               >
