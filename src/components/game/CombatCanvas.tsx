@@ -14,9 +14,11 @@ interface Particle {
   size: number;
   color: string;
   gravity?: number;
-  kind?: 'spark' | 'ring' | 'text' | 'slash' | 'shield' | 'dust' | 'pillar';
+  kind?: 'spark' | 'ring' | 'text' | 'slash' | 'shield' | 'dust' | 'pillar' | 'orb';
   text?: string;
   angle?: number;
+  targetX?: number;
+  targetY?: number;
 }
 
 interface TileDecor {
@@ -177,6 +179,27 @@ export default function CombatCanvas() {
           floatText(mx, my - 115, fx.text ?? '✨ СКИЛЛ', col, 30);
           monsterHit.current = 0.32;
           playerLunge.current = 0.30;
+
+          // Flying Projectile Orb from Hero (px, py) to Monster (mx, my)
+          const dx = mx - px;
+          const dy = (my - 40) - (py - 40);
+          const dist = Math.hypot(dx, dy);
+          const projSpeed = 700;
+          const flightTime = dist / projSpeed;
+
+          P.push({
+            x: px + 30, y: py - 40,
+            vx: (dx / dist) * projSpeed,
+            vy: (dy / dist) * projSpeed,
+            life: 0,
+            maxLife: flightTime,
+            size: 24,
+            color: col,
+            gravity: 0,
+            kind: 'orb',
+            targetX: mx,
+            targetY: my - 40
+          });
 
           // 1. HOLY / LIGHT / PALADIN SKILLS
           if (sId.includes('holy') || sId.includes('sun') || sId.includes('divine') || sId.includes('judgement') || sId.includes('pal_') || sId.includes('light') || col === '#facc15' || col === '#fde047') {
@@ -730,6 +753,13 @@ export default function CombatCanvas() {
           ctx.shadowBlur = 24;
           const w = p.size * (1 - progress);
           ctx.fillRect(p.x - w / 2, 0, w, p.y + 100);
+        } else if (p.kind === 'orb') {
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 22;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * (1 - progress * 0.3), 0, Math.PI * 2);
+          ctx.fill();
         } else if (p.kind === 'dust') {
           ctx.fillStyle = p.color;
           ctx.shadowColor = 'rgba(0,0,0,0.5)';
