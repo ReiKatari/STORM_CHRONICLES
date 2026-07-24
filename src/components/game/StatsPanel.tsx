@@ -61,12 +61,12 @@ export default function StatsPanel({ onOpenPaperdoll }: { onOpenPaperdoll?: () =
               <button
                 onClick={() => allocate(d.id)}
                 disabled={points <= 0}
-                className="w-5 h-5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-white text-xs font-black leading-none transition-all active:scale-95 shadow"
+                className="w-5 h-5 rounded-md rpg-button-primary disabled:opacity-30 text-white text-xs font-black leading-none flex items-center justify-center"
               >+</button>
               <button
                 onClick={() => allocate10(d.id)}
                 disabled={points <= 0}
-                className="px-1.5 h-5 rounded-md bg-emerald-700 hover:bg-emerald-600 disabled:opacity-30 text-white text-[9px] font-black leading-none transition-all active:scale-95 shadow"
+                className="px-1.5 h-5 rounded-md rpg-button-primary disabled:opacity-30 text-white text-[9px] font-black leading-none flex items-center justify-center"
               >+10</button>
             </div>
             <div className="absolute left-0 -bottom-1 translate-y-full z-20 hidden group-hover:block bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-[10px] text-slate-300 w-52 shadow-2xl">

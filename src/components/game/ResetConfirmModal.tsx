@@ -41,16 +41,15 @@ export default function ResetConfirmModal({ onClose }: { onClose: () => void }) 
         <div className="grid grid-cols-2 gap-3 pt-2">
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-extrabold text-xs transition-all border border-slate-700 active:scale-95"
+            className="w-full py-2.5 rounded-xl rpg-button text-slate-300 font-extrabold text-xs"
           >
             ❌ Отмена
           </button>
           <button
             onClick={handleConfirm}
-            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-500 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs shadow-lg shadow-red-900/50 border border-red-400/60 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+            className="w-full py-2.5 rounded-xl rpg-button-danger font-black text-xs flex items-center justify-center gap-1.5"
           >
-            <span>🔥</span>
-            <span>Сбросить Всё</span>
+            🔥 Сбросить Всё
           </button>
         </div>
       </div>
