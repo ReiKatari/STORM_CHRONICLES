@@ -450,10 +450,11 @@ export const useGame = create<GameState>((set, get) => {
         const s = get();
         if (!s.classId || !s.characterName) return;
 
-        // Ensure active valid monster
-        if (!s.monster || !s.monster.hp || isNaN(s.monster.hp) || s.monster.hp <= 0) {
-          set({ monster: spawnFor(s.zoneId || 'hills', s.stage || 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, s.dungeon || null) });
-          return;
+        // Ensure active valid monster inline
+        let currentM = s.monster;
+        if (!currentM || !currentM.hp || isNaN(currentM.hp) || currentM.hp <= 0) {
+          currentM = spawnFor(s.zoneId || 'hills', s.stage || 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, s.dungeon || null);
+          set({ monster: currentM });
         }
 
         const d = s.derived || computeDerived(s.level || 1, s.stats, s.equipment || {}, s.talents || {});
@@ -816,6 +817,7 @@ export const useGame = create<GameState>((set, get) => {
         skillRanks: s.skillRanks, autoCast: s.autoCast, talents: s.talents,
         zoneId: s.zoneId, stage: s.stage, stageKills: s.stageKills, mastery: s.mastery,
         unlockedZones: s.unlockedZones, unlockedSecrets: s.unlockedSecrets,
+        activePetId: s.activePetId, petLvl: s.petLvl, petXp: s.petXp, petCustomNames: s.petCustomNames,
         quests: s.quests, kills: s.kills, bossKills: s.bossKills, dungeonsCleared: s.dungeonsCleared,
         savedAt: Date.now(),
       };
@@ -855,6 +857,10 @@ export function loadSave() {
       zoneId: targetZoneId, stage: d.stage ?? 1, stageKills: d.stageKills ?? 0,
       mastery: d.mastery ?? {}, unlockedZones: d.unlockedZones ?? ['hills'],
       unlockedSecrets: d.unlockedSecrets ?? [],
+      activePetId: d.activePetId ?? 'pet_dragon',
+      petLvl: d.petLvl ?? 1,
+      petXp: d.petXp ?? 0,
+      petCustomNames: d.petCustomNames ?? {},
       quests, kills: d.kills ?? 0, bossKills: d.bossKills ?? 0, dungeonsCleared: d.dungeonsCleared ?? 0,
     });
     // recompute derived and respawn
