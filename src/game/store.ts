@@ -789,16 +789,26 @@ export const useGame = create<GameState>((set, get) => {
 
     manualAttack: () => {
       const s = get();
-      if (!s.monster) return;
-      let m = { ...s.monster };
-      const d = s.derived;
+      if (!s.classId || !s.characterName) return;
 
-      const isCrit = Math.random() * 100 < d.critChance;
-      const rawDmg = Math.floor(d.dmgMin + Math.random() * (d.dmgMax - d.dmgMin + 1));
-      const dealt = Math.round(rawDmg * (isCrit ? d.critMult : 1.0));
+      let m = s.monster ? { ...s.monster } : null;
+      if (!m || !m.hp || isNaN(m.hp) || m.hp <= 0) {
+        m = spawnFor(s.zoneId || 'hills', s.stage || 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, s.dungeon || null);
+      }
+
+      const d = s.derived || computeDerived(s.level || 1, s.stats, s.equipment || {}, s.talents || {});
+      const dmgMin = (d && !isNaN(d.dmgMin) && d.dmgMin > 0) ? d.dmgMin : 15;
+      const dmgMax = (d && !isNaN(d.dmgMax) && d.dmgMax >= dmgMin) ? d.dmgMax : dmgMin + 10;
+      const critChance = (d && !isNaN(d.critChance)) ? d.critChance : 5;
+      const critMult = (d && !isNaN(d.critMult) && d.critMult > 1) ? d.critMult : 1.5;
+
+      const isCrit = Math.random() * 100 < critChance;
+      const rawDmg = Math.floor(dmgMin + Math.random() * (dmgMax - dmgMin + 1));
+      const dealt = Math.max(1, Math.round(rawDmg * (isCrit ? critMult : 1.0)));
 
       if (isCrit) sound.playCrit(); else sound.playHit();
-      m.hp -= dealt;
+      m.hp = Math.max(0, m.hp - dealt);
+
       pushFx(s.fxQueue, {
         type: isCrit ? 'crit' : 'monsterHit',
         value: dealt,
@@ -810,14 +820,14 @@ export const useGame = create<GameState>((set, get) => {
         onKill(m);
         set({ playerAtk: 1.0, fxQueue: [...s.fxQueue] });
       } else {
-        set({ playerAtk: 1.0, monster: m, fxQueue: [...s.fxQueue] });
+        set({ monster: { ...m }, playerAtk: 1.0, fxQueue: [...s.fxQueue] });
       }
     },
 
     manualBlock: () => {
       const s = get();
-      const d = s.derived;
-      const blockShield = Math.round(d.maxHp * 0.35);
+      const d = s.derived || computeDerived(s.level || 1, s.stats, s.equipment || {}, s.talents || {});
+      const blockShield = Math.round((d.maxHp || 100) * 0.35);
       const newShield = (s.shield ?? 0) + blockShield;
       sound.playLevelUp();
       pushFx(s.fxQueue, { type: 'heal', text: `🛡️ БЛОК +${fmt(blockShield)} Щит!`, color: '#facc15' });
