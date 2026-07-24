@@ -82,12 +82,12 @@ export default function TalentsPanel() {
       </div>
 
       {/* Branch Selector Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none shrink-0">
+      <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none shrink-0">
         <button
           onClick={() => setActiveBranch('all')}
-          className={`py-1.5 px-3.5 rounded-xl font-extrabold text-xs transition-all shrink-0 border ${
+          className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all shrink-0 border ${
             activeBranch === 'all'
-              ? 'bg-slate-800 border-slate-600 text-white shadow'
+              ? 'bg-slate-800 border-slate-600 text-white shadow font-black'
               : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -100,16 +100,16 @@ export default function TalentsPanel() {
             <button
               key={b.id}
               onClick={() => setActiveBranch(b.id)}
-              className={`py-1.5 px-3.5 rounded-xl font-extrabold text-xs flex items-center gap-2 transition-all shrink-0 border ${
+              className={`text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all shrink-0 border ${
                 isActive
-                  ? 'bg-slate-800 border-slate-600 text-white shadow'
+                  ? 'bg-slate-800 border-slate-600 text-white shadow font-black'
                   : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
               }`}
               style={{ borderColor: isActive ? `${b.color}80` : undefined }}
             >
               <span>{b.icon}</span>
               <span>{b.name}</span>
-              <span className="text-[10px] px-2 py-0.2 rounded-full bg-slate-900 font-mono font-bold" style={{ color: b.color }}>
+              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-slate-900 font-mono font-bold" style={{ color: b.color }}>
                 {bPoints}
               </span>
             </button>
@@ -117,25 +117,50 @@ export default function TalentsPanel() {
         })}
       </div>
 
-      {/* Secondary Status Filter & Search */}
+      {/* Secondary Status Filter Tabs & Search Bar (Identical Compact Style as SkillsPanel) */}
       <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
-        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
-          {(['all', 'learned', 'upgradeable', 'locked'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                filter === f
-                  ? 'bg-purple-600 text-white shadow'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {f === 'all' && `Все (${talentsDef.length})`}
-              {f === 'learned' && 'Изученные'}
-              {f === 'upgradeable' && 'Доступные'}
-              {f === 'locked' && 'Закрытые'}
-            </button>
-          ))}
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+          <button
+            onClick={() => setFilter('all')}
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+              filter === 'all' ? 'bg-purple-600 text-white shadow-md font-black' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Все ({talentsDef.length})
+          </button>
+          <button
+            onClick={() => setFilter('learned')}
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+              filter === 'learned' ? 'bg-emerald-500 text-slate-950 shadow-md font-black' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Изученные ({talentsDef.filter(t => (talents[t.id] ?? 0) > 0).length})
+          </button>
+          <button
+            onClick={() => setFilter('upgradeable')}
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+              filter === 'upgradeable' ? 'bg-amber-400 text-slate-950 shadow-md font-black' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Доступные ({talentsDef.filter(t => {
+              const bPoints = branchPointsMap[t.branchId] ?? 0;
+              const reqPoints = t.row * 2;
+              const isUnlocked = t.row === 0 || bPoints >= reqPoints;
+              return points > 0 && (talents[t.id] ?? 0) < t.maxRank && isUnlocked;
+            }).length})
+          </button>
+          <button
+            onClick={() => setFilter('locked')}
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+              filter === 'locked' ? 'bg-slate-700 text-slate-200 shadow-md font-black' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Заблокированные ({talentsDef.filter(t => {
+              const bPoints = branchPointsMap[t.branchId] ?? 0;
+              const reqPoints = t.row * 2;
+              return t.row > 0 && bPoints < reqPoints;
+            }).length})
+          </button>
         </div>
 
         <input
@@ -143,7 +168,7 @@ export default function TalentsPanel() {
           placeholder="🔍 Поиск таланта..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          className="bg-slate-950/90 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500/60 w-44 shadow-inner"
+          className="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-purple-500/60 w-36 shadow-inner"
         />
       </div>
 
