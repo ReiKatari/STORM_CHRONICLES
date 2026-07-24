@@ -207,7 +207,7 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
       {hoverSlot && equipment[hoverSlot.id] && (
         <SmartItemTooltip
           item={equipment[hoverSlot.id]!}
-          targetRect={hoverSlot.rect}
+          anchorRect={hoverSlot.rect}
         />
       )}
     </div>

@@ -4,6 +4,7 @@ import { fmt } from '@/game/engine';
 import { zoneById } from '@/game/monsters';
 import { getClassById } from '@/game/classes';
 import { PETS } from '@/game/pets';
+import { sound } from '@/game/sound';
 import type { FxEvent } from '@/game/types';
 
 interface Particle {
