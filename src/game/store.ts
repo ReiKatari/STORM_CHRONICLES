@@ -142,6 +142,7 @@ export interface GameState {
   allocateStat: (s: StatId) => void;
   allocateStat10: (s: StatId) => void;
   equip: (itemId: string) => void;
+  equipBestAll: () => void;
   unequip: (slot: SlotId) => void;
   sellItem: (itemId: string) => void;
   sellJunk: (maxRarity: string) => void;
@@ -729,6 +730,63 @@ export const useGame = create<GameState>((set, get) => {
 
       const derived = computeDerived(s.level, s.stats, equipment, s.talents);
       set({ equipment, inventory, derived });
+    },
+
+    equipBestAll: () => {
+      const s = get();
+      let currentInv = [...s.inventory];
+      let currentEq = { ...s.equipment };
+      let equippedCount = 0;
+
+      const slotsToProcess: { id: SlotId; kind: SlotKind }[] = [
+        { id: 'helmet', kind: 'helmet' },
+        { id: 'shoulders', kind: 'shoulders' },
+        { id: 'armor', kind: 'armor' },
+        { id: 'cloak', kind: 'cloak' },
+        { id: 'weapon', kind: 'weapon' },
+        { id: 'pants', kind: 'pants' },
+        { id: 'banner', kind: 'banner' },
+        { id: 'gloves', kind: 'gloves' },
+        { id: 'kneepads', kind: 'kneepads' },
+        { id: 'boots', kind: 'boots' },
+        { id: 'amulet', kind: 'amulet' },
+        { id: 'ring1', kind: 'ring' },
+        { id: 'ring2', kind: 'ring' },
+        { id: 'earring1', kind: 'earring' },
+        { id: 'earring2', kind: 'earring' },
+      ];
+
+      slotsToProcess.forEach(slot => {
+        const equippedItem = currentEq[slot.id];
+        const currentScore = equippedItem ? equippedItem.score : -1;
+
+        const candidates = currentInv
+          .filter(i => i.slot === slot.kind)
+          .sort((a, b) => b.score - a.score);
+
+        if (candidates.length > 0) {
+          const bestCandidate = candidates[0];
+          if (bestCandidate.score > currentScore) {
+            currentInv = currentInv.filter(i => i.id !== bestCandidate.id);
+            if (equippedItem) {
+              currentInv.push(equippedItem);
+            }
+            currentEq[slot.id] = bestCandidate;
+            equippedCount++;
+          }
+        }
+      });
+
+      if (equippedCount > 0) {
+        const derived = computeDerived(s.level, s.stats, currentEq, s.talents);
+        const newTotalScore = Object.values(currentEq).reduce((sum, i) => sum + (i?.score ?? 0), 0);
+        sound.playEquip();
+        pushLog(s.log, `⚡ Автоматически надето ${equippedCount} предметов с наивысшей мощью! (Общая мощь: ⚡${fmt(newTotalScore)})`, '#facc15');
+        pushFx(s.fxQueue, { type: 'loot', text: `⚡ НАДЕТО ${equippedCount} ИТЕМА!`, color: '#facc15' });
+        set({ equipment: currentEq, inventory: currentInv, derived });
+      } else {
+        pushLog(s.log, `ℹ️ На вас уже надето всё самое лучшее снаряжение из инвентаря!`, '#94a3b8');
+      }
     },
 
     unequip: (slot: SlotId) => {

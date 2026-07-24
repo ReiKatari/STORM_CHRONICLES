@@ -49,7 +49,7 @@ const PAPERDOLL_LAYOUT: {
 export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind: SlotKind) => void }) {
   const equipment = useGame(s => s.equipment);
   const unequip = useGame(s => s.unequip);
-  const equipBestAll = useGame(s => (s as unknown as { equipBestAll: () => void }).equipBestAll);
+  const equipBestAll = useGame(s => s.equipBestAll);
   const setSlotFilter = useGame(s => s.setSlotFilter);
   const selectedSlotFilter = useGame(s => s.selectedSlotFilter);
   const [hoverSlot, setHoverSlot] = useState<{ id: SlotId; rect: DOMRect } | null>(null);
