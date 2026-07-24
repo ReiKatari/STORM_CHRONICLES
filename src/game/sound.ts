@@ -122,6 +122,11 @@ class SoundEngine {
         osc.start(now + idx * 0.08);
         osc.stop(now + idx * 0.08 + 0.12);
       });
+    } catch {
+      /* ignore audio playback errors */
+    }
+  }
+
   public playLoot() {
     try {
       if (this.isMuted) return;
