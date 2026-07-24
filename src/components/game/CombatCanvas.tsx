@@ -145,13 +145,58 @@ export default function CombatCanvas() {
           shake.current = Math.max(shake.current, 10);
           monsterHit.current = 0.25; playerLunge.current = 0.25;
           break;
-        case 'skill':
-          burst(mx, my - 40, 32, fx.color ?? '#c084fc', 290, 4);
-          P.push({ x: mx - 20, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.30, size: 65, color: fx.color ?? '#c084fc', gravity: 0, kind: 'slash' });
-          floatText(mx, my - 105, fx.text ?? '', fx.color ?? '#c084fc', 24);
-          shake.current = Math.max(shake.current, 5);
-          monsterHit.current = 0.22; playerLunge.current = 0.20;
+        case 'skill': {
+          const sId = fx.skillId || '';
+          const col = fx.color || '#c084fc';
+          floatText(mx, my - 110, fx.text ?? '✨ СКИЛЛ', col, 26);
+          monsterHit.current = 0.26;
+          playerLunge.current = 0.24;
+
+          // 1. HOLY / LIGHT SKILLS (Paladin / Priest / Judgement)
+          if (sId.includes('holy') || sId.includes('sun') || sId.includes('divine') || sId.includes('judgement') || sId.includes('pal_') || col === '#facc15' || col === '#fde047') {
+            for (let i = 0; i < 18; i++) {
+              P.push({ x: mx + (Math.random() - 0.5) * 45, y: Math.random() * my, vx: (Math.random() - 0.5) * 10, vy: 280 + Math.random() * 220, life: 0, maxLife: 0.45, size: 3 + Math.random() * 5, color: '#fde047', gravity: 0, kind: 'spark' });
+            }
+            burst(mx, my - 30, 45, '#facc15', 320, 4, -60);
+            P.push({ x: mx - 30, y: my - 60, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 90, color: '#fde047', gravity: 0, kind: 'slash' });
+            shake.current = Math.max(shake.current, 8);
+          }
+          // 2. FIRE / METEOR SKILLS (Mage / Elementalist)
+          else if (sId.includes('fire') || sId.includes('meteor') || sId.includes('flame') || col === '#ef4444' || col === '#fb923c') {
+            burst(mx, my - 40, 55, '#ef4444', 400, 5, 60);
+            burst(mx, my - 40, 35, '#f97316', 340, 4, -90);
+            P.push({ x: mx - 40, y: my - 60, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 95, color: '#fb923c', gravity: 0, kind: 'slash' });
+            shake.current = Math.max(shake.current, 12);
+          }
+          // 3. ICE / FROST SKILLS (Frost Nova / Ice Touch)
+          else if (sId.includes('frost') || sId.includes('ice') || col === '#38bdf8' || col === '#a5f3fc') {
+            burst(mx, my - 40, 50, '#38bdf8', 280, 3, -130);
+            burst(mx, my - 40, 30, '#a5f3fc', 360, 4, 30);
+            P.push({ x: mx - 30, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 80, color: '#a5f3fc', gravity: 0, kind: 'slash' });
+            shake.current = Math.max(shake.current, 7);
+          }
+          // 4. SHADOW / POISON / ASSASSIN SKILLS
+          else if (sId.includes('shadow') || sId.includes('poison') || sId.includes('ass') || col === '#a855f7' || col === '#22c55e') {
+            burst(mx, my - 40, 45, col, 300, 3, 30);
+            P.push({ x: mx - 25, y: my - 55, vx: 0, vy: 0, life: 0, maxLife: 0.32, size: 85, color: col, gravity: 0, kind: 'slash' });
+            P.push({ x: mx + 15, y: my - 35, vx: 0, vy: 0, life: 0, maxLife: 0.32, size: 85, color: col, gravity: 0, kind: 'slash' });
+            shake.current = Math.max(shake.current, 9);
+          }
+          // 5. BERSERKER / WHIRLWIND / EXECUTE SKILLS
+          else if (sId.includes('ber') || sId.includes('cleave') || sId.includes('whirl') || sId.includes('execute')) {
+            burst(mx, my - 40, 50, '#dc2626', 380, 4, 40);
+            P.push({ x: mx - 35, y: my - 65, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 100, color: '#dc2626', gravity: 0, kind: 'slash' });
+            P.push({ x: mx + 35, y: my - 25, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 100, color: '#ef4444', gravity: 0, kind: 'slash' });
+            shake.current = Math.max(shake.current, 15);
+          }
+          // 6. DEFAULT UNIQUE SKILL BURST
+          else {
+            burst(mx, my - 40, 40, col, 320, 4);
+            P.push({ x: mx - 25, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 80, color: col, gravity: 0, kind: 'slash' });
+            shake.current = Math.max(shake.current, 8);
+          }
           break;
+        }
         case 'petHit':
           burst(mx - 30, my - 40, 22, fx.color ?? '#38bdf8', 240, 3);
           floatText(mx - 20, my - 90, fx.text ?? '🐾 ПИТОМЕЦ', fx.color ?? '#38bdf8', 22);
@@ -166,16 +211,17 @@ export default function CombatCanvas() {
           floatText(px, py - 85, '💨 Уворот!', '#38bdf8', 18);
           break;
         case 'heal':
-          burst(px, py - 30, 18, '#4ade80', 140, 3, -100);
-          floatText(px, py - 95, fx.text ?? '+HP', '#4ade80', 22);
+          burst(px, py - 30, 25, '#4ade80', 160, 3, -110);
+          floatText(px, py - 95, fx.text ?? '+HP', '#4ade80', 24);
           break;
         case 'loot':
           P.push({ x: mx, y: my - 50, vx: 0, vy: -120, life: 0, maxLife: 1.4, size: 20, color: fx.color ?? '#facc15', gravity: 0, kind: 'text', text: `✨ ${fx.text}` });
           break;
         case 'levelup':
-          burst(px, py - 20, 45, '#facc15', 280, 4, -150);
-          floatText(px, py - 110, `⬆️ ${fx.text}`, '#facc15', 28);
-          shake.current = 7;
+          burst(px, py - 20, 60, '#facc15', 340, 5, -160);
+          burst(px, py - 20, 35, '#4ade80', 260, 4, -120);
+          floatText(px, py - 115, `✨ ${fx.text}`, '#facc15', 30);
+          shake.current = 10;
           break;
       }
     };
