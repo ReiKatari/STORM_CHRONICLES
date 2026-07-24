@@ -100,32 +100,28 @@ function Header({
           <span>Торговля</span>
         </button>
 
-        {/* Audio Mute Controls */}
-        <button
-          onClick={() => useGame.getState().toggleSfx()}
-          className={`text-[10.5px] font-black px-2.5 py-1.5 rounded-xl border transition-all shadow-md flex items-center gap-1 ${
-            useGame(s => s.sfxMuted)
-              ? 'bg-red-950/80 border-red-500/50 text-red-300'
-              : 'bg-slate-950 border-slate-700 text-emerald-300'
-          }`}
-          title="Включить / Отключить эффекты звука (SFX)"
-        >
-          <span>{useGame(s => s.sfxMuted) ? '🔇' : '🔊'}</span>
-          <span>{useGame(s => s.sfxMuted) ? 'Звук: ВЫКЛ' : 'Звук: ВКЛ'}</span>
-        </button>
-
-        <button
-          onClick={() => useGame.getState().toggleMusic()}
-          className={`text-[10.5px] font-black px-2.5 py-1.5 rounded-xl border transition-all shadow-md flex items-center gap-1 ${
-            useGame(s => s.musicMuted)
-              ? 'bg-red-950/80 border-red-500/50 text-red-300'
-              : 'bg-slate-950 border-slate-700 text-amber-300'
-          }`}
-          title="Включить / Отключить фоновую музыку (Music)"
-        >
-          <span>{useGame(s => s.musicMuted) ? '🔇' : '🎵'}</span>
-          <span>{useGame(s => s.musicMuted) ? 'Музыка: ВЫКЛ' : 'Музыка: ВКЛ'}</span>
-        </button>
+        {/* Quick Audio Controls Widget */}
+        <div className="flex items-center gap-1 bg-slate-950/90 px-2 py-1 rounded-xl border border-slate-800 shadow-md">
+          <button
+            onClick={() => useGame.getState().toggleSfx()}
+            className={`p-1.5 rounded-lg text-xs font-bold transition-all ${
+              useGame(s => s.sfxMuted) ? 'text-red-400 bg-red-950/50' : 'text-emerald-400 hover:bg-slate-800'
+            }`}
+            title="Эффекты звука (SFX)"
+          >
+            {useGame(s => s.sfxMuted) ? '🔇 SFX' : '🔊 SFX'}
+          </button>
+          <span className="text-slate-700">|</span>
+          <button
+            onClick={() => useGame.getState().toggleMusic()}
+            className={`p-1.5 rounded-lg text-xs font-bold transition-all ${
+              useGame(s => s.musicMuted) ? 'text-red-400 bg-red-950/50' : 'text-amber-300 hover:bg-slate-800'
+            }`}
+            title="Фоновая музыка (Music)"
+          >
+            {useGame(s => s.musicMuted) ? '🔇 МУЗ' : '🎵 МУЗ'}
+          </button>
+        </div>
 
         <span className="text-amber-300 font-mono font-extrabold bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
           💰 {fmt(gold)}
