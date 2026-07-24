@@ -88,29 +88,29 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
             e.preventDefault();
             if (item) unequip(slot.id);
           }}
-          className={`w-full flex items-center gap-2 rounded-xl border p-2 text-left transition-all hover:scale-[1.02] bg-slate-950/90 ${
-            isSelected ? 'ring-2 ring-amber-400 border-amber-400 shadow-lg' : ''
+          className={`w-full flex items-center gap-2.5 rounded-2xl border p-2.5 sm:p-3 text-left transition-all hover:scale-[1.02] bg-slate-950/95 shadow-md ${
+            isSelected ? 'ring-2 ring-amber-400 border-amber-400 shadow-xl' : ''
           }`}
           style={{
             borderColor: r ? r.color : isSelected ? '#facc15' : '#334155',
-            boxShadow: r ? `0 0 10px ${r.glow}` : undefined,
+            boxShadow: r ? `0 0 12px ${r.glow}` : undefined,
           }}
           title={item ? `${item.name}\n(ЛКМ — фильтр инвентаря, ПКМ — снять)` : `${slot.name} (Пусто - ЛКМ — фильтр инвентаря)`}
         >
           <div
-            className="w-8 h-8 rounded-lg border flex items-center justify-center text-lg shrink-0 bg-slate-900 shadow"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center text-xl shrink-0 bg-slate-900 shadow-md"
             style={{ borderColor: r ? r.color : '#475569' }}
           >
             {item ? item.icon : slot.icon}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[9px] text-slate-400 font-extrabold uppercase leading-none truncate">{slot.name}</div>
-            <div className="text-[10.5px] font-extrabold truncate leading-tight mt-0.5" style={{ color: r ? r.color : '#64748b' }}>
+            <div className="text-[10px] sm:text-[11px] text-slate-400 font-extrabold uppercase leading-tight truncate">{slot.name}</div>
+            <div className="text-xs sm:text-[13px] font-black truncate leading-tight mt-0.5" style={{ color: r ? r.color : '#64748b' }}>
               {item ? item.name : 'Пусто'}
             </div>
           </div>
           {item && (
-            <span className="text-[9.5px] font-black text-amber-300 font-mono shrink-0 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+            <span className="text-[10px] font-black text-amber-300 font-mono shrink-0 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800 shadow-inner">
               ⚡{fmt(item.score)}
             </span>
           )}
@@ -120,7 +120,7 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
   };
 
   return (
-    <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-4 shadow-2xl backdrop-blur-md font-sans space-y-3">
+    <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-4 sm:p-5 shadow-2xl backdrop-blur-md font-sans space-y-3.5 w-full min-w-[340px] md:min-w-[420px]">
       {/* Panel Header */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
         <div className="flex items-center gap-2">

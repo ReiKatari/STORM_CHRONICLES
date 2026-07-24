@@ -121,15 +121,26 @@ export default function HotbarPanel() {
                 {key}
               </span>
 
-              {/* Slot Icon */}
+              {/* Slot Icon & Compact Skill Name */}
               {isHpPot ? (
-                <span className="text-xl">🧪</span>
+                <div className="flex flex-col items-center leading-none mt-1">
+                  <span className="text-base">🧪</span>
+                  <span className="text-[8px] font-black text-emerald-300 truncate max-w-[44px] mt-0.5">Зелье HP</span>
+                </div>
               ) : isManaPot ? (
-                <span className="text-xl">💧</span>
+                <div className="flex flex-col items-center leading-none mt-1">
+                  <span className="text-base">💧</span>
+                  <span className="text-[8px] font-black text-sky-300 truncate max-w-[44px] mt-0.5">Эликсир</span>
+                </div>
               ) : sk ? (
-                <span className="text-xl">{sk.icon}</span>
+                <div className="flex flex-col items-center leading-none mt-1">
+                  <span className="text-base">{sk.icon}</span>
+                  <span className="text-[8px] font-black text-slate-200 truncate max-w-[46px] mt-0.5" style={{ color: sk.color }}>
+                    {sk.name}
+                  </span>
+                </div>
               ) : (
-                <span className="text-slate-600 text-xs">пусто</span>
+                <span className="text-slate-600 text-[9px] font-bold mt-2">пусто</span>
               )}
 
               {/* Cooldown Overlay */}
