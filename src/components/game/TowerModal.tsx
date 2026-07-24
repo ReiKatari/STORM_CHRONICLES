@@ -43,21 +43,24 @@ export default function TowerModal({ onClose }: { onClose: () => void }) {
     if (!inBattle) return;
 
     // Calculate exponentially scaling Guardian stats for current Floor
+    const currentDerived = useGame.getState().derived;
     const mult = Math.pow(1.18, currentFloor - 1);
-    const gHpMax = Math.round(derived.maxHp * (1.5 + mult * 0.8));
+    const gHpMax = Math.max(100, Math.round((currentDerived.maxHp || 1000) * (1.5 + mult * 0.8)));
     const gDmg = Math.round((20 + currentFloor * 15) * mult);
 
     setGuardianMaxHp(gHpMax);
     setGuardianHp(gHpMax);
-    setPlayerMaxHp(derived.maxHp);
-    setPlayerHp(derived.maxHp);
+    setPlayerMaxHp(currentDerived.maxHp || 1000);
+    setPlayerHp(currentDerived.maxHp || 1000);
 
     let curGHp = gHpMax;
-    let curPHp = derived.maxHp;
+    let curPHp = currentDerived.maxHp || 1000;
 
     const interval = setInterval(() => {
+      const liveDerived = useGame.getState().derived;
+
       // Player Atk
-      const pDmg = Math.round(derived.playerAtk * (0.8 + Math.random() * 0.4));
+      const pDmg = Math.max(10, Math.round(liveDerived.playerAtk * (0.8 + Math.random() * 0.4)));
       curGHp = Math.max(0, curGHp - pDmg);
       setGuardianHp(curGHp);
 
@@ -80,7 +83,7 @@ export default function TowerModal({ onClose }: { onClose: () => void }) {
       }
 
       // Guardian Atk
-      const gActualDmg = Math.max(5, gDmg - Math.floor(derived.armor * 0.3));
+      const gActualDmg = Math.max(5, gDmg - Math.floor(liveDerived.armor * 0.3));
       curPHp = Math.max(0, curPHp - gActualDmg);
       setPlayerHp(curPHp);
 
@@ -89,10 +92,10 @@ export default function TowerModal({ onClose }: { onClose: () => void }) {
         setInBattle(false);
         setLogMsg(`💀 ПОРАЖЕНИЕ! Страж ${currentFloor} этажа нанес смертельный урон. Улучшите экипировку!`);
       }
-    }, 350);
+    }, 250);
 
     return () => clearInterval(interval);
-  }, [inBattle, currentFloor, derived]);
+  }, [inBattle, currentFloor]);
 
   const handleStartBattle = () => {
     if (inBattle) return;

@@ -18,13 +18,16 @@ function getTargetCraftingTime(): number {
   return target;
 }
 
+const DEFAULT_RUNES = ['ruby_1', 'emerald_1'];
+
 export default function CraftingModal({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<'craft' | 'salvage' | 'sockets'>('craft');
   const level = useGame(s => s.level);
   const inventory = useGame(s => s.inventory);
   const ore = useGame(s => (s as unknown as { astralOre: number }).astralOre ?? 120);
   const essence = useGame(s => (s as unknown as { astralEssence: number }).astralEssence ?? 25);
-  const playerRunes = useGame(s => (s as unknown as { runesInventory: string[] }).runesInventory ?? ['ruby_1', 'emerald_1']);
+  const rawRunes = useGame(s => (s as unknown as { runesInventory: string[] }).runesInventory);
+  const playerRunes = rawRunes || DEFAULT_RUNES;
 
   const [selectedItemForRune, setSelectedItemForRune] = useState<Item | null>(null);
 

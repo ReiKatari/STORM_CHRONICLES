@@ -251,8 +251,10 @@ export default function EventsPanel() {
     try { localStorage.setItem('storm_abyss_event_target', nextTarget.toString()); } catch { /* ignore */ }
   };
 
-  // Automated persistent 5-minute event generator (300 seconds)
+  // Automated persistent 5-minute event generator (300 seconds) + Initial event on mount
   useEffect(() => {
+    generateRandomEvent();
+
     const timerId = setInterval(() => {
       const target = getTargetEventTime();
       const diff = Math.max(0, Math.ceil((target - Date.now()) / 1000));
@@ -321,9 +323,17 @@ export default function EventsPanel() {
               </div>
             </div>
           ) : (
-            <div className="p-2.5 text-center text-[10.5px] text-slate-300 italic bg-slate-950/60 rounded-xl border border-dashed border-slate-800 flex items-center justify-center gap-2">
-              <span>🔮</span>
-              <span>Автоматический сканер аномалий включен. Следующее событие появится через <b className="text-amber-300 font-mono not-italic">{formatTimer(eventTimer)}</b>.</span>
+            <div className="p-2.5 text-center bg-slate-950/60 rounded-xl border border-dashed border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2">
+              <div className="text-[10.5px] text-slate-300 flex items-center gap-1.5">
+                <span>🔮</span>
+                <span>Сканер аномалий включен ({formatTimer(eventTimer)})</span>
+              </div>
+              <button
+                onClick={() => generateRandomEvent()}
+                className="py-1 px-3 rounded-lg bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 text-purple-200 text-[10px] font-extrabold transition-all active:scale-95 shadow shrink-0"
+              >
+                ⚡ Запустить Экспедицию Бездны
+              </button>
             </div>
           )}
         </div>

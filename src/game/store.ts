@@ -280,11 +280,11 @@ export const useGame = create<GameState>((set, get) => {
       if (level % 5 === 0) talentPoints += 1;
     }
     if (leveled > 0) {
-      const d = recalc();
+      const d = computeDerived(level, s.stats, s.equipment, s.talents);
       sound.playLevelUp();
       pushFx(s.fxQueue, { type: 'levelup', text: `Уровень ${level}!`, color: '#facc15' });
       pushLog(s.log, `⬆️ Уровень ${level}! +${(5 + tBonus) * leveled} очков статов`, '#facc15');
-      set({ xp, level, statPoints, skillPoints, talentPoints, hp: d.maxHp, mana: d.maxMana, derived: d });
+      set({ xp, level, statPoints, skillPoints, talentPoints, stats: { ...s.stats }, hp: d.maxHp, mana: d.maxMana, derived: d });
       addQuestProgress('level', '', level);
     } else {
       set({ xp });
@@ -630,88 +630,7 @@ export const useGame = create<GameState>((set, get) => {
       }
     },
 
-    equipBestAll: () => {
-      const s = get();
-      let equipment = { ...s.equipment };
-      let inventory = [...s.inventory];
 
-      // 1. Single Slots
-      const singleSlots: { slotId: SlotId; kind: string }[] = [
-        { slotId: 'helmet', kind: 'helmet' },
-        { slotId: 'shoulders', kind: 'shoulders' },
-        { slotId: 'armor', kind: 'armor' },
-        { slotId: 'cloak', kind: 'cloak' },
-        { slotId: 'weapon', kind: 'weapon' },
-        { slotId: 'pants', kind: 'pants' },
-        { slotId: 'banner', kind: 'banner' },
-        { slotId: 'gloves', kind: 'gloves' },
-        { slotId: 'kneepads', kind: 'kneepads' },
-        { slotId: 'boots', kind: 'boots' },
-        { slotId: 'amulet', kind: 'amulet' },
-      ];
-
-      singleSlots.forEach(({ slotId, kind }) => {
-        const candidates = inventory.filter(i => i.slot === kind).sort((a, b) => b.score - a.score);
-        if (candidates.length === 0) return;
-
-        const best = candidates[0];
-        const equipped = equipment[slotId];
-
-        if (!equipped || best.score > equipped.score) {
-          inventory = inventory.filter(i => i.id !== best.id);
-          if (equipped) inventory.push(equipped);
-          equipment[slotId] = best;
-        }
-      });
-
-      // 2. Rings (ring1 & ring2)
-      let ringCandidates = inventory.filter(i => i.slot === 'ring').sort((a, b) => b.score - a.score);
-      if (ringCandidates.length > 0) {
-        const best1 = ringCandidates[0];
-        const eq1 = equipment.ring1;
-        if (!eq1 || best1.score > eq1.score) {
-          inventory = inventory.filter(i => i.id !== best1.id);
-          if (eq1) inventory.push(eq1);
-          equipment.ring1 = best1;
-        }
-      }
-      ringCandidates = inventory.filter(i => i.slot === 'ring').sort((a, b) => b.score - a.score);
-      if (ringCandidates.length > 0) {
-        const best2 = ringCandidates[0];
-        const eq2 = equipment.ring2;
-        if (!eq2 || best2.score > eq2.score) {
-          inventory = inventory.filter(i => i.id !== best2.id);
-          if (eq2) inventory.push(eq2);
-          equipment.ring2 = best2;
-        }
-      }
-
-      // 3. Earrings (earring1 & earring2)
-      let earringCandidates = inventory.filter(i => i.slot === 'earring').sort((a, b) => b.score - a.score);
-      if (earringCandidates.length > 0) {
-        const best1 = earringCandidates[0];
-        const eq1 = equipment.earring1;
-        if (!eq1 || best1.score > eq1.score) {
-          inventory = inventory.filter(i => i.id !== best1.id);
-          if (eq1) inventory.push(eq1);
-          equipment.earring1 = best1;
-        }
-      }
-      earringCandidates = inventory.filter(i => i.slot === 'earring').sort((a, b) => b.score - a.score);
-      if (earringCandidates.length > 0) {
-        const best2 = earringCandidates[0];
-        const eq2 = equipment.earring2;
-        if (!eq2 || best2.score > eq2.score) {
-          inventory = inventory.filter(i => i.id !== best2.id);
-          if (eq2) inventory.push(eq2);
-          equipment.earring2 = best2;
-        }
-      }
-
-      const derived = computeDerived(s.level, s.stats, equipment, s.talents);
-      sound.playEquip();
-      set({ equipment, inventory, derived });
-    },
 
     allocateStat: (st: StatId) => {
       const s = get();
@@ -777,7 +696,7 @@ export const useGame = create<GameState>((set, get) => {
         const currentScore = equippedItem ? equippedItem.score : -1;
 
         const candidates = currentInv
-          .filter(i => i.slot === slot.kind)
+          .filter(i => i.slot === slot.kind || i.slot.startsWith(slot.kind) || slot.id.startsWith(i.slot))
           .sort((a, b) => b.score - a.score);
 
         if (candidates.length > 0) {
