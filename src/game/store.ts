@@ -451,10 +451,9 @@ export const useGame = create<GameState>((set, get) => {
         if (!s.classId || !s.characterName) return;
 
         // Ensure active valid monster inline
-        let currentM = s.monster;
+        let currentM = s.monster ? { ...s.monster } : null;
         if (!currentM || !currentM.hp || isNaN(currentM.hp) || currentM.hp <= 0) {
           currentM = spawnFor(s.zoneId || 'hills', s.stage || 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, s.dungeon || null);
-          set({ monster: currentM });
         }
 
         const d = s.derived || computeDerived(s.level || 1, s.stats, s.equipment || {}, s.talents || {});
@@ -480,15 +479,13 @@ export const useGame = create<GameState>((set, get) => {
                 if (sk.id.includes('heal') || sk.id.includes('meditate') || sk.id.includes('rejuvenation')) {
                   hp = Math.min(d.maxHp, hp + Math.round(d.maxHp * 0.35));
                   pushFx(s.fxQueue, { type: 'heal', text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
-                } else if (s.monster) {
-                  let mHp = s.monster.hp - skillDmg;
+                } else if (currentM) {
+                  currentM.hp -= skillDmg;
                   pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
-                  if (mHp <= 0) {
-                    onKill(s.monster);
+                  if (currentM.hp <= 0) {
+                    onKill(currentM);
                     set({ hp, mana, skillCds: newCds });
                     return;
-                  } else {
-                    set({ monster: { ...s.monster, hp: mHp } });
                   }
                 }
               }
@@ -497,22 +494,20 @@ export const useGame = create<GameState>((set, get) => {
         }
 
         // Active Pet Companion Auto-Attack & Auto-Skills
-        if (s.activePetId) {
+        if (s.activePetId && currentM) {
           const petDef = PETS.find(p => p.id === s.activePetId);
           if (petDef) {
             const petLvl = s.petLvl ?? 1;
             const petDmg = Math.round((d.dmgMin + d.dmgMax) * 0.4 * (1 + petLvl * 0.05));
             const petAtkTimer = ((s as any).petAtkTimer ?? 0) + dt;
-            if (petAtkTimer >= 1.8 && s.monster) {
-              const mHp = s.monster.hp - petDmg;
+            if (petAtkTimer >= 1.8) {
+              currentM.hp -= petDmg;
               pushFx(s.fxQueue, { type: 'petHit', value: petDmg, text: `🐾 ${petDef.icon} ${fmt(petDmg)}`, color: petDef.color });
               (s as any).petAtkTimer = 0;
-              if (mHp <= 0) {
-                onKill(s.monster);
+              if (currentM.hp <= 0) {
+                onKill(currentM);
                 set({ hp, mana, skillCds: newCds });
                 return;
-              } else {
-                set({ monster: { ...s.monster, hp: mHp } });
               }
             } else {
               (s as any).petAtkTimer = petAtkTimer;
@@ -521,7 +516,6 @@ export const useGame = create<GameState>((set, get) => {
         }
 
         // Player auto-attack
-        let monster = { ...s.monster };
         const speed = (!d || isNaN(d.attackSpeed) || d.attackSpeed <= 0) ? 1.5 : d.attackSpeed;
         let atkTimer = (s.playerAtk ?? 0) + dt * speed;
 
@@ -532,37 +526,39 @@ export const useGame = create<GameState>((set, get) => {
           const dealt = Math.round(rawDmg * (isCrit ? d.critMult : 1.0));
 
           if (isCrit) sound.playCrit(); else sound.playHit();
-          monster.hp -= dealt;
+          currentM.hp -= dealt;
           pushFx(s.fxQueue, { type: isCrit ? 'crit' : 'monsterHit', value: dealt, text: isCrit ? `💥 КРИТ ${fmt(dealt)}` : `${fmt(dealt)}`, color: isCrit ? '#facc15' : '#f87171' });
 
-          if (monster.hp <= 0) {
-            onKill(monster);
+          if (currentM.hp <= 0) {
+            onKill(currentM);
             set({ playerAtk: 0, hp, mana, skillCds: newCds });
             return;
           }
         }
 
         // Monster attack timer
-        let mTimer = (monster.attackTimer ?? 0) + dt;
-        if (mTimer >= 1.8) {
-          mTimer = 0;
-          if (Math.random() * 100 >= d.dodge) {
-            const mDmg = mitigate(monster.dmg, d.armor);
-            hp -= mDmg;
-            pushFx(s.fxQueue, { type: 'playerHit', value: mDmg, text: `-${fmt(mDmg)}`, color: '#ef4444' });
-            if (hp <= 0) {
-              hp = d.maxHp;
-              pushLog(s.log, `☠️ Вы погибли от рук ${monster.def.name}. Отступление на этап 1!`, '#ef4444');
-              set({ stage: 1, stageKills: 0, dungeon: null, monster: spawnFor(s.zoneId || 'hills', 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, null), hp, mana: d.maxMana, playerAtk: 0 });
-              return;
+        if (currentM) {
+          let mTimer = (currentM.attackTimer ?? 0) + dt;
+          if (mTimer >= 1.8) {
+            mTimer = 0;
+            if (Math.random() * 100 >= d.dodge) {
+              const mDmg = mitigate(currentM.dmg, d.armor);
+              hp -= mDmg;
+              pushFx(s.fxQueue, { type: 'playerHit', value: mDmg, text: `-${fmt(mDmg)}`, color: '#ef4444' });
+              if (hp <= 0) {
+                hp = d.maxHp;
+                pushLog(s.log, `☠️ Вы погибли от рук ${currentM.def.name}. Отступление на этап 1!`, '#ef4444');
+                set({ stage: 1, stageKills: 0, dungeon: null, monster: spawnFor(s.zoneId || 'hills', 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, null), hp, mana: d.maxMana, playerAtk: 0 });
+                return;
+              }
+            } else {
+              pushFx(s.fxQueue, { type: 'dodge', text: '💨 Уворот!', color: '#38bdf8' });
             }
-          } else {
-            pushFx(s.fxQueue, { type: 'dodge', text: '💨 Уворот!', color: '#38bdf8' });
           }
+          currentM.attackTimer = mTimer;
         }
-        monster.attackTimer = mTimer;
 
-        set({ hp, mana, playerAtk: atkTimer, monster, skillCds: newCds });
+        set({ hp, mana, playerAtk: atkTimer, monster: currentM, skillCds: newCds });
       } catch (err) {
         console.error('Combat tick error:', err);
       }
