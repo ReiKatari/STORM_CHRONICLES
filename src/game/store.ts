@@ -686,7 +686,7 @@ export const useGame = create<GameState>((set, get) => {
 
       if (id.includes('heal') || id.includes('meditate') || id.includes('rejuvenation')) {
         const hp = Math.min(d.maxHp, s.hp + Math.round(d.maxHp * 0.35));
-        pushFx(s.fxQueue, { type: 'heal', text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
+        pushFx(s.fxQueue, { type: 'heal', skillId: sk.id, text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
         set({ mana, hp, skillCds, fxQueue: [...s.fxQueue] });
         if (s.monster && s.monster.hp > 0) {
           triggerMonsterTurn(get(), s.monster, false);
@@ -694,7 +694,7 @@ export const useGame = create<GameState>((set, get) => {
       } else if (s.monster) {
         const skillDmg = Math.round(d.skillPower * 2.5);
         const mHp = Math.max(0, s.monster.hp - skillDmg);
-        pushFx(s.fxQueue, { type: 'skill', text: `✨ ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
+        pushFx(s.fxQueue, { type: 'skill', skillId: sk.id, text: `${sk.icon} ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
         if (mHp <= 0) {
           onKill(s.monster);
           set({ mana, skillCds, fxQueue: [...s.fxQueue] });

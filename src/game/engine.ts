@@ -18,7 +18,7 @@ export const STAT_DEFS: StatDef[] = [
 
 export function xpForLevel(level: number): number {
   const l = isNaN(level) || level < 1 ? 1 : level;
-  return Math.floor(60 * Math.pow(l, 1.6) + l * 20);
+  return Math.floor(100 * Math.pow(l, 1.48) + l * 25);
 }
 
 /**
@@ -140,16 +140,16 @@ export function computeDerived(
 
 export function monsterStats(level: number, hpMult: number, dmgMult: number) {
   const lvl = isNaN(level) || level < 1 ? 1 : level;
-  const hp = Math.floor((45 + Math.pow(lvl, 1.72) * 9) * (hpMult || 1.0));
-  const dmg = Math.floor((4 + Math.pow(lvl, 1.45) * 1.6) * (dmgMult || 1.0));
-  return { hp: Math.max(20, hp), dmg: Math.max(2, dmg) };
+  const hp = Math.floor((55 + Math.pow(lvl, 1.62) * 10) * (hpMult || 1.0));
+  const dmg = Math.floor((6 + Math.pow(lvl, 1.42) * 2.0) * (dmgMult || 1.0));
+  return { hp: Math.max(30, hp), dmg: Math.max(3, dmg) };
 }
 
 export function monsterReward(level: number, xpMult: number, goldMult: number) {
   const lvl = isNaN(level) || level < 1 ? 1 : level;
   return {
-    xp: Math.floor((12 + Math.pow(lvl, 1.55) * 5) * (xpMult || 1.0)),
-    gold: Math.floor((6 + Math.pow(lvl, 1.5) * 2.2) * (goldMult || 1.0)),
+    xp: Math.floor((22 + Math.pow(lvl, 1.48) * 7.5) * (xpMult || 1.0)),
+    gold: Math.floor((10 + Math.pow(lvl, 1.42) * 3.5) * (goldMult || 1.0)),
   };
 }
 

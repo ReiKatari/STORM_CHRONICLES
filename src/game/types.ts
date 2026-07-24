@@ -275,6 +275,7 @@ export interface FxEvent {
   value?: number;
   text?: string;
   color?: string;
+  skillId?: string;
   skillFx?: string;
 }
 
