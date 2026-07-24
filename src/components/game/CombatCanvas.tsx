@@ -13,8 +13,9 @@ interface Particle {
   size: number;
   color: string;
   gravity?: number;
-  kind?: 'spark' | 'ring' | 'text' | 'slash';
+  kind?: 'spark' | 'ring' | 'text' | 'slash' | 'shield' | 'dust' | 'pillar';
   text?: string;
+  angle?: number;
 }
 
 interface TileDecor {
@@ -128,104 +129,123 @@ export default function CombatCanvas() {
         P.push({ x: x + (Math.random() - 0.5) * 30, y, vx: (Math.random() - 0.5) * 20, vy: -70, life: 0, maxLife: 1.1, size, color, gravity: 0, kind: 'text', text });
       };
 
-      // Correct FX assignments:
-      // monsterHit / crit / skill -> player attacks monster (particles & text at monster pos mx, my)
-      // playerHit -> monster attacks player (particles & text at player pos px, py)
       switch (fx.type) {
         case 'monsterHit':
-          burst(mx, my - 40, 16, '#f87171', 220);
-          P.push({ x: mx - 20, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.25, size: 45, color: '#f87171', gravity: 0, kind: 'slash' });
-          floatText(mx, my - 95, `-${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#f87171', 22);
-          monsterHit.current = 0.20; playerLunge.current = 0.22;
+          burst(mx, my - 40, 24, '#f87171', 260);
+          P.push({ x: mx - 20, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.28, size: 55, color: '#f87171', gravity: 0, kind: 'slash', angle: Math.PI / 4 });
+          floatText(mx, my - 95, `-${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#f87171', 24);
+          monsterHit.current = 0.22; playerLunge.current = 0.24;
           break;
+
         case 'crit':
-          burst(mx, my - 40, 38, '#facc15', 340, 4);
-          P.push({ x: mx - 30, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 70, color: '#facc15', gravity: 0, kind: 'slash' });
-          floatText(mx, my - 105, `💥 ${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#facc15', 34);
-          shake.current = Math.max(shake.current, 10);
-          monsterHit.current = 0.25; playerLunge.current = 0.25;
+          burst(mx, my - 40, 45, '#facc15', 380, 5);
+          P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 160, color: '#facc15', gravity: 0, kind: 'ring' });
+          P.push({ x: mx - 30, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 85, color: '#facc15', gravity: 0, kind: 'slash', angle: Math.PI / 4 });
+          P.push({ x: mx + 30, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 85, color: '#fb923c', gravity: 0, kind: 'slash', angle: -Math.PI / 4 });
+          floatText(mx, my - 105, `💥 КРИТ ${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#facc15', 36);
+          shake.current = Math.max(shake.current, 12);
+          monsterHit.current = 0.28; playerLunge.current = 0.28;
           break;
+
+        case 'block':
+          P.push({ x: px, y: py - 40, vx: 0, vy: 0, life: 0, maxLife: 0.55, size: 140, color: '#38bdf8', gravity: 0, kind: 'shield' });
+          burst(px, py - 40, 32, '#38bdf8', 240, 4, -60);
+          floatText(px, py - 105, fx.text ?? '🛡️ СТАЛЬНОЙ БЛОК!', '#38bdf8', 26);
+          shake.current = Math.max(shake.current, 5);
+          break;
+
+        case 'flee':
+          for (let i = 0; i < 30; i++) {
+            P.push({
+              x: px + (Math.random() - 0.5) * 50,
+              y: py - 20 + (Math.random() - 0.5) * 30,
+              vx: -200 - Math.random() * 160,
+              vy: -30 + (Math.random() - 0.5) * 70,
+              life: 0, maxLife: 0.7, size: 12 + Math.random() * 18,
+              color: '#94a3b8', gravity: -30, kind: 'dust'
+            });
+          }
+          floatText(px, py - 95, fx.text ?? '🏃 ПОБЕГ НА ЭТАП 1!', '#a855f7', 26);
+          playerLunge.current = -0.3;
+          break;
+
         case 'skill': {
           const sId = fx.skillId || '';
           const col = fx.color || '#c084fc';
-          floatText(mx, my - 110, fx.text ?? '✨ СКИЛЛ', col, 26);
-          monsterHit.current = 0.26;
-          playerLunge.current = 0.24;
+          floatText(mx, my - 115, fx.text ?? '✨ СКИЛЛ', col, 28);
+          monsterHit.current = 0.28;
+          playerLunge.current = 0.25;
 
           // 1. HOLY / LIGHT SKILLS (Paladin / Priest / Judgement)
           if (sId.includes('holy') || sId.includes('sun') || sId.includes('divine') || sId.includes('judgement') || sId.includes('pal_') || col === '#facc15' || col === '#fde047') {
-            sound.playHoly();
-            for (let i = 0; i < 18; i++) {
-              P.push({ x: mx + (Math.random() - 0.5) * 45, y: Math.random() * my, vx: (Math.random() - 0.5) * 10, vy: 280 + Math.random() * 220, life: 0, maxLife: 0.45, size: 3 + Math.random() * 5, color: '#fde047', gravity: 0, kind: 'spark' });
+            P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 60, color: '#fde047', gravity: 0, kind: 'pillar' });
+            for (let i = 0; i < 24; i++) {
+              P.push({ x: mx + (Math.random() - 0.5) * 50, y: Math.random() * my, vx: (Math.random() - 0.5) * 10, vy: 320 + Math.random() * 240, life: 0, maxLife: 0.45, size: 3 + Math.random() * 6, color: '#fde047', gravity: 0, kind: 'spark' });
             }
-            burst(mx, my - 30, 45, '#facc15', 320, 4, -60);
-            P.push({ x: mx - 30, y: my - 60, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 90, color: '#fde047', gravity: 0, kind: 'slash' });
-            shake.current = Math.max(shake.current, 8);
+            burst(mx, my - 30, 50, '#facc15', 340, 4, -60);
+            shake.current = Math.max(shake.current, 9);
           }
           // 2. FIRE / METEOR SKILLS (Mage / Elementalist)
           else if (sId.includes('fire') || sId.includes('meteor') || sId.includes('flame') || col === '#ef4444' || col === '#fb923c') {
-            sound.playFireball();
-            burst(mx, my - 40, 55, '#ef4444', 400, 5, 60);
-            burst(mx, my - 40, 35, '#f97316', 340, 4, -90);
-            P.push({ x: mx - 40, y: my - 60, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 95, color: '#fb923c', gravity: 0, kind: 'slash' });
-            shake.current = Math.max(shake.current, 12);
+            burst(mx, my - 40, 60, '#ef4444', 420, 5, 70);
+            burst(mx, my - 40, 40, '#f97316', 360, 4, -90);
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 180, color: '#ef4444', gravity: 0, kind: 'ring' });
+            shake.current = Math.max(shake.current, 14);
           }
           // 3. ICE / FROST SKILLS (Frost Nova / Ice Touch)
           else if (sId.includes('frost') || sId.includes('ice') || col === '#38bdf8' || col === '#a5f3fc') {
-            sound.playFrost();
-            burst(mx, my - 40, 50, '#38bdf8', 280, 3, -130);
-            burst(mx, my - 40, 30, '#a5f3fc', 360, 4, 30);
-            P.push({ x: mx - 30, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 80, color: '#a5f3fc', gravity: 0, kind: 'slash' });
-            shake.current = Math.max(shake.current, 7);
+            burst(mx, my - 40, 55, '#38bdf8', 300, 4, -130);
+            burst(mx, my - 40, 35, '#a5f3fc', 380, 4, 30);
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 160, color: '#38bdf8', gravity: 0, kind: 'ring' });
+            shake.current = Math.max(shake.current, 8);
           }
           // 4. SHADOW / POISON / ASSASSIN SKILLS
           else if (sId.includes('shadow') || sId.includes('poison') || sId.includes('ass') || col === '#a855f7' || col === '#22c55e') {
-            sound.playSlash();
-            burst(mx, my - 40, 45, col, 300, 3, 30);
-            P.push({ x: mx - 25, y: my - 55, vx: 0, vy: 0, life: 0, maxLife: 0.32, size: 85, color: col, gravity: 0, kind: 'slash' });
-            P.push({ x: mx + 15, y: my - 35, vx: 0, vy: 0, life: 0, maxLife: 0.32, size: 85, color: col, gravity: 0, kind: 'slash' });
-            shake.current = Math.max(shake.current, 9);
+            burst(mx, my - 40, 50, col, 320, 4, 30);
+            P.push({ x: mx - 30, y: my - 60, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 95, color: col, gravity: 0, kind: 'slash', angle: Math.PI / 6 });
+            P.push({ x: mx + 20, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 95, color: col, gravity: 0, kind: 'slash', angle: -Math.PI / 6 });
+            shake.current = Math.max(shake.current, 10);
           }
           // 5. BERSERKER / WHIRLWIND / EXECUTE SKILLS
           else if (sId.includes('ber') || sId.includes('cleave') || sId.includes('whirl') || sId.includes('execute')) {
-            burst(mx, my - 40, 50, '#dc2626', 380, 4, 40);
-            P.push({ x: mx - 35, y: my - 65, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 100, color: '#dc2626', gravity: 0, kind: 'slash' });
-            P.push({ x: mx + 35, y: my - 25, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 100, color: '#ef4444', gravity: 0, kind: 'slash' });
-            shake.current = Math.max(shake.current, 15);
+            burst(mx, my - 40, 60, '#dc2626', 400, 5, 40);
+            P.push({ x: mx - 35, y: my - 65, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 110, color: '#dc2626', gravity: 0, kind: 'slash', angle: Math.PI / 4 });
+            P.push({ x: mx + 35, y: my - 25, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 110, color: '#ef4444', gravity: 0, kind: 'slash', angle: -Math.PI / 4 });
+            shake.current = Math.max(shake.current, 16);
           }
           // 6. DEFAULT UNIQUE SKILL BURST
           else {
-            burst(mx, my - 40, 40, col, 320, 4);
-            P.push({ x: mx - 25, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 80, color: col, gravity: 0, kind: 'slash' });
-            shake.current = Math.max(shake.current, 8);
+            burst(mx, my - 40, 45, col, 340, 4);
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 140, color: col, gravity: 0, kind: 'ring' });
+            shake.current = Math.max(shake.current, 9);
           }
           break;
         }
         case 'petHit':
-          burst(mx - 30, my - 40, 22, fx.color ?? '#38bdf8', 240, 3);
-          floatText(mx - 20, my - 90, fx.text ?? '🐾 ПИТОМЕЦ', fx.color ?? '#38bdf8', 22);
-          monsterHit.current = 0.18;
+          burst(mx - 30, my - 40, 24, fx.color ?? '#38bdf8', 260, 3);
+          floatText(mx - 20, my - 90, fx.text ?? '🐾 ПИТОМЕЦ', fx.color ?? '#38bdf8', 24);
+          monsterHit.current = 0.20;
           break;
         case 'playerHit':
-          burst(px, py - 30, 14, '#ef4444', 200);
-          floatText(px, py - 95, `-${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#ef4444', 22);
-          shake.current = Math.max(shake.current, 6);
+          burst(px, py - 30, 18, '#ef4444', 220);
+          floatText(px, py - 95, `-${fmt(typeof fx.value === 'number' ? fx.value : parseFloat(fx.value as any) || 0)}`, '#ef4444', 24);
+          shake.current = Math.max(shake.current, 7);
           break;
         case 'dodge':
-          floatText(px, py - 85, '💨 Уворот!', '#38bdf8', 18);
+          floatText(px, py - 85, '💨 Уворот!', '#38bdf8', 20);
           break;
         case 'heal':
-          burst(px, py - 30, 25, '#4ade80', 160, 3, -110);
-          floatText(px, py - 95, fx.text ?? '+HP', '#4ade80', 24);
+          burst(px, py - 30, 30, '#4ade80', 180, 4, -120);
+          floatText(px, py - 95, fx.text ?? '+HP', '#4ade80', 26);
           break;
         case 'loot':
-          P.push({ x: mx, y: my - 50, vx: 0, vy: -120, life: 0, maxLife: 1.4, size: 20, color: fx.color ?? '#facc15', gravity: 0, kind: 'text', text: `✨ ${fx.text}` });
+          P.push({ x: mx, y: my - 50, vx: 0, vy: -130, life: 0, maxLife: 1.5, size: 22, color: fx.color ?? '#facc15', gravity: 0, kind: 'text', text: `✨ ${fx.text}` });
           break;
         case 'levelup':
-          burst(px, py - 20, 60, '#facc15', 340, 5, -160);
-          burst(px, py - 20, 35, '#4ade80', 260, 4, -120);
-          floatText(px, py - 115, `✨ ${fx.text}`, '#facc15', 30);
-          shake.current = 10;
+          burst(px, py - 20, 70, '#facc15', 360, 5, -180);
+          burst(px, py - 20, 40, '#4ade80', 280, 4, -130);
+          floatText(px, py - 115, `✨ ${fx.text}`, '#facc15', 32);
+          shake.current = 12;
           break;
       }
     };
@@ -642,23 +662,60 @@ export default function CombatCanvas() {
         if (p.kind === 'spark') {
           ctx.fillStyle = p.color;
           ctx.shadowColor = p.color;
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = 10;
           ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1, p.size * (1 - progress * 0.5)), 0, Math.PI * 2); ctx.fill();
         } else if (p.kind === 'slash') {
           ctx.strokeStyle = p.color;
-          ctx.lineWidth = 4 * (1 - progress);
+          ctx.lineWidth = 5 * (1 - progress);
           ctx.shadowColor = p.color;
-          ctx.shadowBlur = 12;
+          ctx.shadowBlur = 16;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.angle ?? (Math.PI / 4));
           ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(p.x + 40, p.y + 40);
+          ctx.moveTo(-p.size / 2, 0);
+          ctx.quadraticCurveTo(0, -15, p.size / 2, 0);
           ctx.stroke();
+          ctx.restore();
+        } else if (p.kind === 'shield') {
+          const r = (p.size / 2) * Math.sin(progress * Math.PI * 0.5);
+          ctx.strokeStyle = p.color;
+          ctx.lineWidth = 6 * (1 - progress);
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 20;
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        } else if (p.kind === 'ring') {
+          const r = (p.size / 2) * Math.sin(progress * Math.PI * 0.5);
+          ctx.strokeStyle = p.color;
+          ctx.lineWidth = 5 * (1 - progress);
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 15;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (p.kind === 'pillar') {
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 24;
+          const w = p.size * (1 - progress);
+          ctx.fillRect(p.x - w / 2, 0, w, p.y + 100);
+        } else if (p.kind === 'dust') {
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = 'rgba(0,0,0,0.5)';
+          ctx.shadowBlur = 4;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, Math.max(2, p.size * (1 + progress * 0.5)), 0, Math.PI * 2);
+          ctx.fill();
         } else if (p.kind === 'text' && p.text) {
           ctx.font = `bold ${p.size}px 'Century Gothic', CenturyGothic, sans-serif`;
           ctx.fillStyle = p.color;
           ctx.textAlign = 'center';
           ctx.shadowColor = 'rgba(0,0,0,0.95)';
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = 10;
           ctx.fillText(p.text, p.x, p.y);
         }
         ctx.restore();
