@@ -517,6 +517,27 @@ export const useGame = create<GameState>((set, get) => {
           }
         }
 
+        // Player auto-attack
+        const speed = (!d || isNaN(d.attackSpeed) || d.attackSpeed <= 0) ? 1.5 : d.attackSpeed;
+        let atkTimer = (s.playerAtk ?? 0) + dt * speed;
+
+        if (atkTimer >= 1.0) {
+          atkTimer -= 1.0;
+          const isCrit = Math.random() * 100 < (d.critChance || 5);
+          const rawDmg = Math.floor((d.dmgMin || 15) + Math.random() * ((d.dmgMax || 25) - (d.dmgMin || 15) + 1));
+          const dealt = Math.round(rawDmg * (isCrit ? (d.critMult || 1.5) : 1.0));
+
+          if (isCrit) sound.playCrit(); else sound.playHit();
+          currentM.hp -= dealt;
+          pushFx(s.fxQueue, { type: isCrit ? 'crit' : 'monsterHit', value: dealt, text: isCrit ? `💥 КРИТ ${fmt(dealt)}` : `${fmt(dealt)}`, color: isCrit ? '#facc15' : '#f87171' });
+
+          if (currentM.hp <= 0) {
+            onKill(currentM);
+            set({ playerAtk: 0, hp, mana, skillCds: newCds, fxQueue: [...s.fxQueue] });
+            return;
+          }
+        }
+
         // Monster attack timer
         if (currentM) {
           let mTimer = (currentM.attackTimer ?? 0) + dt;
@@ -547,7 +568,7 @@ export const useGame = create<GameState>((set, get) => {
           currentM.attackTimer = mTimer;
         }
 
-        set({ hp, mana, monster: currentM, skillCds: newCds, fxQueue: [...s.fxQueue] });
+        set({ hp, mana, playerAtk: atkTimer, monster: currentM, skillCds: newCds, fxQueue: [...s.fxQueue] });
       } catch (err) {
         console.error('Combat tick error:', err);
       }
