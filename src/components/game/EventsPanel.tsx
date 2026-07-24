@@ -272,57 +272,62 @@ export default function EventsPanel() {
   };
 
   return (
-    <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-3.5 shadow-2xl backdrop-blur-md space-y-3 font-sans">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-2 px-1">
-        <div className="flex items-center gap-2">
-          <span className="text-xl p-1 bg-purple-500/10 rounded-lg border border-purple-500/30">🔮</span>
+    <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-3 shadow-2xl backdrop-blur-md font-sans">
+      <div className="grid md:grid-cols-12 gap-3 items-center">
+        {/* Left Side: Title & Timer Badge */}
+        <div className="md:col-span-5 flex items-center gap-2.5 border-b md:border-b-0 md:border-r border-slate-800 pb-2 md:pb-0 md:pr-3">
+          <span className="text-2xl p-2 bg-purple-500/10 rounded-xl border border-purple-500/30 shrink-0">🔮</span>
           <div>
             <h3 className="font-black text-xs text-slate-100 uppercase tracking-wider">
-              ЭКСПЕДИЦИИ И СОБЫТИЯ БЕЗДНЫ
+              ЭКСПЕДИЦИИ И СОБЫТИЯ
             </h3>
-            <span className="text-[10px] text-purple-300 font-mono font-bold">
-              ⏱️ Следующее событие Бездны через: <b className="text-amber-300 font-extrabold">{formatTimer(eventTimer)}</b>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {currentEvent ? (
-        <div className="p-3 rounded-2xl bg-slate-950 border border-purple-500/60 space-y-2.5 animate-fadeIn shadow-xl">
-          <div className="flex items-start gap-3">
-            <span className="text-3xl p-2 bg-slate-900 rounded-xl border border-slate-800 shrink-0">{currentEvent.icon}</span>
-            <div>
-              <h4 className="font-black text-xs text-amber-300">{currentEvent.name}</h4>
-              <p className="text-[11px] text-slate-300 leading-snug mt-0.5">{currentEvent.desc}</p>
+            <div className="text-[10px] text-purple-300 font-mono font-bold mt-0.5">
+              ⏱️ Событие через: <b className="text-amber-300 font-extrabold">{formatTimer(eventTimer)}</b>
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-            <button
-              onClick={() => {
-                currentEvent.actionA();
-                setCurrentEvent(null);
-              }}
-              className="py-2 px-3 rounded-xl bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-black text-xs text-left transition-all active:scale-95 shadow"
-            >
-              {currentEvent.choiceA}
-            </button>
-            <button
-              onClick={() => {
-                currentEvent.actionB();
-                setCurrentEvent(null);
-              }}
-              className="py-2 px-3 rounded-xl bg-amber-950/90 hover:bg-amber-900 border border-amber-500/50 text-amber-300 font-black text-xs text-left transition-all active:scale-95 shadow"
-            >
-              {currentEvent.choiceB}
-            </button>
-          </div>
+        {/* Right Side: Scanner status card / Active Event choices */}
+        <div className="md:col-span-7">
+          {currentEvent ? (
+            <div className="p-2.5 rounded-xl bg-slate-950 border border-purple-500/60 space-y-2 animate-fadeIn shadow-xl">
+              <div className="flex items-start gap-2.5">
+                <span className="text-2xl p-1.5 bg-slate-900 rounded-lg border border-slate-800 shrink-0">{currentEvent.icon}</span>
+                <div>
+                  <h4 className="font-black text-xs text-amber-300">{currentEvent.name}</h4>
+                  <p className="text-[10px] text-slate-300 leading-snug">{currentEvent.desc}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-0.5">
+                <button
+                  onClick={() => {
+                    currentEvent.actionA();
+                    setCurrentEvent(null);
+                  }}
+                  className="py-1.5 px-2 rounded-lg bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-bold text-[10px] text-left transition-all active:scale-95 shadow truncate"
+                >
+                  {currentEvent.choiceA}
+                </button>
+                <button
+                  onClick={() => {
+                    currentEvent.actionB();
+                    setCurrentEvent(null);
+                  }}
+                  className="py-1.5 px-2 rounded-lg bg-amber-950/90 hover:bg-amber-900 border border-amber-500/50 text-amber-300 font-bold text-[10px] text-left transition-all active:scale-95 shadow truncate"
+                >
+                  {currentEvent.choiceB}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-2.5 text-center text-[10.5px] text-slate-300 italic bg-slate-950/60 rounded-xl border border-dashed border-slate-800 flex items-center justify-center gap-2">
+              <span>🔮</span>
+              <span>Автоматический сканер аномалий включен. Следующее событие появится через <b className="text-amber-300 font-mono not-italic">{formatTimer(eventTimer)}</b>.</span>
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="p-3 text-center text-[11px] text-slate-400 italic bg-slate-950/60 rounded-2xl border border-dashed border-slate-800">
-          🔮 Автоматический сканер аномалий включен. Следующее событие появится через <b className="text-amber-300 font-mono not-italic">{formatTimer(eventTimer)}</b>.
-        </div>
-      )}
+      </div>
     </div>
   );
 }
