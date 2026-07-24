@@ -47,6 +47,8 @@ function Header({
   const xp = useGame(s => s.xp);
   const gold = useGame(s => s.gold);
   const kills = useGame(s => s.kills);
+  const sfxMuted = useGame(s => s.sfxMuted);
+  const musicMuted = useGame(s => s.musicMuted);
   const xpPct = Math.min(100, (xp / xpForLevel(level)) * 100);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -138,34 +140,34 @@ function Header({
               <button
                 onClick={() => useGame.getState().toggleSfx()}
                 className={`w-full py-2 px-3 rounded-xl border font-extrabold text-xs transition-all flex items-center justify-between shadow cursor-pointer ${
-                  useGame(s => s.sfxMuted)
+                  sfxMuted
                     ? 'bg-red-950/80 border-red-500/50 text-red-300'
                     : 'bg-slate-900 border-emerald-500/50 text-emerald-300'
                 }`}
               >
                 <span className="flex items-center gap-1.5">
-                  <span>{useGame(s => s.sfxMuted) ? '🔇' : '🔊'}</span>
+                  <span>{sfxMuted ? '🔇' : '🔊'}</span>
                   <span>ЗВУКИ</span>
                 </span>
                 <span className="text-[10px] font-mono font-bold">
-                  {useGame(s => s.sfxMuted) ? 'ВЫКЛ' : 'ВКЛ'}
+                  {sfxMuted ? 'ВЫКЛ' : 'ВКЛ'}
                 </span>
               </button>
 
               <button
                 onClick={() => useGame.getState().toggleMusic()}
                 className={`w-full py-2 px-3 rounded-xl border font-extrabold text-xs transition-all flex items-center justify-between shadow cursor-pointer ${
-                  useGame(s => s.musicMuted)
+                  musicMuted
                     ? 'bg-red-950/80 border-red-500/50 text-red-300'
                     : 'bg-slate-900 border-amber-500/50 text-amber-300'
                 }`}
               >
                 <span className="flex items-center gap-1.5">
-                  <span>{useGame(s => s.musicMuted) ? '🔇' : '🎵'}</span>
+                  <span>{musicMuted ? '🔇' : '🎵'}</span>
                   <span>МУЗЫКА</span>
                 </span>
                 <span className="text-[10px] font-mono font-bold">
-                  {useGame(s => s.musicMuted) ? 'ВЫКЛ' : 'ВКЛ'}
+                  {musicMuted ? 'ВЫКЛ' : 'ВКЛ'}
                 </span>
               </button>
             </div>

@@ -172,54 +172,66 @@ export default function CombatCanvas() {
           break;
 
         case 'skill': {
-          const sId = fx.skillId || '';
+          const sId = (fx.skillId || '').toLowerCase();
           const col = fx.color || '#c084fc';
-          floatText(mx, my - 115, fx.text ?? '✨ СКИЛЛ', col, 28);
-          monsterHit.current = 0.28;
-          playerLunge.current = 0.25;
+          floatText(mx, my - 115, fx.text ?? '✨ СКИЛЛ', col, 30);
+          monsterHit.current = 0.32;
+          playerLunge.current = 0.30;
 
-          // 1. HOLY / LIGHT SKILLS (Paladin / Priest / Judgement)
-          if (sId.includes('holy') || sId.includes('sun') || sId.includes('divine') || sId.includes('judgement') || sId.includes('pal_') || col === '#facc15' || col === '#fde047') {
-            P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 60, color: '#fde047', gravity: 0, kind: 'pillar' });
-            for (let i = 0; i < 24; i++) {
-              P.push({ x: mx + (Math.random() - 0.5) * 50, y: Math.random() * my, vx: (Math.random() - 0.5) * 10, vy: 320 + Math.random() * 240, life: 0, maxLife: 0.45, size: 3 + Math.random() * 6, color: '#fde047', gravity: 0, kind: 'spark' });
+          // 1. HOLY / LIGHT / PALADIN SKILLS
+          if (sId.includes('holy') || sId.includes('sun') || sId.includes('divine') || sId.includes('judgement') || sId.includes('pal_') || sId.includes('light') || col === '#facc15' || col === '#fde047') {
+            P.push({ x: mx, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.55, size: 80, color: '#fde047', gravity: 0, kind: 'pillar' });
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 200, color: '#facc15', gravity: 0, kind: 'ring' });
+            for (let i = 0; i < 35; i++) {
+              P.push({ x: mx + (Math.random() - 0.5) * 60, y: Math.random() * my, vx: (Math.random() - 0.5) * 12, vy: 350 + Math.random() * 260, life: 0, maxLife: 0.5, size: 4 + Math.random() * 6, color: '#fde047', gravity: 0, kind: 'spark' });
             }
-            burst(mx, my - 30, 50, '#facc15', 340, 4, -60);
-            shake.current = Math.max(shake.current, 9);
+            burst(mx, my - 30, 60, '#facc15', 360, 4.5, -60);
+            shake.current = Math.max(shake.current, 12);
           }
-          // 2. FIRE / METEOR SKILLS (Mage / Elementalist)
-          else if (sId.includes('fire') || sId.includes('meteor') || sId.includes('flame') || col === '#ef4444' || col === '#fb923c') {
-            burst(mx, my - 40, 60, '#ef4444', 420, 5, 70);
-            burst(mx, my - 40, 40, '#f97316', 360, 4, -90);
-            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 180, color: '#ef4444', gravity: 0, kind: 'ring' });
-            shake.current = Math.max(shake.current, 14);
+          // 2. FIRE / METEOR / PYRO SKILLS
+          else if (sId.includes('fire') || sId.includes('meteor') || sId.includes('flame') || sId.includes('pyro') || sId.includes('burn') || col === '#ef4444' || col === '#fb923c') {
+            burst(mx, my - 40, 75, '#ef4444', 450, 6, 70);
+            burst(mx, my - 40, 50, '#f97316', 380, 5, -90);
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 220, color: '#ef4444', gravity: 0, kind: 'ring' });
+            P.push({ x: mx - 40, y: my - 60, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 100, color: '#f97316', gravity: 0, kind: 'slash', angle: Math.PI / 3 });
+            shake.current = Math.max(shake.current, 18);
           }
-          // 3. ICE / FROST SKILLS (Frost Nova / Ice Touch)
-          else if (sId.includes('frost') || sId.includes('ice') || col === '#38bdf8' || col === '#a5f3fc') {
-            burst(mx, my - 40, 55, '#38bdf8', 300, 4, -130);
-            burst(mx, my - 40, 35, '#a5f3fc', 380, 4, 30);
-            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 160, color: '#38bdf8', gravity: 0, kind: 'ring' });
-            shake.current = Math.max(shake.current, 8);
-          }
-          // 4. SHADOW / POISON / ASSASSIN SKILLS
-          else if (sId.includes('shadow') || sId.includes('poison') || sId.includes('ass') || col === '#a855f7' || col === '#22c55e') {
-            burst(mx, my - 40, 50, col, 320, 4, 30);
-            P.push({ x: mx - 30, y: my - 60, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 95, color: col, gravity: 0, kind: 'slash', angle: Math.PI / 6 });
-            P.push({ x: mx + 20, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 95, color: col, gravity: 0, kind: 'slash', angle: -Math.PI / 6 });
+          // 3. ICE / FROST / BLIZZARD SKILLS
+          else if (sId.includes('frost') || sId.includes('ice') || sId.includes('blizzard') || sId.includes('cold') || col === '#38bdf8' || col === '#a5f3fc') {
+            burst(mx, my - 40, 70, '#38bdf8', 340, 5, -130);
+            burst(mx, my - 40, 45, '#a5f3fc', 400, 4, 30);
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 190, color: '#38bdf8', gravity: 0, kind: 'ring' });
             shake.current = Math.max(shake.current, 10);
           }
-          // 5. BERSERKER / WHIRLWIND / EXECUTE SKILLS
-          else if (sId.includes('ber') || sId.includes('cleave') || sId.includes('whirl') || sId.includes('execute')) {
-            burst(mx, my - 40, 60, '#dc2626', 400, 5, 40);
-            P.push({ x: mx - 35, y: my - 65, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 110, color: '#dc2626', gravity: 0, kind: 'slash', angle: Math.PI / 4 });
-            P.push({ x: mx + 35, y: my - 25, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 110, color: '#ef4444', gravity: 0, kind: 'slash', angle: -Math.PI / 4 });
-            shake.current = Math.max(shake.current, 16);
+          // 4. SHADOW / NECRO / POISON SKILLS
+          else if (sId.includes('shadow') || sId.includes('necro') || sId.includes('poison') || sId.includes('venom') || sId.includes('dark') || col === '#a855f7' || col === '#22c55e') {
+            burst(mx, my - 40, 65, col, 350, 5, 30);
+            P.push({ x: mx - 35, y: my - 65, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 110, color: col, gravity: 0, kind: 'slash', angle: Math.PI / 6 });
+            P.push({ x: mx + 25, y: my - 45, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 110, color: col, gravity: 0, kind: 'slash', angle: -Math.PI / 6 });
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 170, color: col, gravity: 0, kind: 'ring' });
+            shake.current = Math.max(shake.current, 12);
           }
-          // 6. DEFAULT UNIQUE SKILL BURST
+          // 5. BERSERKER / WARRIOR / WHIRLWIND SKILLS
+          else if (sId.includes('ber') || sId.includes('cleave') || sId.includes('whirl') || sId.includes('execute') || sId.includes('slash') || sId.includes('rage')) {
+            burst(mx, my - 40, 75, '#dc2626', 420, 6, 40);
+            P.push({ x: mx - 40, y: my - 70, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 130, color: '#dc2626', gravity: 0, kind: 'slash', angle: Math.PI / 4 });
+            P.push({ x: mx + 40, y: my - 30, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 130, color: '#ef4444', gravity: 0, kind: 'slash', angle: -Math.PI / 4 });
+            shake.current = Math.max(shake.current, 20);
+          }
+          // 6. RANGER / NATURE / ARROW SKILLS
+          else if (sId.includes('range') || sId.includes('arrow') || sId.includes('shot') || sId.includes('nature') || sId.includes('druid')) {
+            for (let i = 0; i < 3; i++) {
+              P.push({ x: px + 40 + i * 15, y: py - 50 + i * 10, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 85, color: '#4ade80', gravity: 0, kind: 'slash', angle: 0 });
+            }
+            burst(mx, my - 40, 55, '#4ade80', 360, 4.5);
+            shake.current = Math.max(shake.current, 11);
+          }
+          // 7. DEFAULT ALL CLASS SKILLS
           else {
-            burst(mx, my - 40, 45, col, 340, 4);
-            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.38, size: 140, color: col, gravity: 0, kind: 'ring' });
-            shake.current = Math.max(shake.current, 9);
+            burst(mx, my - 40, 60, col, 380, 5);
+            P.push({ x: mx, y: my - 40, vx: 0, vy: 0, life: 0, maxLife: 0.4, size: 160, color: col, gravity: 0, kind: 'ring' });
+            P.push({ x: mx - 30, y: my - 50, vx: 0, vy: 0, life: 0, maxLife: 0.35, size: 90, color: col, gravity: 0, kind: 'slash', angle: Math.PI / 4 });
+            shake.current = Math.max(shake.current, 10);
           }
           break;
         }
