@@ -171,8 +171,16 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
             <span>БИЖУТЕРИЯ И АКСЕССУАРЫ</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {PAPERDOLL_LAYOUT.jewelry.map(renderSlotBtn)}
+          <div className="space-y-2">
+            <div>{renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[0])}</div>
+            <div className="grid grid-cols-2 gap-2">
+              {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[1])}
+              {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[2])}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[3])}
+              {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[4])}
+            </div>
           </div>
         </div>
       </div>
