@@ -185,6 +185,10 @@ export default function CombatCanvas() {
       last = now;
       time.current += dt;
 
+      playerLunge.current = Math.max(0, playerLunge.current - dt);
+      monsterHit.current = Math.max(0, monsterHit.current - dt);
+      shake.current = Math.max(0, shake.current - dt * 25);
+
       const s = useGame.getState();
       const zone = zoneById(s.zoneId);
       const heroClass = s.classId ? getClassById(s.classId) : null;
