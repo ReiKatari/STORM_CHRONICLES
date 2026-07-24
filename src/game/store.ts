@@ -91,7 +91,9 @@ export interface GameState {
   travelTo: (zoneId: string) => void;
   startDungeon: (id: string) => void;
   leaveDungeon: () => void;
-  clearFx: () => void;
+  manualAttack: () => void;
+  manualBlock: () => void;
+  manualFlee: () => void;
   save: () => void;
   hardReset: () => void;
   setSlotFilter: (slot: SlotKind | 'all') => void;
@@ -515,27 +517,6 @@ export const useGame = create<GameState>((set, get) => {
           }
         }
 
-        // Player auto-attack
-        const speed = (!d || isNaN(d.attackSpeed) || d.attackSpeed <= 0) ? 1.5 : d.attackSpeed;
-        let atkTimer = (s.playerAtk ?? 0) + dt * speed;
-
-        if (atkTimer >= 1.0) {
-          atkTimer -= 1.0;
-          const isCrit = Math.random() * 100 < d.critChance;
-          const rawDmg = Math.floor(d.dmgMin + Math.random() * (d.dmgMax - d.dmgMin + 1));
-          const dealt = Math.round(rawDmg * (isCrit ? d.critMult : 1.0));
-
-          if (isCrit) sound.playCrit(); else sound.playHit();
-          currentM.hp -= dealt;
-          pushFx(s.fxQueue, { type: isCrit ? 'crit' : 'monsterHit', value: dealt, text: isCrit ? `💥 КРИТ ${fmt(dealt)}` : `${fmt(dealt)}`, color: isCrit ? '#facc15' : '#f87171' });
-
-          if (currentM.hp <= 0) {
-            onKill(currentM);
-            set({ playerAtk: 0, hp, mana, skillCds: newCds, fxQueue: [...s.fxQueue] });
-            return;
-          }
-        }
-
         // Monster attack timer
         if (currentM) {
           let mTimer = (currentM.attackTimer ?? 0) + dt;
@@ -543,14 +524,22 @@ export const useGame = create<GameState>((set, get) => {
             mTimer = 0;
             if (Math.random() * 100 >= d.dodge) {
               const mDmg = mitigate(currentM.dmg, d.armor);
-              hp -= mDmg;
+              let remDmg = mDmg;
+              let currShield = s.shield ?? 0;
+              if (currShield > 0) {
+                const absorbed = Math.min(currShield, remDmg);
+                currShield -= absorbed;
+                remDmg -= absorbed;
+              }
+              hp -= remDmg;
               pushFx(s.fxQueue, { type: 'playerHit', value: mDmg, text: `-${fmt(mDmg)}`, color: '#ef4444' });
               if (hp <= 0) {
                 hp = d.maxHp;
                 pushLog(s.log, `☠️ Вы погибли от рук ${currentM.def.name}. Отступление на этап 1!`, '#ef4444');
-                set({ stage: 1, stageKills: 0, dungeon: null, monster: spawnFor(s.zoneId || 'hills', 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, null), hp, mana: d.maxMana, playerAtk: 0 });
+                set({ stage: 1, stageKills: 0, dungeon: null, monster: spawnFor(s.zoneId || 'hills', 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, null), hp, mana: d.maxMana, shield: 0, playerAtk: 0 });
                 return;
               }
+              set({ shield: currShield });
             } else {
               pushFx(s.fxQueue, { type: 'dodge', text: '💨 Уворот!', color: '#38bdf8' });
             }
@@ -558,7 +547,7 @@ export const useGame = create<GameState>((set, get) => {
           currentM.attackTimer = mTimer;
         }
 
-        set({ hp, mana, playerAtk: atkTimer, monster: currentM, skillCds: newCds, fxQueue: [...s.fxQueue] });
+        set({ hp, mana, monster: currentM, skillCds: newCds, fxQueue: [...s.fxQueue] });
       } catch (err) {
         console.error('Combat tick error:', err);
       }
@@ -796,6 +785,58 @@ export const useGame = create<GameState>((set, get) => {
     leaveDungeon: () => {
       const s = get();
       set({ dungeon: null, monster: spawnFor(s.zoneId, s.stage, s.mastery[s.zoneId] ?? 0, null) });
+    },
+
+    manualAttack: () => {
+      const s = get();
+      if (!s.monster) return;
+      let m = { ...s.monster };
+      const d = s.derived;
+
+      const isCrit = Math.random() * 100 < d.critChance;
+      const rawDmg = Math.floor(d.dmgMin + Math.random() * (d.dmgMax - d.dmgMin + 1));
+      const dealt = Math.round(rawDmg * (isCrit ? d.critMult : 1.0));
+
+      if (isCrit) sound.playCrit(); else sound.playHit();
+      m.hp -= dealt;
+      pushFx(s.fxQueue, {
+        type: isCrit ? 'crit' : 'monsterHit',
+        value: dealt,
+        text: isCrit ? `💥 КРИТ ${fmt(dealt)}` : `${fmt(dealt)}`,
+        color: isCrit ? '#facc15' : '#f87171'
+      });
+
+      if (m.hp <= 0) {
+        onKill(m);
+        set({ playerAtk: 1.0, fxQueue: [...s.fxQueue] });
+      } else {
+        set({ playerAtk: 1.0, monster: m, fxQueue: [...s.fxQueue] });
+      }
+    },
+
+    manualBlock: () => {
+      const s = get();
+      const d = s.derived;
+      const blockShield = Math.round(d.maxHp * 0.35);
+      const newShield = (s.shield ?? 0) + blockShield;
+      sound.playLevelUp();
+      pushFx(s.fxQueue, { type: 'heal', text: `🛡️ БЛОК +${fmt(blockShield)} Щит!`, color: '#facc15' });
+      pushLog(s.log, `🛡️ Ваша стойка Блока поглотит урон! (+${fmt(blockShield)} HP щита)`, '#facc15');
+      set({ shield: newShield, fxQueue: [...s.fxQueue] });
+    },
+
+    manualFlee: () => {
+      const s = get();
+      sound.playLoot();
+      pushLog(s.log, `🏃 Вы успешно уклонились и убежали на Этап 1!`, '#38bdf8');
+      pushFx(s.fxQueue, { type: 'dodge', text: '🏃 Убежал на этап 1!', color: '#38bdf8' });
+      set({
+        stage: 1,
+        stageKills: 0,
+        dungeon: null,
+        monster: spawnFor(s.zoneId || 'hills', 1, (s.mastery && s.mastery[s.zoneId]) ?? 0, null),
+        fxQueue: [...s.fxQueue]
+      });
     },
 
     clearFx: () => set({ fxQueue: [] }),

@@ -4,6 +4,7 @@ import { fmt, xpForLevel, MAX_LEVEL } from '@/game/engine';
 import { zoneById } from '@/game/monsters';
 import { getClassById } from '@/game/classes';
 import CombatCanvas from '@/components/game/CombatCanvas';
+import CombatActionControls from '@/components/game/CombatActionControls';
 import StatsPanel from '@/components/game/StatsPanel';
 import InventoryPanel from '@/components/game/InventoryPanel';
 import SkillsPanel from '@/components/game/SkillsPanel';
@@ -258,6 +259,7 @@ export default function App() {
             <div className="rounded-2xl border border-slate-700/60 overflow-hidden shadow-2xl bg-slate-900" style={{ height: 380 }}>
               <CombatCanvas />
             </div>
+            <CombatActionControls />
             <HotbarPanel />
             <BattleLog />
             <EventsPanel />
