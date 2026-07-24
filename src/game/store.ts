@@ -13,6 +13,66 @@ import { sound } from './sound';
 let fxId = 1;
 let logId = 1;
 
+const SAVE_KEY = 'storm_chronicles_save';
+const ACTIVE_SLOT_KEY = 'storm_chronicles_active_slot_id';
+const DEFAULT_SLOT_ID = 'slot_1';
+
+let isResettingGame = false;
+
+export function getActiveSlotId(): string {
+  try {
+    return localStorage.getItem(ACTIVE_SLOT_KEY) || DEFAULT_SLOT_ID;
+  } catch {
+    return DEFAULT_SLOT_ID;
+  }
+}
+
+export function setActiveSlotId(slotId: string) {
+  try {
+    localStorage.setItem(ACTIVE_SLOT_KEY, slotId);
+  } catch { /* ignore */ }
+}
+
+export function getSlotSaveKey(slotId: string): string {
+  return `storm_chronicles_save_${slotId || DEFAULT_SLOT_ID}`;
+}
+
+export interface CharacterSlotMeta {
+  slotId: string;
+  characterName: string;
+  classId: string;
+  level: number;
+  zoneId: string;
+  savedAt: number;
+}
+
+export function getCharacterSlotsMeta(): CharacterSlotMeta[] {
+  const slots: CharacterSlotMeta[] = [];
+  const slotIds = ['slot_1', 'slot_2', 'slot_3', 'slot_4', 'slot_5'];
+  slotIds.forEach(id => {
+    try {
+      let raw = localStorage.getItem(getSlotSaveKey(id));
+      if (!raw && id === 'slot_1') {
+        raw = localStorage.getItem(SAVE_KEY);
+      }
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d && d.characterName && d.classId) {
+          slots.push({
+            slotId: id,
+            characterName: d.characterName,
+            classId: d.classId,
+            level: d.level || 1,
+            zoneId: d.zoneId || 'hills',
+            savedAt: d.savedAt || Date.now(),
+          });
+        }
+      }
+    } catch { /* ignore */ }
+  });
+  return slots;
+}
+
 export interface GameState {
   // character
   characterName: string;
@@ -72,8 +132,9 @@ export interface GameState {
   log: LogEntry[];
   lastSave: number;
 
-  // derived (recomputed)
-  derived: DerivedStats;
+  // audio settings
+  sfxMuted: boolean;
+  musicMuted: boolean;
 
   // actions
   initCharacter: (name: string, classId: string) => void;
@@ -95,6 +156,8 @@ export interface GameState {
   manualAttack: () => void;
   manualBlock: () => void;
   manualFlee: () => void;
+  toggleSfx: () => void;
+  toggleMusic: () => void;
   save: () => void;
   hardReset: () => void;
   setSlotFilter: (slot: SlotKind | 'all') => void;
@@ -141,9 +204,6 @@ function spawnFor(zoneId: string, stage: number, mastery: number, dungeon: Dunge
   const rew = monsterReward(lvl, def.xpMult, def.goldMult);
   return { def, hp, maxHp: hp, level: lvl, dmg, xp: rew.xp, gold: rew.gold, attackTimer: 0, dotTimer: 0, dots: [] };
 }
-
-const SAVE_KEY = 'rogalik_save_v4';
-let isResettingGame = false;
 
 let fxCounter = 0;
 function pushFx(fx: FxEvent[], e: Omit<FxEvent, 'id'>) {
@@ -462,6 +522,9 @@ export const useGame = create<GameState>((set, get) => {
     lastSave: Date.now(),
     derived: initialDerived,
 
+    sfxMuted: false,
+    musicMuted: false,
+
     initCharacter: (name: string, classId: string) => {
       const cls = getClassById(classId);
       const starterEquipment: Partial<Record<SlotId, Item>> = {};
@@ -512,6 +575,8 @@ export const useGame = create<GameState>((set, get) => {
         const d = s.derived || computeDerived(s.level || 1, s.stats, s.equipment || {}, s.talents || {});
         let hp = Math.min(d.maxHp, (s.hp ?? d.maxHp) + d.regen * dt);
         let mana = Math.min(d.maxMana, (s.mana ?? d.maxMana) + d.manaRegen * dt);
+
+        sound.updateZoneAndStage(s.zoneId || 'hills', s.stage || 1);
 
         const newCds: Record<string, number> = {};
         if (s.skillCds) {
@@ -843,12 +908,27 @@ export const useGame = create<GameState>((set, get) => {
       });
     },
 
+    toggleSfx: () => {
+      const s = get();
+      const next = !s.sfxMuted;
+      sound.setSfxMuted(next);
+      set({ sfxMuted: next });
+    },
+
+    toggleMusic: () => {
+      const s = get();
+      const next = !s.musicMuted;
+      sound.setMusicMuted(next);
+      set({ musicMuted: next });
+    },
+
     clearFx: () => set({ fxQueue: [] }),
 
     save: () => {
       if (isResettingGame) return;
       const s = get();
       if (!s.classId || !s.characterName) return;
+      const slotId = getActiveSlotId();
       const data = {
         characterName: s.characterName,
         classId: s.classId,
@@ -860,27 +940,37 @@ export const useGame = create<GameState>((set, get) => {
         unlockedZones: s.unlockedZones, unlockedSecrets: s.unlockedSecrets,
         activePetId: s.activePetId, petLvl: s.petLvl, petXp: s.petXp, petCustomNames: s.petCustomNames,
         quests: s.quests, kills: s.kills, bossKills: s.bossKills, dungeonsCleared: s.dungeonsCleared,
+        sfxMuted: s.sfxMuted, musicMuted: s.musicMuted,
         savedAt: Date.now(),
       };
-      try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch { /* ignore */ }
+      try {
+        localStorage.setItem(getSlotSaveKey(slotId), JSON.stringify(data));
+      } catch { /* ignore */ }
       set({ lastSave: Date.now() });
     },
 
     hardReset: () => {
       isResettingGame = true;
-      localStorage.removeItem(SAVE_KEY);
+      const slotId = getActiveSlotId();
+      try {
+        localStorage.removeItem(getSlotSaveKey(slotId));
+        localStorage.removeItem(SAVE_KEY);
+      } catch { /* ignore */ }
       location.reload();
     },
 
     setSlotFilter: (slot) => set({ selectedSlotFilter: slot }),
   };
 });
-// Store modules updated
 
 // ===================== LOAD SAVE =====================
 export function loadSave() {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const slotId = getActiveSlotId();
+    let raw = localStorage.getItem(getSlotSaveKey(slotId));
+    if (!raw) {
+      raw = localStorage.getItem(SAVE_KEY);
+    }
     if (!raw) return;
     const d = JSON.parse(raw);
     if (!d || typeof d !== 'object') return;
@@ -888,6 +978,11 @@ export function loadSave() {
     const quests = { ...s.quests };
     Object.entries(d.quests ?? {}).forEach(([k, v]) => { if (quests[k]) quests[k] = v as never; });
     const targetZoneId = d.zoneId && ZONES.some(z => z.id === d.zoneId) ? d.zoneId : 'hills';
+
+    sound.setSfxMuted(d.sfxMuted ?? false);
+    sound.setMusicMuted(d.musicMuted ?? false);
+    sound.updateZoneAndStage(targetZoneId, d.stage ?? 1);
+
     useGame.setState({
       characterName: d.characterName ?? '',
       classId: d.classId ?? '',
@@ -903,6 +998,8 @@ export function loadSave() {
       petLvl: d.petLvl ?? 1,
       petXp: d.petXp ?? 0,
       petCustomNames: d.petCustomNames ?? {},
+      sfxMuted: d.sfxMuted ?? false,
+      musicMuted: d.musicMuted ?? false,
       quests, kills: d.kills ?? 0, bossKills: d.bossKills ?? 0, dungeonsCleared: d.dungeonsCleared ?? 0,
     });
     // recompute derived and respawn
@@ -915,6 +1012,5 @@ export function loadSave() {
     });
   } catch (err) {
     console.error('Failed to load save:', err);
-    try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
   }
 }
