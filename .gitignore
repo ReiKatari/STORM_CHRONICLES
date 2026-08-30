@@ -1,24 +1,43 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Build outputs & Executables
+bin/
+obj/
+dist/
+build/
+out/
+target/
+Assembling/
+scratch/
+gar_data/
+*.exe
+*.dll
+*.obj
+*.zip
+*.7z
+*.rar
+*.tar.gz
+*.apk
+*.aab
+*.msi
+*.pfx
+*.cer
 
-node_modules
-dist
-dist-ssr
-*.local
+# Keep tools in STORM SWITCH BOX if needed
+!tools/**/*.exe
+!tools/**/*.dll
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
+# Keep branding icons
+!Files/*.ico
+!Files/*.png
+!Files/*.svg
+
+# IDE & Environment
+.vs/
+.vscode/
+.idea/
 *.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.user
+Thumbs.db
+Desktop.ini
+*.log
+*.tmp
+node_modules/
