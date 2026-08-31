@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useGame } from '@/game/store';
-import { generateItem, rarityById, POTIONS_CATALOG, type PotionItemDef } from '@/game/items';
-import type { Item, SlotId, SlotKind } from '@/game/types';
-import { fmt, computeDerived } from '@/game/engine';
+import { generateItem, rarityById } from '@/game/items';
+import type { Item, RarityId } from '@/game/types';
+import { fmt } from '@/game/engine';
+import { sound } from '@/game/sound';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface TorvaldContract {
   id: string;
@@ -15,11 +17,94 @@ interface TorvaldContract {
   current: number;
   rewardGold: number;
   rewardXP: number;
-  rewardGems?: number;
-  rewardPoints?: number;
   completed: boolean;
   claimed: boolean;
 }
+
+interface BlackMarketItem {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  rarity: RarityId;
+  costGold: number;
+  type: 'artifact' | 'potion' | 'keys' | 'scroll' | 'chest';
+}
+
+interface CaravanRoute {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  durationSec: number;
+  costGold: number;
+  returnGold: number;
+  returnStones: number;
+  returnShards: number;
+  repReq: number;
+}
+
+const CARAVAN_ROUTES: CaravanRoute[] = [
+  {
+    id: 'caravan_desert',
+    name: 'Караван Пустыни Оазиса',
+    icon: '🐪',
+    desc: 'Торговая экспедиция по шелковым дюнам за пряностями и редкими минералами.',
+    durationSec: 90,
+    costGold: 15000,
+    returnGold: 22000,
+    returnStones: 6,
+    returnShards: 2,
+    repReq: 1,
+  },
+  {
+    id: 'caravan_sea',
+    name: 'Морской Фрегат Торвальда',
+    icon: '⛵',
+    desc: 'Купеческий корабль через Бездну Океана за рубинами и драгоценными реликвиями.',
+    durationSec: 240,
+    costGold: 60000,
+    returnGold: 95000,
+    returnStones: 18,
+    returnShards: 6,
+    repReq: 3,
+  },
+  {
+    id: 'caravan_astral',
+    name: 'Астральный Дирижабль Бездны',
+    icon: '🌌',
+    desc: 'Флагманский дирижабль Гильдии за эфирными кристаллами и небесными осколками.',
+    durationSec: 480,
+    costGold: 250000,
+    returnGold: 420000,
+    returnStones: 50,
+    returnShards: 25,
+    repReq: 6,
+  },
+  {
+    id: 'caravan_divine',
+    name: 'Небесный Ковчег Архистратигов',
+    icon: '✨',
+    desc: 'Флагманский звездный ковчег за первозданной божественной рудой и артефактами.',
+    durationSec: 600,
+    costGold: 1000000,
+    returnGold: 2200000,
+    returnStones: 120,
+    returnShards: 60,
+    repReq: 10,
+  },
+];
+
+const BLACK_MARKET_STOCK: BlackMarketItem[] = [
+  { id: 'bm_key_master', name: 'Мастер-Ключи Бездны (5 штук)', icon: '🗝️', desc: 'Набор высокоточных отмычек. Добавляет 5 отмычек для сундуков сокровищ.', rarity: 'rare', costGold: 30000, type: 'keys' },
+  { id: 'bm_elixir_titan', name: 'Эликсир Титанической Силы', icon: '🍷', desc: '+50% к Урону персонажа на 10 минут.', rarity: 'epic', costGold: 60000, type: 'potion' },
+  { id: 'bm_scroll_respec', name: 'Свиток Перерождения Разума', icon: '📜', desc: 'Возвращает все потраченные очки талантов для свободного перераспределения.', rarity: 'epic', costGold: 80000, type: 'scroll' },
+  { id: 'bm_stones_bundle', name: 'Мешок Камней Усиления (25 штук)', icon: '💎', desc: 'Большой мешок отборных камней для заточки снаряжения в Великой Кузнице.', rarity: 'rare', costGold: 45000, type: 'artifact' },
+  { id: 'bm_astral_ore_chest', name: 'Сундук Астральной Руды (250 штук)', icon: '⛏️', desc: 'Запас чистейшей астральной руды для ковки сетового снаряжения.', rarity: 'epic', costGold: 120000, type: 'artifact' },
+  { id: 'bm_orb_gods', name: 'Сфера Сотворения Миров', icon: '🌟', desc: '+1 Очко Талантов и +5 Очков Характеристик навсегда!', rarity: 'mythic', costGold: 300000, type: 'artifact' },
+  { id: 'bm_relic_coffer', name: 'Таинственный Ларец Реликвий', icon: '📦', desc: 'Гарантированно содержит случайный Мифический или Божественный предмет!', rarity: 'divine', costGold: 600000, type: 'chest' },
+  { id: 'bm_divine_seal', name: 'Божественная Печать Бессмертия', icon: '👑', desc: 'Высшая реликвия: гарантирует получение Божественного предмета наивысшего качества!', rarity: 'divine', costGold: 1500000, type: 'chest' },
+];
 
 function getTargetMerchantTime(): number {
   try {
@@ -34,8 +119,40 @@ function getTargetMerchantTime(): number {
   return target;
 }
 
-function generateTorvaldContracts(playerLevel: number, totalKills: number, totalBosses: number): TorvaldContract[] {
-  return [
+export default function MerchantModal({ onClose }: { onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [activeTab, setActiveTab] = useState<'shop' | 'bulk_sell' | 'caravans' | 'black_market' | 'contracts'>('shop');
+  const level = useGame(s => s.level);
+  const gold = useGame(s => s.gold);
+  const kills = useGame(s => s.kills);
+  const bossKills = useGame(s => s.bossKills);
+  const inventory = useGame(s => s.inventory);
+
+  // Merchant Reputation Level (1 to 10)
+  const [repLevel, setRepLevel] = useState<number>(() => {
+    const saved = localStorage.getItem('storm_merchant_rep');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+
+  const [repXp, setRepXp] = useState<number>(() => {
+    const saved = localStorage.getItem('storm_merchant_rep_xp');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  // Active Caravans State: { [routeId]: finishTimestamp }
+  const [activeCaravans, setActiveCaravans] = useState<Record<string, number>>(() => {
+    try {
+      const saved = localStorage.getItem('storm_merchant_caravans');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  // Daily Contracts
+  const [contracts, setContracts] = useState<TorvaldContract[]>(() => [
     {
       id: 'c_1',
       title: 'Охота на Элитных Тварей',
@@ -44,9 +161,9 @@ function generateTorvaldContracts(playerLevel: number, totalKills: number, total
       icon: '🎯',
       type: 'kills',
       required: 25,
-      current: Math.min(25, totalKills % 25),
-      rewardGold: playerLevel * 120 + 250,
-      rewardXP: playerLevel * 80 + 150,
+      current: Math.min(25, kills % 25),
+      rewardGold: level * 160 + 500,
+      rewardXP: level * 100 + 300,
       completed: true,
       claimed: false,
     },
@@ -58,575 +175,596 @@ function generateTorvaldContracts(playerLevel: number, totalKills: number, total
       icon: '👑',
       type: 'bosses',
       required: 3,
-      current: Math.min(3, totalBosses % 3),
-      rewardGold: playerLevel * 300 + 800,
-      rewardXP: playerLevel * 200 + 500,
-      rewardGems: 15,
+      current: Math.min(3, bossKills % 3),
+      rewardGold: level * 400 + 1200,
+      rewardXP: level * 250 + 800,
       completed: true,
       claimed: false,
     },
-    {
-      id: 'c_3',
-      title: 'Исследование Тайных Данжей',
-      target: 'Зачистите 2 Подземелья',
-      desc: 'Гильдия наемников ищет смельчаков для спуска в заброшенные руины.',
-      icon: '🏰',
-      type: 'dungeons',
-      required: 2,
-      current: 1,
-      rewardGold: playerLevel * 450 + 1200,
-      rewardXP: playerLevel * 300 + 800,
-      rewardPoints: 1,
-      completed: false,
-      claimed: false,
-    },
-    {
-      id: 'c_4',
-      title: 'Сбор Древнего Золота',
-      target: 'Заработайте 5,000 Золота',
-      desc: 'Торвальд ищет старинные монеты для пополнения городского резерва.',
-      icon: '💰',
-      type: 'gold',
-      required: 5000,
-      current: 5000,
-      rewardGold: playerLevel * 250 + 500,
-      rewardXP: playerLevel * 150 + 300,
-      completed: true,
-      claimed: false,
-    },
-    {
-      id: 'c_5',
-      title: 'Мастерство Локаций',
-      target: 'Завершите 1 Мастер-Цикл',
-      desc: 'Докажите свое непревзойденное владение территорией.',
-      icon: '🌟',
-      type: 'mastery',
-      required: 1,
-      current: 1,
-      rewardGold: playerLevel * 600 + 1500,
-      rewardXP: playerLevel * 400 + 1000,
-      rewardGems: 25,
-      completed: true,
-      claimed: false,
-    },
-    {
-      id: 'c_6',
-      title: 'Зачистка Оскверненного Леса',
-      target: 'Уничтожьте 50 Монстров',
-      desc: 'Торвальд объявляет большую охоту за темными душами.',
-      icon: '🏹',
-      type: 'kills',
-      required: 50,
-      current: 50,
-      rewardGold: playerLevel * 250 + 600,
-      rewardXP: playerLevel * 180 + 400,
-      completed: true,
-      claimed: false,
-    },
-    {
-      id: 'c_7',
-      title: 'Истребитель Драконов',
-      target: 'Победите 5 Высших Боссов',
-      desc: 'Контракт наивысшего ранга опасности для опытных наемников.',
-      icon: '🐉',
-      type: 'bosses',
-      required: 5,
-      current: 4,
-      rewardGold: playerLevel * 800 + 2500,
-      rewardXP: playerLevel * 500 + 1500,
-      rewardPoints: 2,
-      completed: false,
-      claimed: false,
-    },
-    {
-      id: 'c_8',
-      title: 'Астральный Прорыв',
-      target: 'Соберите 15,000 Золота',
-      desc: 'Финансирование астрального портала гильдии.',
-      icon: '🌌',
-      type: 'gold',
-      required: 15000,
-      current: 12400,
-      rewardGold: playerLevel * 1000 + 3000,
-      rewardXP: playerLevel * 600 + 2000,
-      rewardGems: 50,
-      completed: false,
-      claimed: false,
-    },
-  ];
-}
-
-export default function MerchantModal({ onClose }: { onClose: () => void }) {
-  const [activeTab, setActiveTab] = useState<'armorer' | 'alchemist' | 'bounty'>('armorer');
-
-  const gold = useGame(s => s.gold);
-  const level = useGame(s => s.level);
-  const inventory = useGame(s => s.inventory);
-  const equipment = useGame(s => s.equipment);
-  const kills = useGame(s => s.kills);
-  const bossKills = useGame(s => s.bossKills);
-  const sellJunk = useGame(s => s.sellJunk);
-
-  // 3-Minute Persistent Refresh State (180 seconds)
-  const [stockTimer, setStockTimer] = useState<number>(180);
-  const [shopStock, setShopStock] = useState<Item[]>(() => [
-    generateItem(level, 'rare'),
-    generateItem(level + 1, 'rare'),
-    generateItem(level + 2, 'epic'),
-    generateItem(level + 3, 'epic'),
-    generateItem(level + 5, 'legendary'),
-    generateItem(level + 7, 'mythic'),
   ]);
 
-  const [contracts, setContracts] = useState<TorvaldContract[]>(() =>
-    generateTorvaldContracts(level, kills, bossKills)
-  );
+  // Shop Stock
+  const [shopGear, setShopGear] = useState<Item[]>(() => [
+    generateItem(level, 'rare'),
+    generateItem(level, 'epic'),
+    generateItem(level, 'legendary'),
+    generateItem(level, 'mythic'),
+  ]);
 
-  const refreshStock = () => {
-    setShopStock([
-      generateItem(level, 'rare'),
-      generateItem(level + 1, 'rare'),
-      generateItem(level + 2, 'epic'),
-      generateItem(level + 3, 'epic'),
-      generateItem(level + 5, 'legendary'),
-      generateItem(level + 7, 'mythic'),
-    ]);
-    setContracts(generateTorvaldContracts(level, kills, bossKills));
-    const nextTarget = Date.now() + 180000;
-    try { localStorage.setItem('storm_merchant_target', nextTarget.toString()); } catch { /* ignore */ }
-    setStockTimer(180);
-  };
+  const [timeLeft, setTimeLeft] = useState<number>(180);
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
 
-  // Live persistent countdown timer for 3-minute stock rotation
+  // Reputation Discount & Sell Bonus
+  const discountMultiplier = Math.max(0.75, 1 - (repLevel - 1) * 0.028);
+  const sellMultiplier = 1 + (repLevel - 1) * 0.05;
+
   useEffect(() => {
-    const tickTimer = () => {
+    localStorage.setItem('storm_merchant_rep', repLevel.toString());
+  }, [repLevel]);
+
+  useEffect(() => {
+    localStorage.setItem('storm_merchant_rep_xp', repXp.toString());
+  }, [repXp]);
+
+  useEffect(() => {
+    localStorage.setItem('storm_merchant_caravans', JSON.stringify(activeCaravans));
+  }, [activeCaravans]);
+
+  useEffect(() => {
+    const tick = () => {
+      setCurrentTime(Date.now());
       const target = getTargetMerchantTime();
       const diff = Math.max(0, Math.ceil((target - Date.now()) / 1000));
-      setStockTimer(diff);
-      if (diff === 0) {
-        refreshStock();
+      setTimeLeft(diff);
+      if (diff <= 0) {
+        setShopGear([
+          generateItem(level, 'rare'),
+          generateItem(level, 'epic'),
+          generateItem(level, 'legendary'),
+          generateItem(level, 'mythic'),
+        ]);
+        const nextTarget = Date.now() + 180000;
+        try { localStorage.setItem('storm_merchant_target', nextTarget.toString()); } catch { /* ignore */ }
       }
     };
-    tickTimer();
-    const timerId = setInterval(tickTimer, 1000);
-    return () => clearInterval(timerId);
-  }, []);
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+  }, [level]);
 
-  // ESC key listener
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  const addRepXp = (amount: number) => {
+    const nextXp = repXp + amount;
+    const req = repLevel * 120;
+    if (nextXp >= req && repLevel < 10) {
+      setRepLevel(prev => prev + 1);
+      setRepXp(nextXp - req);
+      sound.playLevelUp();
+      setActionFeedback(`🌟 ПОВЫШЕНИЕ РЕПУТАЦИИ ДО УРОВНЯ ${repLevel + 1}!`);
+    } else {
+      setRepXp(nextXp);
+    }
+  };
 
-  const handleBuyShopItem = (item: Item, index: number) => {
-    const cost = item.sellPrice * 3;
-    if (gold < cost || inventory.length >= 72) return;
+  const handleBuyGear = (item: Item) => {
+    const finalPrice = Math.round(item.sellPrice * 3 * discountMultiplier);
+    if (gold < finalPrice || inventory.length >= 72) return;
 
-    const newInventory = [...inventory, item];
-    const newEquipment = { ...equipment };
-
+    sound.playEquip();
     useGame.setState(s => ({
-      gold: s.gold - cost,
-      inventory: newInventory,
-      derived: computeDerived(s.level, s.stats, newEquipment, s.talents),
+      gold: s.gold - finalPrice,
+      inventory: [...s.inventory, item],
+      log: [...s.log, { id: Date.now(), text: `🛒 Куплен предмет ${item.name} за -${fmt(finalPrice)}g`, color: '#facc15', time: Date.now() }]
     }));
 
-    // Remove bought item from shop stock
-    setShopStock(prev => prev.filter((_, i) => i !== index));
+    setShopGear(prev => prev.filter(i => i.id !== item.id));
+    addRepXp(35);
   };
 
-  const handleBuyPotion = (type: 'hp' | 'mana', cost: number) => {
-    if (gold < cost) return;
+  const handleBuyBlackMarket = (bm: BlackMarketItem) => {
+    if (gold < bm.costGold) return;
+
+    sound.playHoly();
+    useGame.setState(s => ({ gold: s.gold - bm.costGold }));
+
+    if (bm.id === 'bm_orb_gods') {
+      useGame.setState(s => ({
+        statPoints: s.statPoints + 5,
+        talentPoints: s.talentPoints + 1,
+        log: [...s.log, { id: Date.now(), text: `🌟 СФЕРА СОТВОРЕНИЯ: +5 Очков Характеристик и +1 Очко Талантов!`, color: '#facc15', time: Date.now() }]
+      }));
+      setActionFeedback('🌟 Получено +5 Очков Характеристик и +1 Очко Талантов!');
+    } else if (bm.id === 'bm_key_master') {
+      const currentPicks = parseInt(localStorage.getItem('storm_lock_picks') || '5', 10);
+      localStorage.setItem('storm_lock_picks', (currentPicks + 5).toString());
+      setActionFeedback('🗝️ +5 Мастер-Ключей добавлено в Сокровищницу!');
+    } else if (bm.id === 'bm_stones_bundle') {
+      useGame.setState(s => ({
+        enhancementStones: (s.enhancementStones || 0) + 25,
+        log: [...s.log, { id: Date.now(), text: `💎 Получено +25 Камней Усиления!`, color: '#38bdf8', time: Date.now() }]
+      }));
+      setActionFeedback('💎 +25 Камней Усиления добавлено в Кузницу!');
+    } else if (bm.id === 'bm_scroll_respec') {
+      useGame.setState(s => {
+        let totalRefund = 0;
+        Object.values(s.talents || {}).forEach(r => { totalRefund += r; });
+        return {
+          talents: {},
+          talentPoints: s.talentPoints + totalRefund,
+          log: [...s.log, { id: Date.now(), text: `📜 СВИТОК ПЕРЕРОЖДЕНИЯ: Все ${totalRefund} очков талантов сброшены!`, color: '#a855f7', time: Date.now() }]
+        };
+      });
+      setActionFeedback('📜 Все очки талантов сброшены для перераспределения!');
+    } else if (bm.id === 'bm_relic_coffer') {
+      const luckyRarity: RarityId = Math.random() < 0.25 ? 'divine' : 'mythic';
+      const wonItem = generateItem(level, luckyRarity);
+      useGame.setState(s => ({
+        inventory: [...s.inventory, wonItem],
+        log: [...s.log, { id: Date.now(), text: `📦 ТАИНСТВЕННЫЙ ЛАРЕЦ: Извлечен ${wonItem.name}!`, color: '#e0e7ff', time: Date.now() }]
+      }));
+    } else if (bm.id === 'bm_astral_ore_chest') {
+      const curOre = parseInt(localStorage.getItem('storm_astral_ore') || '250', 10);
+      localStorage.setItem('storm_astral_ore', (curOre + 250).toString());
+      setActionFeedback('⛏️ +250 Астральной Руды добавлено в Кузницу!');
+    } else if (bm.id === 'bm_divine_seal') {
+      const wonItem = generateItem(level, 'divine');
+      useGame.setState(s => ({
+        inventory: [...s.inventory, wonItem],
+        log: [...s.log, { id: Date.now(), text: `👑 БОЖЕСТВЕННАЯ ПЕЧАТЬ: Извлечен ${wonItem.name}!`, color: '#e0e7ff', time: Date.now() }]
+      }));
+      setActionFeedback(`👑 Извлечен Божественный Артефакт: ${wonItem.name}!`);
+    }
+
+    addRepXp(120);
+  };
+
+  const handleClaimContract = (contract: TorvaldContract) => {
+    if (!contract.completed || contract.claimed) return;
+
+    sound.playLevelUp();
+    contract.claimed = true;
+
     useGame.setState(s => ({
-      gold: s.gold - cost,
-      hp: type === 'hp' ? s.derived.maxHp : s.hp,
-      mana: type === 'mana' ? s.derived.maxMana : s.mana,
+      gold: s.gold + contract.rewardGold,
+      xp: s.xp + contract.rewardXP,
+      log: [...s.log, { id: Date.now(), text: `📜 КОНТРАКТ ТОРВАЛЬДА: Завершен «${contract.title}»! +${fmt(contract.rewardGold)}g, +${contract.rewardXP} XP`, color: '#38bdf8', time: Date.now() }]
     }));
+
+    setContracts([...contracts]);
+    addRepXp(60);
   };
 
-  const handleClaimContract = (contractId: string) => {
-    const targetC = contracts.find(c => c.id === contractId);
-    if (!targetC || !targetC.completed || targetC.claimed) return;
+  // Mass Bulk Sell function
+  const handleBulkSell = (targetRarities: RarityId[]) => {
+    const toSell = inventory.filter(item => targetRarities.includes(item.rarity));
+    if (toSell.length === 0) {
+      setActionFeedback('❌ Нет предметов указанных редкостей в инвентаре.');
+      setTimeout(() => setActionFeedback(null), 2500);
+      return;
+    }
 
+    let earnedGold = 0;
+    toSell.forEach(item => {
+      earnedGold += Math.round(item.sellPrice * sellMultiplier);
+    });
+
+    sound.playEquip();
     useGame.setState(s => ({
-      gold: s.gold + targetC.rewardGold,
-      xp: s.xp + targetC.rewardXP,
-      skillPoints: s.skillPoints + (targetC.rewardPoints ?? 0),
+      gold: s.gold + earnedGold,
+      inventory: s.inventory.filter(item => !targetRarities.includes(item.rarity)),
+      log: [...s.log, { id: Date.now(), text: `💰 МАССОВАЯ ПРОДАЖА: Продано ${toSell.length} предметов на сумму +${fmt(earnedGold)} золота!`, color: '#facc15', time: Date.now() }]
     }));
 
-    setContracts(prev => prev.map(c => c.id === contractId ? { ...c, claimed: true } : c));
+    addRepXp(toSell.length * 10);
+    setActionFeedback(`💰 Продано ${toSell.length} предметов за +${fmt(earnedGold)} золота (+${toSell.length * 10} Репутации)!`);
+    setTimeout(() => setActionFeedback(null), 3000);
   };
 
-  const formatTimer = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  // Dispatch Caravan
+  const handleDispatchCaravan = (route: CaravanRoute) => {
+    if (gold < route.costGold || repLevel < route.repReq) return;
+
+    sound.playSpell();
+    useGame.setState(s => ({ gold: s.gold - route.costGold }));
+
+    const finishTime = Date.now() + route.durationSec * 1000;
+    setActiveCaravans(prev => ({ ...prev, [route.id]: finishTime }));
+    setActionFeedback(`🐪 ${route.name} отправлен в путь!`);
+    setTimeout(() => setActionFeedback(null), 3000);
   };
 
-  // Compute Item Comparison against player's equipped item in target slot
-  const getItemComparison = (item: Item) => {
-    const targetSlot: SlotId = item.slot === 'ring' ? 'ring1' : item.slot === 'earring' ? 'earring1' : (item.slot as SlotId);
-    const equipped = equipment[targetSlot];
+  // Collect Caravan Reward
+  const handleCollectCaravan = (route: CaravanRoute) => {
+    const finish = activeCaravans[route.id];
+    if (!finish || finish > Date.now()) return;
 
-    const itemDmg = item.base.dmg ?? 0;
-    const itemArmor = item.base.armor ?? 0;
-    const itemHp = item.base.hp ?? 0;
+    sound.playLevelUp();
+    useGame.setState(s => ({
+      gold: s.gold + route.returnGold,
+      enhancementStones: (s.enhancementStones || 0) + route.returnStones,
+      celestialShards: (s.celestialShards || 0) + route.returnShards,
+      log: [...s.log, {
+        id: Date.now(),
+        text: `🐪 КАРАВАН ВЕРНУЛСЯ: «${route.name}» принес +${fmt(route.returnGold)} золота, +${route.returnStones} Камней, +${route.returnShards} Осколков!`,
+        color: '#facc15',
+        time: Date.now()
+      }]
+    }));
 
-    const eqDmg = equipped?.base.dmg ?? 0;
-    const eqArmor = equipped?.base.armor ?? 0;
-    const eqHp = equipped?.base.hp ?? 0;
+    setActiveCaravans(prev => {
+      const next = { ...prev };
+      delete next[route.id];
+      return next;
+    });
 
-    const diffDmg = itemDmg - eqDmg;
-    const diffArmor = itemArmor - eqArmor;
-    const diffHp = itemHp - eqHp;
-    const diffScore = item.score - (equipped?.score ?? 0);
-
-    return { equipped, diffDmg, diffArmor, diffHp, diffScore };
+    addRepXp(80);
+    setActionFeedback(`🐪 Прибыль с каравана: +${fmt(route.returnGold)} золота, +${route.returnStones} Камней, +${route.returnShards} Осколков!`);
+    setTimeout(() => setActionFeedback(null), 3000);
   };
+
+  const reqXp = repLevel * 120;
+  const repPct = Math.min(100, (repXp / reqXp) * 100);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-4xl w-full p-4 shadow-2xl space-y-3 relative max-h-[90vh] flex flex-col font-sans">
-        {/* Header & Close Button */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl p-2 bg-amber-500/10 border border-amber-500/30 rounded-2xl">🏪</span>
+    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 font-sans">
+      <div className="bg-slate-950 border border-amber-500/50 rounded-2xl max-w-4xl w-full p-4 shadow-[0_0_60px_rgba(245,158,11,0.3)] space-y-3 relative max-h-[94vh] flex flex-col">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl p-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.4)]">🪙</span>
             <div>
-              <h2 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider">
-                ГОРОДСКАЯ ТОРГОВАЯ ПЛОЩАДЬ И NPC
-              </h2>
-              <div className="flex items-center gap-3 mt-0.5">
-                <span className="text-[11px] text-amber-300 font-extrabold">💰 Золото: {fmt(gold)} g</span>
-                <span className="text-[10px] text-slate-400 font-mono bg-slate-950 px-2.5 py-0.5 rounded-md border border-slate-800">
-                  ⏱️ Авто-обновление: <b className="text-amber-300 font-black">{formatTimer(stockTimer)}</b>
+              <h2 className="font-black text-sm text-slate-100 uppercase tracking-wider flex items-center gap-2">
+                <span>ТОРГОВАЯ ГИЛЬДИЯ ТОРВАЛЬДА</span>
+                <span className="text-[10px] text-amber-300 font-mono bg-amber-950/80 border border-amber-500/40 px-2 py-0.5 rounded-full">
+                  Уровень {repLevel} (-{Math.round((1 - discountMultiplier) * 100)}% скидка · +{Math.round((sellMultiplier - 1) * 100)}% к выкупу)
                 </span>
+              </h2>
+              <div className="text-[11px] text-slate-400 font-mono mt-0.5 flex items-center gap-3">
+                <span>Баланс: <b className="text-yellow-300 font-black">💰 {fmt(gold)} золота</b></span>
+                <span>·</span>
+                <span>Ротация товаров через: <b className="text-sky-300">{Math.floor(timeLeft / 60)} минут {timeLeft % 60} секунд</b></span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={refreshStock}
-              className="rpg-button text-amber-300 px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1"
-              title="Обновить ассортимент товаров и контрактов прямо сейчас"
-            >
-              🔄 Обновить Всё
-            </button>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 font-bold text-sm flex items-center justify-center transition-colors"
-            >
-              ✕
-            </button>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-xl bg-slate-900 hover:bg-red-900/60 text-slate-400 hover:text-red-300 font-bold text-sm flex items-center justify-center border border-slate-800 transition-colors cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Reputation Progress Bar */}
+        <div className="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 shrink-0 space-y-1">
+          <div className="flex justify-between items-center text-[10px] font-black">
+            <span className="text-amber-300">👑 РЕПУТАЦИЯ ТОРГОВЦА (РАНГ {repLevel} из 10)</span>
+            <span className="text-slate-400 font-mono">{repXp} / {reqXp} Опыта ({repPct.toFixed(0)}%)</span>
+          </div>
+          <div className="h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800 relative">
+            <div
+              className="h-full bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-300 transition-all duration-300"
+              style={{ width: `${repPct}%` }}
+            />
           </div>
         </div>
 
-        {/* Merchant NPC Tabs */}
-        <div className="flex gap-1.5 bg-slate-950/70 p-1 rounded-xl border border-slate-800 shrink-0">
+        {/* Action Feedback Banner */}
+        {actionFeedback && (
+          <div className="p-2 rounded-xl bg-amber-950/90 border border-amber-500 text-amber-200 text-xs font-black text-center animate-pulse shrink-0">
+            {actionFeedback}
+          </div>
+        )}
+
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 shrink-0 flex-wrap">
           <button
-            onClick={() => setActiveTab('armorer')}
-            className={`flex-1 text-xs py-2 px-3 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 ${
-              activeTab === 'armorer' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            onClick={() => setActiveTab('shop')}
+            className={`flex-1 min-w-[120px] text-xs py-2 px-2.5 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'shop' ? 'bg-amber-600 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span>🛡️</span>
-            <span>Оружейник Бронир</span>
+            <span>🏪</span>
+            <span>Товары</span>
           </button>
+
           <button
-            onClick={() => setActiveTab('alchemist')}
-            className={`flex-1 text-xs py-2 px-3 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 ${
-              activeTab === 'alchemist' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            onClick={() => setActiveTab('bulk_sell')}
+            className={`flex-1 min-w-[120px] text-xs py-2 px-2.5 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'bulk_sell' ? 'bg-amber-600 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span>🧪</span>
-            <span>Алхимик Элиэлла</span>
+            <span>💰</span>
+            <span>Скупка Лута</span>
           </button>
+
           <button
-            onClick={() => setActiveTab('bounty')}
-            className={`flex-1 text-xs py-2 px-3 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 ${
-              activeTab === 'bounty' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            onClick={() => setActiveTab('caravans')}
+            className={`flex-1 min-w-[120px] text-xs py-2 px-2.5 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'caravans' ? 'bg-amber-600 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>🐪</span>
+            <span>Караваны</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('black_market')}
+            className={`flex-1 min-w-[120px] text-xs py-2 px-2.5 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'black_market' ? 'bg-amber-600 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>🏴</span>
+            <span>Черный Рынок</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('contracts')}
+            className={`flex-1 min-w-[120px] text-xs py-2 px-2.5 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'contracts' ? 'bg-amber-600 text-slate-950 font-black shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <span>📜</span>
-            <span>Контракты Торвальда ({contracts.length})</span>
+            <span>Контракты</span>
           </button>
         </div>
 
-        {/* Tab Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
-          {/* TAB 1: ARMORER MERCHANT WITH FULL EQUIPMENT COMPARISON */}
-          {activeTab === 'armorer' && (
-            <div className="space-y-3">
-              {/* Batch Selling Section */}
-              <div className="p-3 rounded-xl bg-amber-950/20 border border-amber-500/40 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="font-extrabold text-xs text-amber-300">
-                    ⚡ Быстрая Продажа Хлама Из Инвентаря
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-mono">Сумка: {inventory.length}/72</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => sellJunk('common')}
-                    className="py-1.5 px-2 rounded-lg rpg-button text-slate-300 text-xs font-bold"
-                  >
-                    💰 Продать Обычные
-                  </button>
-                  <button
-                    onClick={() => sellJunk('uncommon')}
-                    className="py-1.5 px-2 rounded-lg rpg-button text-emerald-300 text-xs font-bold"
-                  >
-                    💰 Продать Необычные
-                  </button>
-                  <button
-                    onClick={() => sellJunk('rare')}
-                    className="py-1.5 px-2 rounded-lg rpg-button text-sky-300 text-xs font-bold"
-                  >
-                    💰 Продать Редкие
-                  </button>
-                </div>
-              </div>
+        {/* Tab 1: Shop Stock */}
+        {activeTab === 'shop' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-h-0 overflow-y-auto pr-1">
+            {shopGear.map(item => {
+              const r = rarityById(item.rarity);
+              const price = Math.round(item.sellPrice * 3 * discountMultiplier);
+              const canAfford = gold >= price;
 
-              {/* Shop Stock Items Header */}
-              <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-200">
-                  🛒 Ассортимент Оружия и Брони Бронира (Сравнение С Надетым)
-                </h3>
-                <span className="text-[10px] text-slate-400 font-mono">В наличии: {shopStock.length} предметов</span>
-              </div>
-
-              {/* Shop Stock Items Grid With Real-time Gear Comparison Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {shopStock.length === 0 ? (
-                  <div className="col-span-2 p-6 text-center text-slate-500 text-xs bg-slate-950 rounded-xl border border-slate-800">
-                    🛒 Весь ассортимент раскуплен! Дождитесь авто-обновления через {formatTimer(stockTimer)} или нажмите «Обновить Всё».
-                  </div>
-                ) : (
-                  shopStock.map((it, idx) => {
-                    const r = rarityById(it.rarity);
-                    const buyCost = it.sellPrice * 3;
-                    const canAfford = gold >= buyCost;
-                    const comp = getItemComparison(it);
-
-                    return (
-                      <div
-                        key={idx}
-                        className="p-3 rounded-2xl border bg-slate-950/90 flex flex-col justify-between gap-2.5 shadow-md hover:border-slate-700 transition-all w-full"
-                        style={{ borderColor: `${r.color}80` }}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-start gap-2.5 min-w-0">
-                            <span
-                              className="text-2xl p-2 bg-slate-900 rounded-xl border shrink-0 shadow-inner"
-                              style={{ borderColor: r.color }}
-                            >
-                              {it.icon}
-                            </span>
-                            <div className="min-w-0">
-                              <div className="font-black text-xs truncate" style={{ color: r.color }}>{it.name}</div>
-                              <div className="text-[10px] text-slate-400 font-mono">
-                                {r.name} · {it.ilvl} ур. · Мощь: <b className="text-amber-300 font-black">⚡{fmt(it.score)}</b>
-                              </div>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={() => handleBuyShopItem(it, idx)}
-                            disabled={!canAfford}
-                            className="py-2 px-3 rounded-xl rpg-button-gold text-xs font-black shrink-0 disabled:opacity-40"
-                          >
-                            💰 {fmt(buyCost)} g
-                          </button>
-                        </div>
-
-                        {/* EQUIPMENT COMPARISON BADGE CARD */}
-                        <div className="bg-slate-900/90 rounded-xl p-2 border border-slate-800/80 text-[10.5px] font-mono space-y-1">
-                          <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans font-bold border-b border-slate-800 pb-1">
-                            <span>Сравнение с надетым:</span>
-                            <span className="text-slate-300 truncate max-w-[140px]">
-                              {comp.equipped ? `[${comp.equipped.name}]` : 'Слот пуст'}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 pt-0.5">
-                            {comp.diffScore !== 0 && (
-                              <div className={comp.diffScore > 0 ? 'text-emerald-400 font-extrabold' : 'text-red-400 font-bold'}>
-                                Мощь: {comp.diffScore > 0 ? `▲ +${comp.diffScore}` : `▼ ${comp.diffScore}`}
-                              </div>
-                            )}
-                            {comp.diffDmg !== 0 && (
-                              <div className={comp.diffDmg > 0 ? 'text-emerald-400 font-extrabold' : 'text-red-400 font-bold'}>
-                                Урон: {comp.diffDmg > 0 ? `▲ +${comp.diffDmg}` : `▼ ${comp.diffDmg}`}
-                              </div>
-                            )}
-                            {comp.diffArmor !== 0 && (
-                              <div className={comp.diffArmor > 0 ? 'text-emerald-400 font-extrabold' : 'text-red-400 font-bold'}>
-                                Броня: {comp.diffArmor > 0 ? `▲ +${comp.diffArmor}` : `▼ ${comp.diffArmor}`}
-                              </div>
-                            )}
-                            {comp.diffHp !== 0 && (
-                              <div className={comp.diffHp > 0 ? 'text-emerald-400 font-extrabold' : 'text-red-400 font-bold'}>
-                                HP: {comp.diffHp > 0 ? `▲ +${comp.diffHp}` : `▼ ${comp.diffHp}`}
-                              </div>
-                            )}
-                          </div>
-                        </div>
+              return (
+                <div
+                  key={item.id}
+                  className="p-3 rounded-xl border border-slate-800 bg-slate-900 flex flex-col justify-between space-y-2.5 shadow"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl p-1.5 bg-slate-950 rounded-xl border border-slate-800 shrink-0">{item.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-black text-xs truncate" style={{ color: r.color }}>{item.name}</div>
+                      <div className="text-[10px] text-slate-400 font-mono">
+                        {r.name} · Мощь: <b className="text-amber-300">⚡{fmt(item.score)}</b>
                       </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )}
+                    </div>
+                  </div>
 
-          {/* TAB 2: ALCHEMIST POTIONS SHOP */}
-          {activeTab === 'alchemist' && (
-            <div className="space-y-3">
-              <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 space-y-1">
-                <div className="font-extrabold text-xs text-emerald-300 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <span>🧪</span>
-                    <span>Алхимическая Лаборатория и Магазин Эликсиров Элиэлы</span>
-                  </span>
-                  <span className="text-[10px] text-emerald-400 font-mono">Доступно: {POTIONS_CATALOG.length} рецептов и зелий</span>
-                </div>
-                <div className="text-[11px] text-slate-300">
-                  Выбирайте зелья для восстановления здоровья, маны, щитов, баффов урона, ускорения и астрального синтеза! Покупка добавляет предмет в Ваш инвентарь (или используйте Drag & Drop для хотбара!).
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                {POTIONS_CATALOG.map(pot => {
-                  const r = rarityById(pot.rarity);
-                  const price = pot.sellPrice * 3;
-                  const canBuy = gold >= price && inventory.length < 72;
-
-                  const handleBuyPotionToInv = () => {
-                    if (!canBuy) return;
-                    useGame.setState(s => {
-                      const potItem: Item = {
-                        id: `pot_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-                        name: pot.name,
-                        slot: 'consumable' as any,
-                        rarity: pot.rarity,
-                        ilvl: level,
-                        icon: pot.icon,
-                        base: {},
-                        affixes: [],
-                        sellPrice: pot.sellPrice,
-                        score: 20,
-                      };
-                      return {
-                        gold: s.gold - price,
-                        inventory: [...s.inventory, potItem],
-                        log: [...s.log, { id: Date.now(), text: `🧪 Куплено зелье: ${pot.name} (-${fmt(price)}g)`, color: '#4ade80', time: Date.now() }]
-                      };
-                    });
-                  };
-
-                  return (
-                    <div
-                      key={pot.id}
-                      className="p-2.5 rounded-xl border bg-slate-950 flex flex-col justify-between space-y-2 shadow-md hover:border-emerald-500/60 transition-all"
-                      style={{ borderColor: `${r.color}55` }}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-xs font-mono font-black text-amber-300">
+                      💰 {fmt(price)} золота
+                    </span>
+                    <button
+                      onClick={() => handleBuyGear(item)}
+                      disabled={!canAfford}
+                      className="py-1.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-black text-xs shadow transition-all active:scale-95 cursor-pointer"
                     >
-                      <div className="flex items-start gap-2">
-                        <span className="text-2xl p-1.5 bg-slate-900 rounded-lg border border-slate-800 shrink-0">{pot.icon}</span>
-                        <div className="min-w-0">
-                          <div className="font-extrabold text-xs truncate" style={{ color: r.color }}>{pot.name}</div>
-                          <div className="text-[9.5px] text-slate-400 font-mono mt-0.5">{r.name}</div>
-                          <div className="text-[10px] text-slate-300 mt-1 leading-snug line-clamp-2">{pot.desc}</div>
-                        </div>
-                      </div>
+                      Купить
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-                      <button
-                        onClick={handleBuyPotionToInv}
-                        disabled={!canBuy}
-                        className="w-full py-1.5 px-2 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-black text-xs transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-1 font-mono shadow"
-                      >
-                        <span>💰</span>
-                        <span>{fmt(price)} g</span>
-                      </button>
-                    </div>
-                  );
-                })}
+        {/* Tab 2: Bulk Sell */}
+        {activeTab === 'bulk_sell' && (
+          <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1">
+            <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-1">
+              <div className="font-black text-xs text-amber-300 uppercase">⚡ БЫСТРАЯ МАССОВАЯ СКУПКА ТОРВАЛЬДА</div>
+              <div className="text-[11px] text-slate-300">
+                Продавайте ненужный лут из инвентаря в 1 клик с бонусом репутации (+{Math.round((sellMultiplier - 1) * 100)}% к золоту). Экипированные предметы в безопасности.
               </div>
             </div>
-          )}
 
-          {/* TAB 3: MASSIVE TORVALD BOUNTY CONTRACTS LIST */}
-          {activeTab === 'bounty' && (
-            <div className="space-y-3">
-              <div className="p-3.5 rounded-xl bg-purple-950/30 border border-purple-500/40 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <div className="font-black text-xs text-purple-300 flex items-center gap-1.5">
-                    <span>📜</span>
-                    <span>Доска Объявлений и Контрактов Торвальда</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="font-black text-xs text-slate-300">⚪ Обычные предметы</div>
+                  <div className="text-[11px] text-slate-400 mt-1">
+                    В инвентаре: <b className="text-white">{inventory.filter(i => i.rarity === 'common').length} предметов</b>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                    ⏱️ Обновление контрактов: <b className="text-purple-300 font-black">{formatTimer(stockTimer)}</b>
-                  </span>
                 </div>
-                <div className="text-[11px] text-slate-300 leading-snug">
-                  Выполняйте наемные контракты на уничтожение монстров, охоту за головами боссов и спуск в подземелья для получения золота, драгоценных камней и очков навыков!
-                </div>
+                <button
+                  onClick={() => handleBulkSell(['common'])}
+                  className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-xs shadow transition-all cursor-pointer"
+                >
+                  Продать Все Обычные
+                </button>
               </div>
 
-              <div className="space-y-2.5">
-                {contracts.map(c => (
+              <div className="p-3.5 bg-slate-900 border border-emerald-900/60 rounded-2xl flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="font-black text-xs text-emerald-400">🟢 Необычные предметы</div>
+                  <div className="text-[11px] text-slate-400 mt-1">
+                    В инвентаре: <b className="text-white">{inventory.filter(i => i.rarity === 'uncommon').length} предметов</b>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleBulkSell(['uncommon'])}
+                  className="w-full py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-black text-xs shadow transition-all cursor-pointer"
+                >
+                  Продать Необычные
+                </button>
+              </div>
+
+              <div className="p-3.5 bg-slate-900 border border-sky-900/60 rounded-2xl flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="font-black text-xs text-sky-400">🔵 Редкие предметы</div>
+                  <div className="text-[11px] text-slate-400 mt-1">
+                    В инвентаре: <b className="text-white">{inventory.filter(i => i.rarity === 'rare').length} предметов</b>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleBulkSell(['rare'])}
+                  className="w-full py-2 rounded-xl bg-sky-950 hover:bg-sky-900 border border-sky-500/40 text-sky-300 font-black text-xs shadow transition-all cursor-pointer"
+                >
+                  Продать Редкие
+                </button>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-amber-950/40 border border-amber-500/40 rounded-2xl flex items-center justify-between">
+              <div>
+                <div className="font-black text-xs text-amber-300">💥 ОЧИСТИТЬ ВЕСЬ НИЗКОРАНГОВЫЙ МУСОР</div>
+                <div className="text-[11px] text-slate-400">Продать сразу все Обычные, Необычные и Редкие предметы разом.</div>
+              </div>
+              <button
+                onClick={() => handleBulkSell(['common', 'uncommon', 'rare'])}
+                className="py-2 px-5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-black text-xs shadow-lg transition-all active:scale-95 cursor-pointer"
+              >
+                Продать Весь Мусор
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Caravans & Investments */}
+        {activeTab === 'caravans' && (
+          <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1">
+            <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-1">
+              <div className="font-black text-xs text-amber-300 uppercase">🐪 КУПЕЧЕСКИЕ КАРАВАНЫ И ИНВЕСТИЦИИ</div>
+              <div className="text-[11px] text-slate-300">
+                Инвестируйте золото в торговые маршруты Гильдии. По истечении таймера забирайте гарантированную сверхприбыль, камни усиления и осколки небес!
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {CARAVAN_ROUTES.map(route => {
+                const finish = activeCaravans[route.id];
+                const isActive = !!finish;
+                const isReady = isActive && finish <= currentTime;
+                const secLeft = isActive && !isReady ? Math.ceil((finish - currentTime) / 1000) : 0;
+                const canAfford = gold >= route.costGold && repLevel >= route.repReq;
+
+                return (
                   <div
-                    key={c.id}
-                    className={`p-3.5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                      c.claimed
-                        ? 'border-slate-800 bg-slate-950/40 opacity-50'
-                        : c.completed
-                        ? 'border-amber-500/60 bg-amber-950/20 shadow-md'
-                        : 'border-slate-800 bg-slate-950/90 hover:border-slate-700'
-                    }`}
+                    key={route.id}
+                    className="p-3.5 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col justify-between space-y-3 shadow"
                   >
-                    <div className="flex items-start gap-3 min-w-0 flex-1">
-                      <span className="text-3xl p-2 bg-slate-900 rounded-xl border border-slate-800 shrink-0">
-                        {c.icon}
-                      </span>
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-black text-xs text-slate-100">{c.title}</h4>
-                          <span className={`text-[9.5px] font-mono font-extrabold px-2 py-0.5 rounded-full border ${
-                            c.claimed
-                              ? 'bg-slate-800 text-slate-500 border-slate-700'
-                              : c.completed
-                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
-                              : 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                          }`}>
-                            {c.claimed ? 'ВЫПОЛНЕН' : c.completed ? 'ГОТОВ К НАГРАДЕ' : `ПРОГРЕСС: ${c.current}/${c.required}`}
-                          </span>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl p-1.5 bg-slate-950 rounded-xl border border-slate-800">{route.icon}</span>
+                        <div>
+                          <div className="font-black text-xs text-white">{route.name}</div>
+                          <div className="text-[10px] text-amber-300 font-mono">Требует: Ранг {route.repReq}</div>
                         </div>
-                        <p className="text-[11px] text-slate-300 leading-snug">{c.desc}</p>
-                        <div className="text-[10.5px] text-amber-300 font-mono font-bold flex flex-wrap items-center gap-3 pt-0.5">
-                          <span>Награда: 💰 {fmt(c.rewardGold)} g</span>
-                          <span>📈 +{fmt(c.rewardXP)} XP</span>
-                          {c.rewardGems && <span className="text-sky-300">💎 +{c.rewardGems} Кристаллов</span>}
-                          {c.rewardPoints && <span className="text-purple-300">⚡ +{c.rewardPoints} Очко Скиллов</span>}
-                        </div>
+                      </div>
+                      <div className="text-[10.5px] text-slate-400">{route.desc}</div>
+                      
+                      <div className="p-2 bg-slate-950 rounded-xl border border-slate-800 text-[10px] font-mono space-y-0.5">
+                        <div className="text-slate-400">Стоимость: <b className="text-amber-300">💰 {fmt(route.costGold)} золота</b></div>
+                        <div className="text-emerald-400">Доход: <b className="text-emerald-300">💰 +{fmt(route.returnGold)} золота</b></div>
+                        <div className="text-sky-300">Ресурсы: +{route.returnStones} Камней · +{route.returnShards} Осколков</div>
+                        <div className="text-slate-500">Время в пути: {Math.floor(route.durationSec / 60)} минут {route.durationSec % 60} секунд</div>
                       </div>
                     </div>
 
-                    {!c.claimed && c.completed && (
-                      <button
-                        onClick={() => handleClaimContract(c.id)}
-                        className="rpg-button-gold px-4 py-2 rounded-xl text-xs font-black shrink-0 self-end sm:self-center"
-                      >
-                        🎁 Забрать Награду
-                      </button>
-                    )}
+                    <div>
+                      {isReady ? (
+                        <button
+                          onClick={() => handleCollectCaravan(route)}
+                          className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg animate-pulse transition-all active:scale-95 cursor-pointer"
+                        >
+                          🎉 Забрать Прибыль (+{fmt(route.returnGold)} золота)
+                        </button>
+                      ) : isActive ? (
+                        <div className="w-full py-2 rounded-xl bg-slate-800 text-slate-400 font-black text-xs text-center font-mono">
+                          ⏳ В пути ({Math.floor(secLeft / 60)} мин {secLeft % 60} сек)
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleDispatchCaravan(route)}
+                          disabled={!canAfford}
+                          className="w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-black text-xs shadow transition-all active:scale-95 cursor-pointer"
+                        >
+                          {repLevel < route.repReq ? `Требуется Ранг ${route.repReq}` : 'Отправить Караван'}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Tab 4: Black Market */}
+        {activeTab === 'black_market' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-h-0 overflow-y-auto pr-1">
+            {BLACK_MARKET_STOCK.map(bm => {
+              const r = rarityById(bm.rarity);
+              const canAfford = gold >= bm.costGold;
+
+              return (
+                <div
+                  key={bm.id}
+                  className="p-3 rounded-xl border border-purple-500/40 bg-slate-900 flex flex-col justify-between space-y-2.5 shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-2xl p-1.5 bg-slate-950 rounded-xl border border-slate-800 shrink-0">{bm.icon}</span>
+                    <div>
+                      <div className="font-black text-xs" style={{ color: r.color }}>{bm.name}</div>
+                      <div className="text-[10px] text-slate-300 mt-0.5">{bm.desc}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-xs font-mono font-black text-amber-300">
+                      💰 {fmt(bm.costGold)} золота
+                    </span>
+                    <button
+                      onClick={() => handleBuyBlackMarket(bm)}
+                      disabled={!canAfford}
+                      className="py-1.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:scale-105 disabled:opacity-40 text-white font-black text-xs shadow transition-all active:scale-95 cursor-pointer"
+                    >
+                      Приобрести
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Tab 5: Contracts */}
+        {activeTab === 'contracts' && (
+          <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1">
+            {contracts.map(c => (
+              <div
+                key={c.id}
+                className="p-3 rounded-xl border border-slate-800 bg-slate-900 flex items-center justify-between gap-3 shadow"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl p-2 bg-slate-950 rounded-xl border border-slate-800">{c.icon}</span>
+                  <div>
+                    <div className="font-black text-xs text-slate-100">{c.title}</div>
+                    <div className="text-[10px] text-slate-400">{c.target} · {c.desc}</div>
+                    <div className="text-[10px] font-mono text-amber-300 mt-0.5">
+                      Награда: +{fmt(c.rewardGold)} золота · +{c.rewardXP} опыта
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleClaimContract(c)}
+                  disabled={!c.completed || c.claimed}
+                  className={`py-2 px-4 rounded-xl font-black text-xs transition-all ${
+                    c.claimed
+                      ? 'bg-slate-800 text-slate-500'
+                      : c.completed
+                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg animate-pulse cursor-pointer'
+                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  }`}
+                >
+                  {c.claimed ? 'Забрано' : c.completed ? 'Забрать Награду' : 'В Процессе'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

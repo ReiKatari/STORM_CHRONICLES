@@ -62,7 +62,7 @@ export default function CombatCanvas() {
     getImageAsset('/backgrounds/hills.jpg');
     getImageAsset('/backgrounds/sea.jpg');
     getImageAsset('/backgrounds/abyss.jpg');
-    getImageAsset('/backgrounds/dark_forest.jpg');
+    getImageAsset('/backgrounds/forest.jpg');
     getImageAsset('/backgrounds/volcano.jpg');
     getImageAsset('/backgrounds/mine.jpg');
     getImageAsset('/backgrounds/swamp.jpg');
@@ -81,10 +81,14 @@ export default function CombatCanvas() {
     getImageAsset('/monsters/storm_elemental.jpg');
     getImageAsset('/monsters/harpy.jpg');
     getImageAsset('/pets/pet_dragon.jpg');
-    getImageAsset('/pets/pet_wolf.jpg');
     getImageAsset('/pets/pet_golem.jpg');
     getImageAsset('/pets/pet_spirit.jpg');
+    getImageAsset('/pets/pet_wolf.jpg');
     getImageAsset('/pets/pet_mech.jpg');
+    getImageAsset('/pets/pet_phoenix.jpg');
+    getImageAsset('/pets/pet_hydra.jpg');
+    getImageAsset('/pets/pet_griffin.jpg');
+    getImageAsset('/pets/pet_sphinx.jpg');
 
     // Preload hero class art assets
     getImageAsset('/heroes/hero_paladin.jpg');
@@ -117,8 +121,8 @@ export default function CombatCanvas() {
     ro.observe(canvas);
 
     const spawnFx = (fx: FxEvent, W: number, H: number) => {
-      const px = W * 0.25, py = H * 0.68;
-      const mx = W * 0.75, my = H * 0.68;
+      const px = W * 0.25, py = H * 0.48;
+      const mx = W * 0.75, my = H * 0.48;
       const P = particles.current;
 
       const burst = (x: number, y: number, n: number, color: string, speed: number, size = 3, grav = 300) => {
@@ -209,7 +213,7 @@ export default function CombatCanvas() {
             P.push({ x: px, y: py - 40, vx: 0, vy: 0, life: 0, maxLife: 0.45, size: 140, color: '#facc15', gravity: 0, kind: 'ring' });
             burst(px, py - 40, 30, '#facc15', 250, 4, -40);
             burst(mx, my - 40, 25, '#fde047', 200, 3.5);
-            floatText(px, py - 90, '✨ +HP СВЯТОЙ СВЕТ', '#fde047', 22);
+            floatText(px, py - 90, '✨ +ЗДОРОВЬЕ СВЯТОЙ СВЕТ', '#fde047', 22);
           }
           else if (sId === 'pal_shield_bash') {
             sound.playSlash();
@@ -300,7 +304,7 @@ export default function CombatCanvas() {
             P.push({ x: px, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0.65, size: 100, color: '#22c55e', gravity: 0, kind: 'pillar' });
             P.push({ x: px, y: py - 40, vx: 0, vy: 0, life: 0, maxLife: 0.5, size: 200, color: '#22c55e', gravity: 0, kind: 'ring' });
             burst(px, py - 40, 60, '#22c55e', 340, 6, -100);
-            floatText(px, py - 100, '💚 ВОЗЛОЖЕНИЕ РУК 100% HP', '#22c55e', 26);
+            floatText(px, py - 100, '💚 ВОЗЛОЖЕНИЕ РУК +100% ЗДОРОВЬЯ', '#22c55e', 26);
           }
           else if (sId === 'pal_dawn_light') {
             sound.playFireball();
@@ -408,7 +412,7 @@ export default function CombatCanvas() {
           break;
         case 'heal':
           burst(px, py - 30, 30, '#4ade80', 180, 4, -120);
-          floatText(px, py - 95, fx.text ?? '+HP', '#4ade80', 26);
+          floatText(px, py - 95, fx.text ?? '+ЗДОРОВЬЕ', '#4ade80', 26);
           break;
         case 'loot':
           P.push({ x: mx, y: my - 50, vx: 0, vy: -130, life: 0, maxLife: 1.5, size: 22, color: fx.color ?? '#facc15', gravity: 0, kind: 'text', text: `✨ ${fx.text}` });
@@ -524,22 +528,22 @@ export default function CombatCanvas() {
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, W, H * 0.7);
 
-        const gGrad = ctx.createLinearGradient(0, H * 0.65, 0, H);
+        const gGrad = ctx.createLinearGradient(0, H * 0.46, 0, H);
         gGrad.addColorStop(0, theme.ground);
         gGrad.addColorStop(1, theme.groundDark);
         ctx.fillStyle = gGrad;
-        ctx.fillRect(0, H * 0.65, W, H * 0.35);
+        ctx.fillRect(0, H * 0.46, W, H * 0.54);
 
         ctx.strokeStyle = `${theme.groundDark}aa`;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(0, H * 0.65);
-        ctx.bezierCurveTo(W * 0.3, H * 0.63, W * 0.7, H * 0.67, W, H * 0.65);
+        ctx.moveTo(0, H * 0.46);
+        ctx.bezierCurveTo(W * 0.3, H * 0.44, W * 0.7, H * 0.48, W, H * 0.46);
         ctx.stroke();
 
         ctx.font = "16px 'Century Gothic', sans-serif";
         tiles.current.forEach(t => {
-          const y = H * 0.68 + Math.sin(t.phase + time.current) * 2;
+          const y = H * 0.49 + Math.sin(t.phase + time.current) * 2;
           ctx.fillText(t.icon, t.x, y);
         });
       }
@@ -561,7 +565,7 @@ export default function CombatCanvas() {
 
       // ===== DRAW PLAYER =====
       const px = W * 0.25;
-      const py = H * 0.68;
+      const py = H * 0.48;
       const attackPhase = (s.playerAtk ?? 0) % 1.0;
       const atkLunge = Math.sin(attackPhase * Math.PI) * 65;
       const lunge = (playerLunge.current > 0 ? Math.sin((playerLunge.current / 0.18) * Math.PI) * 75 : 0) + atkLunge;
@@ -592,10 +596,41 @@ export default function CombatCanvas() {
         ctx.restore();
       }
 
-      // ENLARGED HERO SPRITE (160px Size)
+      // ENLARGED HERO SPRITE (160px Size) WITH GLOWING WINGS
       ctx.save();
       ctx.translate(px + lunge, py + bob - 20);
       ctx.scale(breatheScaleX, breatheScaleY);
+
+      // Render Hero Glowing Wings Behind Sprite
+      const activeWings = s.activeWings;
+      if (activeWings) {
+        const wingFlap = Math.sin(time.current * 4) * 0.12;
+        ctx.save();
+        ctx.translate(0, -10);
+
+        // Left Wing
+        ctx.save();
+        ctx.rotate(-0.25 + wingFlap);
+        ctx.font = "80px sans-serif";
+        ctx.textAlign = 'right';
+        ctx.shadowColor = activeWings === 'wing_abyss' ? '#c084fc' : activeWings === 'wing_archdemon' ? '#f87171' : '#fde047';
+        ctx.shadowBlur = 24;
+        ctx.fillText(activeWings === 'wing_abyss' ? '🌌' : activeWings === 'wing_archdemon' ? '🔥' : '🪽', -20, 0);
+        ctx.restore();
+
+        // Right Wing
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.rotate(-0.25 + wingFlap);
+        ctx.font = "80px sans-serif";
+        ctx.textAlign = 'right';
+        ctx.shadowColor = activeWings === 'wing_abyss' ? '#c084fc' : activeWings === 'wing_archdemon' ? '#f87171' : '#fde047';
+        ctx.shadowBlur = 24;
+        ctx.fillText(activeWings === 'wing_abyss' ? '🌌' : activeWings === 'wing_archdemon' ? '🔥' : '🪽', -20, 0);
+        ctx.restore();
+
+        ctx.restore();
+      }
 
       const heroImg = heroClass?.artSrc ? getImageAsset(heroClass.artSrc) : null;
       const size = 160;
@@ -631,8 +666,8 @@ export default function CombatCanvas() {
       // Player Name & Level Badge Plate (Positioned ABOVE the 160px sprite)
       ctx.save();
       const pBadgeW = 165, pBadgeH = 34;
-      const pBx = px - pBadgeW / 2, pBy = py - 150;
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      const pBx = px - pBadgeW / 2, pBy = py - 125;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
       ctx.strokeStyle = heroColor;
       ctx.lineWidth = 1.5;
       ctx.shadowColor = heroColor;
@@ -654,24 +689,70 @@ export default function CombatCanvas() {
       ctx.fillText(`${heroClass?.icon ?? ''} ${heroClass?.name ?? 'Искатель'}`, px, pBy + 28);
       ctx.restore();
 
-      // Player HP/Mana Bar
-      const barW = 140;
-      ctx.fillStyle = 'rgba(15,23,42,0.9)';
-      ctx.fillRect(px - barW / 2 - 2, py + 52, barW + 4, 18);
-      ctx.strokeStyle = 'rgba(51,65,85,0.9)';
-      ctx.strokeRect(px - barW / 2 - 2, py + 52, barW + 4, 18);
+      // Player HP/Mana Bar Plate (Clear, prominent, raised)
+      const barW = 156, barH = 22;
+      const barX = px - barW / 2, barY = py + 48;
+      ctx.save();
+      ctx.fillStyle = 'rgba(10, 15, 30, 0.95)';
+      ctx.strokeStyle = s.shield > 0 ? 'rgba(250, 204, 21, 0.85)' : 'rgba(34, 197, 94, 0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = s.shield > 0 ? '#facc15' : '#22c55e';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(barX - 2, barY - 2, barW + 4, barH + 4, 7);
+      ctx.fill();
+      ctx.stroke();
 
-      // HP Fill
-      ctx.fillStyle = '#22c55e';
-      ctx.fillRect(px - barW / 2, py + 54, barW * Math.max(0, s.hp / s.derived.maxHp), 8);
-      // Mana Fill
-      ctx.fillStyle = '#3b82f6';
-      ctx.fillRect(px - barW / 2, py + 63, barW * Math.max(0, s.mana / s.derived.maxMana), 5);
+      // HP Bar Background
+      ctx.fillStyle = 'rgba(20, 30, 45, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW, 11, 4);
+      ctx.fill();
 
+      // HP Fill with Vibrant Gradient
+      const hpPct = Math.max(0, Math.min(1, s.hp / s.derived.maxHp));
+      if (hpPct > 0) {
+        const hpGrad = ctx.createLinearGradient(barX, 0, barX + barW * hpPct, 0);
+        hpGrad.addColorStop(0, '#22c55e');
+        hpGrad.addColorStop(1, '#10b981');
+        ctx.fillStyle = hpGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW * hpPct, 11, 4);
+        ctx.fill();
+      }
+
+      // HP Text
       ctx.fillStyle = '#ffffff';
-      ctx.font = "bold 8.5px font-mono";
+      ctx.font = "bold 9px 'Century Gothic', CenturyGothic, sans-serif";
       ctx.textAlign = 'center';
-      ctx.fillText(`${fmt(Math.round(s.hp))}/${fmt(s.derived.maxHp)}`, px, py + 61);
+      ctx.shadowColor = 'rgba(0,0,0,0.95)';
+      ctx.shadowBlur = 4;
+      const shieldStr = s.shield > 0 ? ` (+🛡️${fmt(s.shield)})` : '';
+      ctx.fillText(`❤️ ${fmt(Math.round(s.hp))}/${fmt(s.derived.maxHp)}${shieldStr}`, px, barY + 9);
+
+      // Mana Bar Background
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(barX, barY + 12, barW, 8, 3);
+      ctx.fill();
+
+      // Mana Fill
+      const manaPct = Math.max(0, Math.min(1, s.mana / s.derived.maxMana));
+      if (manaPct > 0) {
+        const manaGrad = ctx.createLinearGradient(barX, 0, barX + barW * manaPct, 0);
+        manaGrad.addColorStop(0, '#3b82f6');
+        manaGrad.addColorStop(1, '#06b6d4');
+        ctx.fillStyle = manaGrad;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY + 12, barW * manaPct, 8, 3);
+        ctx.fill();
+      }
+
+      // Mana Text
+      ctx.fillStyle = '#e0f2fe';
+      ctx.font = "bold 7.5px 'Century Gothic', CenturyGothic, sans-serif";
+      ctx.fillText(`💧 ${fmt(Math.round(s.mana))}/${fmt(s.derived.maxMana)}`, px, barY + 18.5);
+      ctx.restore();
 
       // ===== DRAW ENLARGED ACTIVE PET COMPANION =====
       const activePetId = s.activePetId ?? 'pet_dragon';
@@ -686,10 +767,10 @@ export default function CombatCanvas() {
           // Pet Companion Position with Staggered Attack Strike Animation (Attacks AFTER Player!)
           const petStrike = petLunge.current > 0 ? Math.sin((petLunge.current / 0.25) * Math.PI) * 80 : 0;
           const petX = px - 110 + petStrike;
-          const petY = py + Math.sin(time.current * 4.5) * 10 - 25;
+          const petY = py + Math.sin(time.current * 4.5) * 8 - 18;
 
           ctx.save();
-          // Pet Sprite (Clean image without colored stroke circles)
+          // Pet Sprite
           const petImg = petDef.artSrc ? getImageAsset(petDef.artSrc) : null;
           if (petImg) {
             ctx.save();
@@ -708,7 +789,7 @@ export default function CombatCanvas() {
           const petCustomName = s.petCustomNames?.[activePetId] || petDef.name.split(' ')[0];
           const petTextStr = `${evoBadge} ${petCustomName} (Ур.${fmt(petLvl)})`;
           const ptBadgeW = 145, ptBadgeH = 22;
-          const ptBx = petX - ptBadgeW / 2, ptBy = petY - petSize - 26;
+          const ptBx = petX - ptBadgeW / 2, ptBy = petY - petSize - 22;
 
           ctx.save();
           ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
@@ -734,7 +815,7 @@ export default function CombatCanvas() {
 
       // ===== DRAW ENLARGED MONSTER =====
       const mx = W * 0.75;
-      const my = H * 0.68;
+      const my = H * 0.48;
       const mBob = Math.sin(time.current * 2.5 + 1) * 4;
       const mHitShake = monsterHit.current > 0 ? (Math.random() - 0.5) * 14 : 0;
       const mDef = s.monster.def;
@@ -747,6 +828,52 @@ export default function CombatCanvas() {
       ctx.beginPath(); ctx.ellipse(0, 0, isBoss ? 100 : 75, 18, 0, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
 
+      // Boss Demonic Summoning Rune Circle (Backdrop Aura)
+      if (isBoss) {
+        ctx.save();
+        ctx.translate(mx + mHitShake, my + mBob - 40);
+        
+        const runeAngle = time.current * 0.8;
+        const outerR = 140;
+
+        // Outer Rotating Rune Ring
+        ctx.save();
+        ctx.rotate(runeAngle);
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 18;
+        ctx.beginPath();
+        ctx.arc(0, 0, outerR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Runic Symbols on Circle
+        const runes = ['✦', '💀', '⛧', '⚡', '✴', '🔥', '⚔️', '✧'];
+        ctx.font = "14px sans-serif";
+        ctx.fillStyle = '#fca5a5';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i < runes.length; i++) {
+          const a = (Math.PI * 2 * i) / runes.length;
+          ctx.fillText(runes[i], Math.cos(a) * (outerR - 12), Math.sin(a) * (outerR - 12));
+        }
+        ctx.restore();
+
+        // Inner Counter-Rotating Ring
+        ctx.save();
+        ctx.rotate(-runeAngle * 1.4);
+        ctx.strokeStyle = 'rgba(250, 204, 21, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#facc15';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(0, 0, outerR * 0.75, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.restore();
+      }
+
       // Monster Character
       ctx.save();
       ctx.translate(mx + mHitShake, my + mBob);
@@ -756,7 +883,7 @@ export default function CombatCanvas() {
         ctx.filter = 'brightness(2.8)';
       }
 
-      // Check image artwork (Clean image without colored stroke outlines)
+      // Check image artwork
       const mImg = mDef.artSrc ? getImageAsset(mDef.artSrc) : null;
       const mSize = isBoss ? 240 : 185;
 
@@ -779,10 +906,10 @@ export default function CombatCanvas() {
       ctx.save();
       const mTextStr = `${mDef.name} (Ур.${s.monster.level})`;
       const mBadgeW = isBoss ? 210 : 170, mBadgeH = 26;
-      const mBy = my - (isBoss ? 215 : 165);
+      const mBy = my - (isBoss ? 165 : 130);
       const mBx = mx - mBadgeW / 2;
 
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
       ctx.strokeStyle = mDef.color;
       ctx.lineWidth = 1.5;
       ctx.shadowColor = mDef.color;
@@ -800,20 +927,52 @@ export default function CombatCanvas() {
       ctx.fillText(mTextStr, mx, mBy + 17);
       ctx.restore();
 
-      // Monster HP Bar
-      const mBarW = isBoss ? 180 : 140;
-      ctx.fillStyle = 'rgba(15,23,42,0.9)';
-      ctx.fillRect(mx - mBarW / 2 - 2, my + 52, mBarW + 4, 16);
-      ctx.strokeStyle = 'rgba(51,65,85,0.9)';
-      ctx.strokeRect(mx - mBarW / 2 - 2, my + 52, mBarW + 4, 16);
+      // Monster HP Bar (Raised, prominent with gradient & glowing border)
+      const mBarW = isBoss ? 200 : 156, mBarH = 22;
+      const mBarX = mx - mBarW / 2, mBarY = my + 48;
+      ctx.save();
+      ctx.fillStyle = 'rgba(10, 15, 30, 0.95)';
+      ctx.strokeStyle = isBoss ? 'rgba(239, 68, 68, 0.9)' : 'rgba(249, 115, 22, 0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = isBoss ? '#ef4444' : '#f97316';
+      ctx.shadowBlur = isBoss ? 12 : 8;
+      ctx.beginPath();
+      ctx.roundRect(mBarX - 2, mBarY - 2, mBarW + 4, mBarH + 4, 7);
+      ctx.fill();
+      ctx.stroke();
 
-      ctx.fillStyle = isBoss ? '#ef4444' : '#f97316';
-      ctx.fillRect(mx - mBarW / 2, my + 54, mBarW * Math.max(0, s.monster.hp / s.monster.maxHp), 12);
+      // Monster HP Fill Background
+      ctx.fillStyle = 'rgba(20, 20, 35, 0.95)';
+      ctx.beginPath();
+      ctx.roundRect(mBarX, mBarY, mBarW, mBarH, 4);
+      ctx.fill();
 
+      // Monster HP Fill Gradient
+      const mHpPct = Math.max(0, Math.min(1, s.monster.hp / s.monster.maxHp));
+      if (mHpPct > 0) {
+        const mHpGrad = ctx.createLinearGradient(mBarX, 0, mBarX + mBarW * mHpPct, 0);
+        if (isBoss) {
+          mHpGrad.addColorStop(0, '#ef4444');
+          mHpGrad.addColorStop(0.5, '#dc2626');
+          mHpGrad.addColorStop(1, '#991b1b');
+        } else {
+          mHpGrad.addColorStop(0, '#f97316');
+          mHpGrad.addColorStop(1, '#ea580c');
+        }
+        ctx.fillStyle = mHpGrad;
+        ctx.beginPath();
+        ctx.roundRect(mBarX, mBarY, mBarW * mHpPct, mBarH, 4);
+        ctx.fill();
+      }
+
+      // Monster HP Text
       ctx.fillStyle = '#ffffff';
-      ctx.font = "bold 9px font-mono";
+      ctx.font = `bold ${isBoss ? 11 : 10}px 'Century Gothic', CenturyGothic, sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText(`${fmt(Math.round(s.monster.hp))}/${fmt(s.monster.maxHp)}`, mx, my + 63);
+      ctx.shadowColor = 'rgba(0,0,0,0.95)';
+      ctx.shadowBlur = 5;
+      ctx.fillText(`${isBoss ? '👑' : '💀'} ${fmt(Math.round(s.monster.hp))} / ${fmt(s.monster.maxHp)} HP`, mx, mBarY + 15);
+      ctx.restore();
 
       // ===== DRAW PARTICLES =====
       const P = particles.current;
@@ -913,9 +1072,95 @@ export default function CombatCanvas() {
     };
   }, []);
 
+  const combo = useGame(s => s.combo);
+  const screenShake = useGame(s => s.screenShake);
+  const activePotions = useGame(s => s.activePotions);
+  const tarotCards = useGame(s => s.tarotCards);
+  const useTarotCard = useGame(s => s.useTarotCard);
+
+  const comboRankColors: Record<string, string> = {
+    D: '#94a3b8',
+    C: '#38bdf8',
+    B: '#34d399',
+    A: '#fbbf24',
+    S: '#f97316',
+    SS: '#ef4444',
+    SSS: '#e879f9',
+  };
+
+  const handleCanvasClick = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    for (let i = 0; i < 18; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const v = 80 + Math.random() * 140;
+      particles.current.push({
+        x,
+        y,
+        vx: Math.cos(a) * v,
+        vy: Math.sin(a) * v,
+        life: 0,
+        maxLife: 0.35 + Math.random() * 0.3,
+        size: 3.5 + Math.random() * 3,
+        color: i % 2 === 0 ? '#facc15' : '#38bdf8',
+        gravity: 80,
+        kind: 'spark',
+      });
+    }
+  };
+
   return (
-    <div className="relative w-full h-[380px] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl group font-sans">
-      <canvas ref={canvasRef} className="w-full h-full block" />
+    <div className={`relative w-full h-[400px] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl group font-sans ${screenShake ? 'animate-shake' : ''}`}>
+      <canvas ref={canvasRef} onPointerDown={handleCanvasClick} className="w-full h-full block cursor-crosshair" />
+
+      {/* COMBO SSS-RANK WIDGET (TOP-LEFT) */}
+      {combo && combo.count > 0 && (
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 bg-slate-950/90 p-2 rounded-2xl border border-amber-500/40 shadow-2xl backdrop-blur-md animate-pulse">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xl shadow-lg border border-white/20"
+            style={{ backgroundColor: comboRankColors[combo.rank] || '#facc15', color: '#0f172a' }}
+          >
+            {combo.rank}
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-black text-white">{combo.count} КОМБО</span>
+              <span className="text-[10px] font-bold text-amber-400 font-mono">+{Math.round((combo.multiplier - 1) * 100)}% DMG</span>
+            </div>
+            <div className="w-24 bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1 border border-slate-700">
+              <div
+                className="h-full transition-all duration-100 rounded-full"
+                style={{
+                  width: `${Math.max(0, Math.min(100, (combo.timeLeftSec / 4.5) * 100))}%`,
+                  backgroundColor: comboRankColors[combo.rank] || '#facc15'
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ACTIVE POTIONS TRAY (TOP-RIGHT) */}
+      {activePotions && activePotions.length > 0 && (
+        <div className="absolute top-3 right-3 z-20 flex items-center gap-1 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 backdrop-blur-md shadow-xl max-w-[200px] overflow-x-auto">
+          {activePotions.map(pot => {
+            const leftSec = Math.max(0, Math.round((pot.expireTimestamp - Date.now()) / 1000));
+            return (
+              <div
+                key={pot.id}
+                className="flex items-center gap-1 bg-slate-900/90 px-2 py-1 rounded-lg border border-slate-700 shadow shrink-0"
+                title={`${pot.name} (${Math.floor(leftSec / 60)}:${(leftSec % 60).toString().padStart(2, '0')})`}
+              >
+                <span className="text-xs">{pot.icon}</span>
+                <span className="text-[9px] font-mono font-bold text-slate-300">
+                  {Math.floor(leftSec / 60)}m
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* COMPACT TOP-CENTER OVERLAY COMBAT ACTION BUTTONS & TURN BADGE */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1">
@@ -951,6 +1196,26 @@ export default function CombatCanvas() {
           </button>
         </div>
       </div>
+
+      {/* TAROT CARDS OF FATE QUICK-SLOT BELT (BOTTOM OVERLAY) */}
+      {tarotCards && tarotCards.length > 0 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-slate-950/90 px-3 py-1.5 rounded-2xl border border-indigo-500/40 shadow-2xl backdrop-blur-md">
+          <span className="text-[10px] font-black text-indigo-300 font-mono tracking-wider mr-1">
+            🎴 ТАРО:
+          </span>
+          {tarotCards.slice(0, 4).map(card => (
+            <button
+              key={card.id}
+              onClick={() => useTarotCard(card.id)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 active:scale-95 transition-all border border-slate-700 hover:border-indigo-400 shadow group"
+              title={`${card.name}\n${card.desc}`}
+            >
+              <span className="text-sm group-hover:scale-125 transition-transform">{card.icon}</span>
+              <span className="text-[10px] font-black text-slate-200">{card.name.split('. ')[1] || card.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

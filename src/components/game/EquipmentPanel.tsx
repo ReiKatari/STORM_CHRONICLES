@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGame } from '@/game/store';
-import { rarityById } from '@/game/items';
+import { rarityById, getSetById } from '@/game/items';
 import { SmartItemTooltip } from './ItemCard';
 import type { SlotId, SlotKind } from '@/game/types';
 import { fmt } from '@/game/engine';
@@ -49,6 +49,7 @@ const PAPERDOLL_LAYOUT: {
 export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind: SlotKind) => void }) {
   const equipment = useGame(s => s.equipment);
   const unequip = useGame(s => s.unequip);
+  const unequipAll = useGame(s => s.unequipAll);
   const equipBestAll = useGame(s => s.equipBestAll);
   const setSlotFilter = useGame(s => s.setSlotFilter);
   const selectedSlotFilter = useGame(s => s.selectedSlotFilter);
@@ -59,13 +60,28 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
   const totalArmor = Object.values(equipment).reduce((sum, i) => sum + (i?.base.armor ?? 0), 0);
   const totalHp = Object.values(equipment).reduce((sum, i) => sum + (i?.base.hp ?? 0), 0);
 
+  // Active Set Bonuses Calculation
+  const setPieceCounts: Record<string, number> = {};
+  Object.values(equipment).forEach(it => {
+    if (it && it.setId) {
+      setPieceCounts[it.setId] = (setPieceCounts[it.setId] ?? 0) + 1;
+    }
+  });
+
+  const activeSets = Object.entries(setPieceCounts)
+    .map(([setId, count]) => {
+      const setDef = getSetById(setId);
+      return { setDef, count };
+    })
+    .filter((entry): entry is { setDef: NonNullable<typeof entry.setDef>; count: number } => !!entry.setDef);
+
   const handleSlotClick = (slot: SlotConfig) => {
     setSlotFilter(slot.kind);
     if (onSelectSlot) onSelectSlot(slot.kind);
   };
 
   const handleUnequipAll = () => {
-    Object.keys(equipment).forEach(slotId => unequip(slotId as SlotId));
+    unequipAll();
   };
 
   const renderSlotBtn = (slot: SlotConfig, extraWrapperClass = '') => {
@@ -95,16 +111,28 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
             borderColor: r ? r.color : isSelected ? '#facc15' : '#334155',
             boxShadow: r ? `0 0 10px ${r.glow}` : undefined,
           }}
-          title={item ? `${item.name}\n(ЛКМ — фильтр инвентаря, ПКМ — снять)` : `${slot.name} (Пусто - ЛКМ — фильтр инвентаря)`}
+          title={item ? `${item.name}\n(Левая кнопка мыши — фильтр инвентаря, Правая кнопка мыши — снять)` : `${slot.name} (Пусто — нажмите левую кнопку мыши для фильтра инвентаря)`}
         >
           <div
-            className="w-8 h-8 rounded-lg border flex items-center justify-center text-lg shrink-0 bg-slate-900 shadow-md"
+            className="w-8 h-8 rounded-lg border flex items-center justify-center text-lg shrink-0 bg-slate-900 shadow-md relative"
             style={{ borderColor: r ? r.color : '#475569' }}
           >
             {item ? item.icon : slot.icon}
+            {item?.upgradeLevel && item.upgradeLevel > 0 ? (
+              <span className="absolute -top-1.5 -right-1.5 px-1 py-0.2 rounded-full bg-amber-500 text-slate-950 font-black text-[8px] font-mono shadow">
+                +{item.upgradeLevel}
+              </span>
+            ) : null}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] text-slate-400 font-extrabold uppercase leading-none truncate">{slot.name}</div>
+            <div className="text-[10px] text-slate-400 font-extrabold uppercase leading-none truncate flex items-center gap-1">
+              <span>{slot.name}</span>
+              {item?.sockets && item.sockets.length > 0 && (
+                <span className="text-[8px] text-cyan-400">
+                  {item.sockets.map(g => (g ? g.icon : '⚪')).join('')}
+                </span>
+              )}
+            </div>
             <div className="text-xs font-black truncate leading-tight mt-0.5" style={{ color: r ? r.color : '#64748b' }}>
               {item ? item.name : 'Пусто'}
             </div>
@@ -135,14 +163,14 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
         <div className="flex items-center gap-2">
           <button
             onClick={equipBestAll}
-            className="text-[11px] px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:scale-105 text-white font-black border border-emerald-400/60 shadow-lg transition-all active:scale-95 flex items-center gap-1.5"
+            className="text-[11px] px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:scale-105 text-white font-black border border-emerald-400/60 shadow-lg transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
             title="Автоматически надевает предметы с наибольшей мощью из инвентаря во все слоты"
           >
             <span>⚡ Надеть всё лучшее</span>
           </button>
           <button
             onClick={handleUnequipAll}
-            className="text-[11px] px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-200 border border-slate-700 font-bold transition-all active:scale-95"
+            className="text-[11px] px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-200 border border-slate-700 font-bold transition-all active:scale-95 cursor-pointer"
             title="Снять все надетые предметы в инвентарь"
           >
             Снять всё
@@ -154,7 +182,7 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
       <div className="grid grid-cols-3 gap-2 bg-slate-950/90 p-2 rounded-xl border border-slate-800 text-xs text-center font-black font-mono">
         <div className="text-red-400">⚔️ +{fmt(totalDmg)} <span className="text-[10px] text-slate-400 font-sans block font-semibold">Урон</span></div>
         <div className="text-sky-400">🛡️ +{fmt(totalArmor)} <span className="text-[10px] text-slate-400 font-sans block font-semibold">Броня</span></div>
-        <div className="text-emerald-400">❤️ +{fmt(totalHp)} <span className="text-[10px] text-slate-400 font-sans block font-semibold">Здоровье HP</span></div>
+        <div className="text-emerald-400">❤️ +{fmt(totalHp)} <span className="text-[10px] text-slate-400 font-sans block font-semibold">Здоровье</span></div>
       </div>
 
       {/* 2-Column Grid Layout with Centered Helmet & Amulet */}
@@ -201,6 +229,60 @@ export default function EquipmentPanel({ onSelectSlot }: { onSelectSlot?: (kind:
             {renderSlotBtn(PAPERDOLL_LAYOUT.jewelry[4])}
           </div>
         </div>
+
+        {/* Active Set Bonuses Section */}
+        {activeSets.length > 0 && (
+          <div className="border-t border-slate-800 pt-2.5 space-y-2 w-full">
+            <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <span>✨</span>
+                <span>АКТИВНЫЕ КОМПЛЕКТЫ ({activeSets.length})</span>
+              </span>
+              <span className="text-slate-400 font-mono text-[9px] lowercase font-normal">
+                синергия экипировки
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              {activeSets.map(({ setDef, count }) => {
+                const totalPieces = setDef.pieces.length;
+                return (
+                  <div
+                    key={setDef.id}
+                    className="p-2 rounded-xl bg-slate-950/90 border text-[11px] space-y-1"
+                    style={{ borderColor: `${setDef.color}60` }}
+                  >
+                    <div className="flex items-center justify-between font-extrabold" style={{ color: setDef.color }}>
+                      <span className="flex items-center gap-1.5">
+                        <span>{setDef.icon}</span>
+                        <span>{setDef.name}</span>
+                      </span>
+                      <span className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 font-mono text-[10px] text-amber-300">
+                        {count} из {totalPieces} предметов
+                      </span>
+                    </div>
+                    <div className="space-y-0.5 text-[10px]">
+                      {setDef.bonuses.map((b, idx) => {
+                        const isActive = count >= b.reqPieces;
+                        return (
+                          <div
+                            key={idx}
+                            className={`flex items-center gap-1.5 ${
+                              isActive ? 'text-emerald-300 font-bold' : 'text-slate-500'
+                            }`}
+                          >
+                            <span>{isActive ? '✓' : '○'}</span>
+                            <span>({b.reqPieces} предметов): {b.desc}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tooltip Portal */}

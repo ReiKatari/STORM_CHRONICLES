@@ -20,8 +20,6 @@ export default function HotbarPanel() {
     '4': heroClass?.skills[3]?.id || '',
   });
 
-  const [activeBindingKey, setActiveBindingKey] = useState<string | null>(null);
-
   // Update default bindings when class changes
   useEffect(() => {
     if (heroClass) {
@@ -72,11 +70,11 @@ export default function HotbarPanel() {
         <div className="flex items-center gap-1.5">
           <span className="text-base">⌨️</span>
           <h3 className="font-extrabold text-xs text-slate-100 uppercase tracking-wider">
-            Быстрые Клавиши (Hotbar)
+            Панель Быстрого Доступа
           </h3>
         </div>
         <span className="text-[9px] text-slate-400 font-mono">
-          Нажмите [1-8], [Q-R] на клавиатуре
+          Горячие клавиши: [1-8], [Q-R]
         </span>
       </div>
 
@@ -152,7 +150,7 @@ export default function HotbarPanel() {
                 <div className="flex flex-col items-center justify-center w-full h-full pt-1.5">
                   <span className="text-base">🧪</span>
                   <div className="text-[8px] font-black text-emerald-300 text-center leading-[1.1] h-4 flex items-center justify-center mt-0.5">
-                    Зелье<br/>HP
+                    Зелье<br/>Здоровья
                   </div>
                 </div>
               ) : isManaPot ? (
@@ -196,7 +194,7 @@ export default function HotbarPanel() {
               {/* No Mana Badge */}
               {isNoMana && cd === 0 && (
                 <span className="absolute bottom-0.5 text-[7px] text-sky-400 font-bold bg-sky-950/90 px-1 rounded">
-                  💧мана
+                  💧мало маны
                 </span>
               )}
             </div>

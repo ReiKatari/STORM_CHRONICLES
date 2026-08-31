@@ -31,7 +31,7 @@ export default function WorldPanel() {
                 key={z.id}
                 onClick={() => unlocked && travelTo(z.id)}
                 disabled={!unlocked}
-                className={`w-full text-left rounded-xl border px-2.5 py-1.5 transition-all ${
+                className={`w-full text-left rounded-xl border px-2.5 py-1.5 transition-all cursor-pointer ${
                   active
                     ? 'border-emerald-400 bg-emerald-500/15 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
                     : unlocked
@@ -45,13 +45,13 @@ export default function WorldPanel() {
                     <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                       <span>{z.name}</span>
                       {active && <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/20 px-1.5 py-0.2 rounded">● ТЕКУЩАЯ</span>}
-                      {m > 0 && <span className="text-[9px] text-amber-400 font-bold">★ цикл {m}</span>}
+                      {m > 0 && <span className="text-[9px] text-amber-400 font-bold">★ Цикл {m}</span>}
                     </div>
                     <div className="text-[9px] text-slate-400 truncate mt-0.5">
-                      {unlocked ? z.desc : `🔒 Нужен ${z.minLevel} ур.`}
+                      {unlocked ? z.desc : `🔒 Требуется Уровень ${z.minLevel}`}
                     </div>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono font-bold">{z.minLevel}+</span>
+                  <span className="text-[10px] text-slate-400 font-mono font-bold">Уровень {z.minLevel}+</span>
                 </div>
               </button>
             );
@@ -63,7 +63,7 @@ export default function WorldPanel() {
       <div>
         <h3 className="font-extrabold text-xs uppercase tracking-wider text-fuchsia-300 mb-2 flex items-center justify-between">
           <span>🔮 Скрытые Территории</span>
-          <span className="text-[10px] text-fuchsia-400/80 font-normal">(4 Легендарных)</span>
+          <span className="text-[10px] text-fuchsia-400/80 font-normal">(4 Секретных локации)</span>
         </h3>
         <div className="space-y-1">
           {ZONES.filter(z => z.hidden).map(z => {
@@ -75,7 +75,7 @@ export default function WorldPanel() {
                 key={z.id}
                 onClick={() => unlocked && travelTo(z.id)}
                 disabled={!unlocked}
-                className={`w-full text-left rounded-xl border px-2.5 py-1.5 transition-all ${
+                className={`w-full text-left rounded-xl border px-2.5 py-1.5 transition-all cursor-pointer ${
                   active
                     ? 'border-fuchsia-400 bg-fuchsia-500/20 shadow-[0_0_14px_rgba(217,70,239,0.3)]'
                     : unlocked
@@ -88,10 +88,10 @@ export default function WorldPanel() {
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold text-slate-200">{found ? z.name : '??? (Скрыто)'}</div>
                     <div className="text-[9px] text-slate-400 truncate mt-0.5">
-                      {found ? (unlocked ? z.desc : `🔒 нужен ${z.minLevel} ур.`) : '🔒 Найдите секретную карту на этапах'}
+                      {found ? (unlocked ? z.desc : `🔒 Требуется Уровень ${z.minLevel}`) : '🔒 Найдите секретную карту на этапах'}
                     </div>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono font-bold">{z.minLevel}+</span>
+                  <span className="text-[10px] text-slate-400 font-mono font-bold">Уровень {z.minLevel}+</span>
                 </div>
               </button>
             );
@@ -108,9 +108,9 @@ export default function WorldPanel() {
           {dungeon && (
             <button
               onClick={leaveDungeon}
-              className="text-[10px] px-2.5 py-0.5 rounded-lg bg-red-900/60 hover:bg-red-800 text-red-200 font-bold border border-red-500/40 transition-colors"
+              className="text-[10px] px-2.5 py-0.5 rounded-lg bg-red-900/60 hover:bg-red-800 text-red-200 font-bold border border-red-500/40 transition-colors cursor-pointer"
             >
-              🚪 Выйти
+              🚪 Покинуть подземелье
             </button>
           )}
         </div>
@@ -118,7 +118,7 @@ export default function WorldPanel() {
         {dungeon && (
           <div className="mb-2 p-2 rounded-xl border border-purple-500/60 bg-purple-950/40 flex items-center justify-between text-xs font-bold text-purple-200 animate-pulse">
             <span>{dungeonById(dungeon.dungeonId).icon} {dungeonById(dungeon.dungeonId).name}</span>
-            <span>Волна {dungeon.wave}/{dungeonById(dungeon.dungeonId).waves}</span>
+            <span>Волна {dungeon.wave} из {dungeonById(dungeon.dungeonId).waves}</span>
           </div>
         )}
 
@@ -130,7 +130,7 @@ export default function WorldPanel() {
                 key={d.id}
                 onClick={() => canEnter && startDungeon(d.id)}
                 disabled={!canEnter}
-                className={`w-full text-left rounded-xl border px-2.5 py-1.5 transition-all ${
+                className={`w-full text-left rounded-xl border px-2.5 py-1.5 transition-all cursor-pointer ${
                   canEnter
                     ? 'border-purple-600/50 bg-slate-950/60 hover:bg-purple-900/30'
                     : 'border-slate-800/80 opacity-40 bg-slate-950/30'
@@ -142,11 +142,11 @@ export default function WorldPanel() {
                     <div className="text-xs font-bold text-slate-200">{d.name}</div>
                     <div className="text-[9px] text-slate-400 truncate mt-0.5">
                       {level >= d.minLevel
-                        ? `${d.desc} · ${d.waves} волн · Награда: x${d.xpMult} XP`
-                        : `🔒 нужен ${d.minLevel} ур.`}
+                        ? `${d.desc} · ${d.waves} волн · Множитель опыта: x${d.xpMult}`
+                        : `🔒 Требуется Уровень ${d.minLevel}`}
                     </div>
                   </div>
-                  <span className="text-[10px] text-purple-300 font-mono font-bold">{d.minLevel}+</span>
+                  <span className="text-[10px] text-purple-300 font-mono font-bold">Уровень {d.minLevel}+</span>
                 </div>
               </button>
             );

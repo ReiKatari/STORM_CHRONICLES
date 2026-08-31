@@ -64,11 +64,6 @@ export default function PetsPanel() {
     useGame.setState({ petLvl: newLvl, petXp: newXp });
   };
 
-  const rarityNames: Record<string, string> = {
-    common: 'Обычный', rare: 'Редкий', epic: 'Эпик',
-    legendary: 'Легендарный', mythic: 'Мифический', divine: 'Божественный',
-  };
-
   return (
     <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-3.5 flex flex-col h-full min-h-0 shadow-2xl backdrop-blur-md space-y-2.5 font-sans w-full">
       {/* Header Bar */}
@@ -91,20 +86,20 @@ export default function PetsPanel() {
         <div className="flex items-center gap-2">
           <button
             onClick={feedPet}
-            className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-[11px] shadow active:scale-95 transition-all flex items-center gap-1"
+            className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-[11px] shadow active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
           >
             <span>🥩</span>
-            <span>Кормить (+500 XP)</span>
+            <span>Покормить (+500 опыта)</span>
           </button>
           <div className="text-right bg-slate-950/90 px-2.5 py-1 rounded-xl border border-slate-800">
-            <div className="text-[11px] font-black text-emerald-400 font-mono">Ур. {petLvl}</div>
+            <div className="text-[11px] font-black text-emerald-400 font-mono">Уровень {petLvl}</div>
             <div className="text-[9px] text-slate-400 font-mono">{fmt(petXp)} / {fmt(petNeedXp)} ({xpPct}%)</div>
           </div>
         </div>
       </div>
 
       {/* Compact Pet Selector Cards Deck */}
-      <div className="grid grid-cols-5 gap-1.5 shrink-0 w-full">
+      <div className="grid grid-cols-3 sm:grid-cols-9 gap-1.5 shrink-0 w-full">
         {PETS.map(pet => {
           const isActive = activePetId === pet.id;
           const isSelected = selectedPet.id === pet.id;
@@ -115,7 +110,7 @@ export default function PetsPanel() {
             <button
               key={pet.id}
               onClick={() => { setSelectedPet(pet); setEditingName(false); }}
-              className={`p-1.5 rounded-xl border flex flex-col items-center gap-0.5 transition-all relative ${
+              className={`p-1.5 rounded-xl border flex flex-col items-center gap-0.5 transition-all relative cursor-pointer ${
                 isSelected
                   ? 'bg-slate-800 border-amber-400 border-2 shadow-[0_0_12px_rgba(245,158,11,0.3)] scale-[1.02]'
                   : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
@@ -166,7 +161,7 @@ export default function PetsPanel() {
                       placeholder={selectedPet.name}
                       className="bg-slate-900 border border-amber-500/80 rounded-lg px-2 py-0.5 text-xs text-amber-200 outline-none w-36"
                     />
-                    <button onClick={saveName} className="px-2.5 py-0.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs text-white font-bold">
+                    <button onClick={saveName} className="px-2.5 py-0.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs text-white font-bold cursor-pointer">
                       ОК
                     </button>
                   </div>
@@ -175,8 +170,8 @@ export default function PetsPanel() {
                     <h4 className="font-black text-sm leading-tight" style={{ color: selectedPet.color }}>{displayName}</h4>
                     <button
                       onClick={() => { setNameInput(currentCustomName); setEditingName(true); }}
-                      className="text-xs text-slate-400 hover:text-amber-300"
-                      title="Изменить имя"
+                      className="text-xs text-slate-400 hover:text-amber-300 cursor-pointer"
+                      title="Изменить имя спутника"
                     >
                       ✏️
                     </button>
@@ -195,9 +190,9 @@ export default function PetsPanel() {
             ) : (
               <button
                 onClick={() => setActivePet(selectedPet.id)}
-                className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10.5px] shadow transition-all"
+                className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10.5px] shadow transition-all cursor-pointer"
               >
-                ⚔️ Вызвать
+                ⚔️ Вызвать спутника
               </button>
             )}
           </div>
@@ -214,19 +209,19 @@ export default function PetsPanel() {
             <span className="text-xs font-black text-emerald-400 font-mono">+{fmt(selectedPet.baseDmg * petLvl * 0.4)}</span>
           </div>
           <div className="bg-slate-900/90 rounded-lg p-1.5 border border-slate-800">
-            <span className="text-[9px] text-slate-400 font-extrabold block">HP Героя</span>
+            <span className="text-[9px] text-slate-400 font-extrabold block">Здоровье Героя</span>
             <span className="text-xs font-black text-rose-400 font-mono">+{fmt(selectedPet.baseHp * petLvl)}</span>
           </div>
           <div className="bg-slate-900/90 rounded-lg p-1.5 border border-slate-800">
             <span className="text-[9px] text-slate-400 font-extrabold block">Эволюция</span>
-            <span className="text-xs font-black text-purple-300 font-mono">{evoTier}/3</span>
+            <span className="text-xs font-black text-purple-300 font-mono">{evoTier} из 3</span>
           </div>
         </div>
 
         {/* Full-width Active Skills Section */}
         <div className="p-2.5 rounded-xl border border-slate-800 bg-slate-900/70 space-y-2 w-full">
           <span className="text-[11px] font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-            <span>✨</span> Навыки Спутника ({selectedPet.skills.length} активных умения)
+            <span>✨</span> Боевые Способности Спутника ({selectedPet.skills.length} активных)
           </span>
           <div className="grid grid-cols-1 gap-1.5">
             {selectedPet.skills.map(sk => (
@@ -239,7 +234,7 @@ export default function PetsPanel() {
                   </div>
                 </div>
                 <span className="text-[10px] font-mono font-black text-purple-300 bg-purple-950/80 px-2 py-0.5 rounded-lg border border-purple-800/80 shrink-0">
-                  ⏱️ {sk.cooldown}s CD
+                  ⏱️ {sk.cooldown} секунд
                 </span>
               </div>
             ))}
@@ -250,7 +245,7 @@ export default function PetsPanel() {
         <div className="p-2.5 rounded-xl border border-slate-800 bg-slate-900/70 space-y-2 w-full">
           <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
             <span className="text-[11px] font-black text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
-              <span>🌟</span> Таланты Спутника (Доступно: <b className="text-amber-300 font-mono">{availablePetPoints}</b> очков)
+              <span>🌟</span> Пассивные Таланты Спутника (Доступно: <b className="text-amber-300 font-mono">{availablePetPoints}</b> очков)
             </span>
           </div>
           <div className="space-y-2 w-full">
@@ -278,14 +273,14 @@ export default function PetsPanel() {
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span className="font-mono text-purple-300 font-black text-xs px-2 py-0.5 bg-slate-950 rounded-lg border border-slate-800">
-                            {rank}/{t.maxRank}
+                            {rank} из {t.maxRank}
                           </span>
                           {canLearn && (
                             <button
                               onClick={() => learnPetTalent(t.id, t.maxRank)}
-                              className="px-2.5 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-lg text-white font-black text-[10px] shadow active:scale-95 transition-all"
+                              className="px-2.5 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-lg text-white font-black text-[10px] shadow active:scale-95 transition-all cursor-pointer"
                             >
-                              +1
+                              +1 Повысить
                             </button>
                           )}
                         </div>

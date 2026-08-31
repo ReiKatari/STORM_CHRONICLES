@@ -40,6 +40,31 @@ export interface RarityDef {
 export interface ItemAffix {
   stat: StatId | 'dmg' | 'hp' | 'armor' | 'crit' | 'speed' | 'gold' | 'xp';
   value: number;
+  name?: string;
+}
+
+export type ElementType = 'fire' | 'ice' | 'lightning' | 'poison' | 'holy' | 'dark' | 'physical';
+
+export interface ElementalReactionEvent {
+  name: string;
+  icon: string;
+  color: string;
+  dmgMult: number;
+  effectDesc: string;
+}
+
+export type GemType = 'ruby' | 'sapphire' | 'emerald' | 'topaz' | 'diamond' | 'amethyst';
+export type GemTier = 1 | 2 | 3 | 4 | 5; // Обычный, Безупречный, Королевский, Астральный, Божественный
+
+export interface GemItem {
+  id: string;
+  type: GemType;
+  tier: GemTier;
+  name: string;
+  icon: string;
+  bonusDesc: string;
+  stat: StatId | 'dmg' | 'hp' | 'armor' | 'crit' | 'speed' | 'lifesteal';
+  value: number;
 }
 
 export interface Item {
@@ -54,6 +79,10 @@ export interface Item {
   sellPrice: number;
   score: number; // item power score
   setId?: string; // Set Item identifier
+  upgradeLevel?: number; // 0..20 (+1..+20 astral refinement)
+  sockets?: (GemItem | null)[]; // 1-3 socket slots
+  element?: ElementType;
+  runewordName?: string;
 }
 
 export interface SetBonus {
@@ -120,6 +149,7 @@ export interface MonsterDef {
   xpMult: number;
   goldMult: number;
   color: string;
+  artSrc?: string;
 }
 
 export interface ActiveMonster {
@@ -143,6 +173,7 @@ export interface ZoneTheme {
   tiles: string[];
   particles: string;
   fog: string;
+  artSrc?: string;
 }
 
 export interface ZoneDef {
@@ -179,6 +210,7 @@ export interface DungeonDef {
   bossName: string;
   bossIcon: string;
   lootBonus: number;   // rarity bonus
+  rewardRarity?: RarityId;
   xpMult: number;
   goldMult: number;
   desc: string;
@@ -196,6 +228,10 @@ export interface SkillDef {
   cooldown: number;
   desc: string;
   color: string;
+  kind?: string;
+  basePower?: number;
+  scaling?: string | { stat: StatId; mult: number };
+  fx?: string;
 }
 
 export interface TalentDef {
@@ -222,7 +258,9 @@ export interface QuestDef {
   id: string;
   name: string;
   desc: string;
-  type: 'kills' | 'bosses' | 'level' | 'gold' | 'dungeons' | 'stage';
+  type?: 'kills' | 'bosses' | 'level' | 'gold' | 'dungeons' | 'stage';
+  kind?: string;
+  target?: string;
   count: number;
   reward: {
     gold?: number;
@@ -235,6 +273,7 @@ export interface QuestDef {
 }
 
 export interface QuestState {
+  id?: string;
   progress: number;
   done: boolean;
   claimed: boolean;
@@ -260,6 +299,16 @@ export interface DerivedStats {
   lifestealPct: number;
   skillPower: number;
   attackSpeed: number;
+  // Aliases and helpers
+  dmgMin: number;
+  dmgMax: number;
+  dodge: number;
+  goldBonus: number;
+  xpBonus: number;
+  dropBonus: number;
+  cdReduction: number;
+  lifesteal?: number;
+  bossDmg?: number;
 }
 
 // ===================== LOG & FX =====================
@@ -267,7 +316,8 @@ export interface DerivedStats {
 export type FxType =
   | 'playerHit' | 'crit' | 'monsterHit' | 'dodge'
   | 'heal' | 'skill' | 'death' | 'levelup'
-  | 'loot' | 'bossSpawn' | 'quest';
+  | 'loot' | 'bossSpawn' | 'quest'
+  | 'petHit' | 'block' | 'flee' | 'reaction';
 
 export interface FxEvent {
   id: number;
@@ -353,7 +403,7 @@ export interface RuneWordDef {
 
 // Extend Item with sockets & inserted runes
 export interface SocketedItem extends Item {
-  sockets?: number;
+  maxSockets?: number;
   insertedRunes?: string[]; // array of rune IDs
   activeRuneWord?: RuneWordDef;
 }
@@ -373,4 +423,112 @@ export interface TreasureMapVault {
     runes: string[];
     itemRarity: RarityId;
   };
+}
+
+// ===================== COMBO & ELEMENTAL SYSTEM =====================
+
+export type ComboRank = 'D' | 'C' | 'B' | 'A' | 'S' | 'SS' | 'SSS';
+
+export interface ComboState {
+  count: number;
+  rank: ComboRank;
+  multiplier: number;
+  timeLeftSec: number;
+}
+
+// ===================== ALCHEMY & HERBS =====================
+
+export interface HerbItem {
+  id: string;
+  name: string;
+  icon: string;
+  count: number;
+  rarity: RarityId;
+  desc: string;
+  color: string;
+}
+
+export interface AlchemyPotionDef {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  durationSec: number;
+  rarity: RarityId;
+  statBonus: Partial<DerivedStats>;
+  recipe: { herbId: string; count: number }[];
+  color: string;
+}
+
+// ===================== MERCENARY EXPEDITIONS =====================
+
+export interface MercenarySquad {
+  id: string;
+  name: string;
+  icon: string;
+  level: number;
+  power: number;
+  cost: number;
+  hired: boolean;
+  currentMissionId?: string;
+  missionEndTimestamp?: number;
+}
+
+export interface ExpeditionMission {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  durationSec: number;
+  minPower: number;
+  rewardGold: number;
+  rewardXp: number;
+  rewardStones: number;
+  herbDropId?: string;
+  herbDropCount?: number;
+  gemChance: number;
+}
+
+// ===================== TAROT CARDS OF FATE =====================
+
+export interface TarotCard {
+  id: string;
+  name: string;
+  arcana: string;
+  icon: string;
+  desc: string;
+  color: string;
+  effect: string;
+  effectValue: number;
+}
+
+// ===================== COSMETICS & WINGS =====================
+
+export interface CosmeticWing {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  rarity: RarityId;
+  auraColor: string;
+  bonusDmgPct: number;
+  bonusHpPct: number;
+  bonusSpeedPct: number;
+  unlocked: boolean;
+  costGold?: number;
+  costShards?: number;
+}
+
+// ===================== ASCENDANCY / PRESTIGE =====================
+
+export interface AscendancyConstellation {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  level: number;
+  maxLevel: number;
+  costPerLevel: number;
+  stat: keyof DerivedStats;
+  valuePerLevel: number;
 }

@@ -155,7 +155,7 @@ export default function CharacterCreationModal({ onComplete }: { onComplete: () 
                   <div className="min-w-0">
                     <div className="font-bold text-[11px] text-amber-300 truncate">{sk.name}</div>
                     <div className="text-[9.5px] text-slate-400 font-mono">
-                      💧 {sk.manaCost} Мана • ⏱️ {sk.cooldown}сек
+                      💧 {sk.manaCost} маны • ⏱️ {sk.cooldown} секунд
                     </div>
                     <div className="text-[9.5px] text-slate-300 mt-0.5 line-clamp-2 leading-snug">{sk.desc}</div>
                   </div>

@@ -10,16 +10,16 @@ function getEquippedItem(item: Item, equipment: Partial<Record<SlotId, Item>>): 
     const r1 = equipment['ring1'];
     const r2 = equipment['ring2'];
     if (!r1 && !r2) return null;
-    if (!r1) return r2;
-    if (!r2) return r1;
+    if (!r1) return r2 ?? null;
+    if (!r2) return r1 ?? null;
     return r1.score <= r2.score ? r1 : r2;
   }
   if (item.slot === 'earring') {
     const e1 = equipment['earring1'];
     const e2 = equipment['earring2'];
     if (!e1 && !e2) return null;
-    if (!e1) return e2;
-    if (!e2) return e1;
+    if (!e1) return e2 ?? null;
+    if (!e2) return e1 ?? null;
     return e1.score <= e2.score ? e1 : e2;
   }
   return equipment[item.slot as SlotId] ?? null;
@@ -31,10 +31,10 @@ export default function InventoryPanel() {
   const selectedSlotFilter = useGame(s => s.selectedSlotFilter);
   const setSlotFilter = useGame(s => s.setSlotFilter);
   const equip = useGame(s => s.equip);
-  const sellItem = useGame(s => s.sellItem);
+  const equipBestAll = useGame(s => s.equipBestAll);
   const sellJunk = useGame(s => s.sellJunk);
   const [hover, setHover] = useState<{ id: string; rect: DOMRect } | null>(null);
-  const [pinned, setPinned] = useState<{ id: string; rect: DOMRect } | null>(null);
+  const [pinned] = useState<{ id: string; rect: DOMRect } | null>(null);
   const [filter, setFilter] = useState<RarityId | 'all'>('all');
 
   const filtered = [...inventory]
@@ -42,6 +42,14 @@ export default function InventoryPanel() {
     .sort((a, b) => b.score - a.score);
 
   const activeSlotDef = selectedSlotFilter !== 'all' ? SLOT_DEFS.find(s => s.kind === selectedSlotFilter) : null;
+
+  const handleEquipOrUse = (item: Item) => {
+    if (item.slot === ('consumable' as any) || item.slot === ('potion' as any)) {
+      useGame.getState().usePotion(item.id);
+    } else {
+      equip(item.id);
+    }
+  };
 
   return (
     <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-3.5 flex flex-col h-full min-h-0 shadow-2xl backdrop-blur-md font-sans">
@@ -52,17 +60,24 @@ export default function InventoryPanel() {
           <span>Инвентарь</span>
           <span className="text-slate-400 text-xs font-mono font-bold">({fmt(inventory.length)}/72)</span>
         </h3>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 flex-wrap items-center">
+          <button
+            onClick={() => equipBestAll()}
+            className="text-[10px] font-black px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:scale-105 text-white border border-emerald-400/50 shadow transition-all active:scale-95 flex items-center gap-1"
+            title="Автоматически надевает предметы с наибольшей мощью во все слоты"
+          >
+            <span>⚡ Надеть лучшее</span>
+          </button>
           <button
             onClick={() => sellJunk('rare')}
-            className="text-[10px] font-black px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all active:scale-95 shadow"
+            className="text-[10px] font-black px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all active:scale-95 shadow"
             title="Продать обычные и необычные предметы"
           >
-            Продать хлам
+            Хлам
           </button>
           <button
             onClick={() => sellJunk('epic')}
-            className="text-[10px] font-black px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all active:scale-95 shadow"
+            className="text-[10px] font-black px-2 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all active:scale-95 shadow"
             title="Продать всё ниже эпического"
           >
             Ниже эпика
@@ -127,13 +142,12 @@ export default function InventoryPanel() {
         )}
         {filtered.map(item => {
           const r = rarityById(item.rarity);
-          const eqItem = getEquippedItem(item, equipment);
-          const scoreDiff = eqItem ? item.score - eqItem.score : item.score;
+          const isConsumable = item.slot === ('consumable' as any) || item.slot === ('potion' as any);
 
           return (
             <div
               key={item.id}
-              className="relative"
+              className="relative group"
               onMouseEnter={e => {
                 setHover({ id: item.id, rect: e.currentTarget.getBoundingClientRect() });
               }}
@@ -144,17 +158,14 @@ export default function InventoryPanel() {
                 onDragStart={e => {
                   e.dataTransfer.setData('application/json', JSON.stringify({ type: 'item', itemId: item.id, icon: item.icon, name: item.name }));
                 }}
-                onClick={e => {
-                  if (pinned?.id === item.id) {
-                    setPinned(null);
-                    return;
-                  }
-                  setPinned({
-                    id: item.id,
-                    rect: e.currentTarget.getBoundingClientRect(),
-                  });
+                onClick={() => {
+                  handleEquipOrUse(item);
                 }}
-                className={`flex items-center gap-2.5 rounded-xl border p-2 cursor-grab active:cursor-grabbing transition-all bg-slate-950/80 hover:bg-slate-900 hover:border-amber-400 ${
+                onContextMenu={e => {
+                  e.preventDefault();
+                  handleEquipOrUse(item);
+                }}
+                className={`flex items-center gap-2 rounded-xl border p-2 cursor-pointer transition-all bg-slate-950/80 hover:bg-slate-900 hover:border-amber-400 ${
                   pinned?.id === item.id ? 'ring-2 ring-purple-500 border-purple-400' : ''
                 }`}
                 style={{ borderColor: pinned?.id === item.id ? undefined : r.color, boxShadow: `0 0 6px ${r.glow}` }}
@@ -177,22 +188,21 @@ export default function InventoryPanel() {
                   </div>
                 </div>
 
-                {/* Comparison Arrow Badge */}
-                {scoreDiff > 0 ? (
-                  <span
-                    className="text-emerald-400 font-black text-xs px-1.5 py-0.5 rounded-lg bg-emerald-950/80 border border-emerald-500/40 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.3)] animate-pulse"
-                    title={`Улучшение! (+${fmt(scoreDiff)} мощи)`}
-                  >
-                    ▲
-                  </span>
-                ) : scoreDiff < 0 ? (
-                  <span
-                    className="text-red-400 font-black text-xs px-1.5 py-0.5 rounded-lg bg-red-950/80 border border-red-500/40 shrink-0"
-                    title={`Хуже надетого (${fmt(scoreDiff)} мощи)`}
-                  >
-                    ▼
-                  </span>
-                ) : null}
+                {/* Direct Action Equip/Drink Button */}
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleEquipOrUse(item);
+                  }}
+                  className={`text-[10px] font-black px-2 py-1.5 rounded-lg text-white border shadow transition-all active:scale-95 shrink-0 ${
+                    isConsumable
+                      ? 'bg-teal-600 hover:bg-teal-500 border-teal-400'
+                      : 'bg-emerald-600 hover:bg-emerald-500 border-emerald-400'
+                  }`}
+                  title={isConsumable ? 'Использовать зелье' : 'Надеть предмет в слот'}
+                >
+                  {isConsumable ? '🧪' : '🛡️'}
+                </button>
               </div>
             </div>
           );
@@ -210,44 +220,6 @@ export default function InventoryPanel() {
             equippedItem={eqItem}
             anchorRect={hover.rect}
           />
-        );
-      })()}
-
-      {/* Pinned Click Popup with Gear Comparison & Action Buttons */}
-      {pinned && (() => {
-        const item = inventory.find(i => i.id === pinned.id);
-        if (!item) return null;
-        const eqItem = getEquippedItem(item, equipment);
-        return (
-          <SmartItemTooltip
-            item={item}
-            equippedItem={eqItem}
-            anchorRect={pinned.rect}
-            onClose={() => setPinned(null)}
-          >
-            <div className="flex gap-2 mt-2 bg-slate-950 p-2 rounded-xl border border-slate-800 shadow-2xl">
-              <button
-                onClick={() => {
-                  equip(item.id);
-                  setPinned(null);
-                }}
-                className="flex-1 text-xs py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1"
-              >
-                <span>🛡️</span>
-                <span>Надеть</span>
-              </button>
-              <button
-                onClick={() => {
-                  sellItem(item.id);
-                  setPinned(null);
-                }}
-                className="flex-1 text-xs py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-extrabold shadow-lg transition-all active:scale-95 font-mono flex items-center justify-center gap-1"
-              >
-                <span>💰</span>
-                <span>Продать {fmt(item.sellPrice)}g</span>
-              </button>
-            </div>
-          </SmartItemTooltip>
         );
       })()}
     </div>

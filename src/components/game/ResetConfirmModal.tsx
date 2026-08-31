@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGame, getCharacterSlotsMeta, getActiveSlotId, setActiveSlotId, getSlotSaveKey } from '@/game/store';
 import { HERO_CLASSES } from '@/game/classes';
 import { ZONES } from '@/game/monsters';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 export default function ResetConfirmModal({
   onClose,
@@ -10,6 +11,7 @@ export default function ResetConfirmModal({
   onClose: () => void;
   onOpenCreation?: () => void;
 }) {
+  useEscapeKey(onClose);
   const activeSlotId = getActiveSlotId();
   const [slots, setSlots] = useState(getCharacterSlotsMeta());
   const [confirmResetSlot, setConfirmResetSlot] = useState<string | null>(null);
@@ -68,12 +70,15 @@ export default function ResetConfirmModal({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-xl bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 font-bold text-xs flex items-center justify-center transition-colors"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">[ESC]</span>
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-red-950/80 text-slate-400 hover:text-red-300 font-bold text-sm flex items-center justify-center border border-slate-800 hover:border-red-500/50 transition-all cursor-pointer shadow"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* 5 Character Slots List */}

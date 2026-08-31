@@ -43,19 +43,19 @@ export default function EventsPanel() {
         name: 'Кровавый Алтарь Бездны',
         desc: 'Вы находите древнее древо, омытое кровью падших титанов. Голос шепчет о жертве.',
         icon: '🩸',
-        choiceA: '🩸 Жертва HP (Потерять 20% HP)',
+        choiceA: '🩸 Жертва Здоровья (Потерять 20% Здоровья)',
         choiceB: `💰 Пожертвовать ${fmt(100)} золота`,
         actionA: () => {
           useGame.setState(s => ({
             hp: Math.max(10, Math.round(s.hp * 0.8)),
-            log: [...s.log, { id: Date.now(), text: '🩸 Алтарь принял кровь! +50% к урону на 60 сек.', color: '#ef4444', time: Date.now() }],
+            log: [...s.log, { id: Date.now(), text: '🩸 Алтарь принял кровь! +50% к урону на 60 секунд.', color: '#ef4444', time: Date.now() }],
           }));
         },
         actionB: () => {
           if (gold < 100) return;
           useGame.setState(s => ({
             gold: s.gold - 100,
-            log: [...s.log, { id: Date.now(), text: '✨ Алтарь принял золото! +80% к опыту на 60 сек.', color: '#facc15', time: Date.now() }],
+            log: [...s.log, { id: Date.now(), text: '✨ Алтарь принял золото! +80% к опыту на 60 секунд.', color: '#facc15', time: Date.now() }],
           }));
         },
       },
@@ -64,7 +64,7 @@ export default function EventsPanel() {
         name: 'Разлом Астральной Бездны',
         desc: 'В воздухе со скрежетом открылся фиолетовый разлом. Оттуда веет космической энергией.',
         icon: '🌀',
-        choiceA: '⚡ Прыгнуть в разлом (+2 500 XP)',
+        choiceA: '⚡ Прыгнуть в разлом (+2 500 опыта)',
         choiceB: '🔮 Собрать астральные эссенции (+5 эссенций)',
         actionA: () => {
           const gainedXp = level * 250;
@@ -85,7 +85,7 @@ export default function EventsPanel() {
         name: 'Святилище Астрального Дракона',
         desc: 'Перед вами гнездо золотого дракона. Вокруг блестят бесчисленные драгоценности.',
         icon: '🐉',
-        choiceA: `💰 Забрать сокровище (+${fmt(1200)} gold)`,
+        choiceA: `💰 Забрать сокровище (+${fmt(1200)} золота)`,
         choiceB: '🐲 Благословение дракона (+1 очко талантов)',
         actionA: () => {
           const rewardGold = level * 150;
@@ -107,7 +107,7 @@ export default function EventsPanel() {
         name: 'Таинственный Гоблин-Торговец',
         desc: 'Из тени вылезает хитрый гоблин с тяжелым мешком астральных реликвий.',
         icon: '👺',
-        choiceA: `💰 Купить сундук (${fmt(200)}g)`,
+        choiceA: `💰 Купить сундук (${fmt(200)} золота)`,
         choiceB: '👋 Пройти мимо',
         actionA: () => {
           if (gold < 200) return;
@@ -115,7 +115,7 @@ export default function EventsPanel() {
           useGame.setState(s => ({
             gold: s.gold - 200,
             xp: s.xp + dropXp,
-            log: [...s.log, { id: Date.now(), text: `🎁 Гоблин вручил сундук! Получено +${fmt(dropXp)} XP!`, color: '#38bdf8', time: Date.now() }],
+            log: [...s.log, { id: Date.now(), text: `🎁 Гоблин вручил сундук! Получено +${fmt(dropXp)} опыта!`, color: '#38bdf8', time: Date.now() }],
           }));
         },
         actionB: () => {},
@@ -126,7 +126,7 @@ export default function EventsPanel() {
         desc: 'Сияющие ворота ведут в затерянные подземелья, набитые драгоценными камнями.',
         icon: '🔑',
         choiceA: '🔑 Открыть портал (+50 руды)',
-        choiceB: `💰 Забрать куш (+${fmt(800)} gold)`,
+        choiceB: `💰 Забрать куш (+${fmt(800)} золота)`,
         actionA: () => {
           useGame.setState(s => ({
             astralOre: ((s as unknown as { astralOre: number }).astralOre ?? 0) + 50,
@@ -156,7 +156,7 @@ export default function EventsPanel() {
         },
         actionB: () => {
           useGame.setState(s => ({
-            log: [...s.log, { id: Date.now(), text: '⚡ Оружие напитано! +50% к крит шансу!', color: '#facc15', time: Date.now() }],
+            log: [...s.log, { id: Date.now(), text: '⚡ Оружие напитано! +50% к критическому шансу!', color: '#facc15', time: Date.now() }],
           }));
         },
       },
@@ -165,8 +165,8 @@ export default function EventsPanel() {
         name: 'Источник Юности Бездны',
         desc: 'Чистейшая астральная вода бьет из-под кристаллической скалы.',
         icon: '🪞',
-        choiceA: '💧 Испить воды (100% HP И Мана)',
-        choiceB: '🔮 Набрать эликсир (+2 стата)',
+        choiceA: '💧 Испить воды (100% Здоровья и Маны)',
+        choiceB: '🔮 Набрать эликсир (+2 характеристики)',
         actionA: () => {
           useGame.setState(s => ({
             hp: s.derived.maxHp,
@@ -186,8 +186,8 @@ export default function EventsPanel() {
         name: 'Падение Звездного Метеора',
         desc: 'С небес рухнул раскаленный космический осколок, полный астрального золота.',
         icon: '☄️',
-        choiceA: `⛏️ Раскопать руду (+${fmt(1500)} gold)`,
-        choiceB: '✨ Поглотить пыль (+1 очко скиллов)',
+        choiceA: `⛏️ Раскопать руду (+${fmt(1500)} золота)`,
+        choiceB: '✨ Поглотить пыль (+1 очко умений)',
         actionA: () => {
           const goldBonus = level * 100 + 500;
           useGame.setState(s => ({
@@ -199,7 +199,7 @@ export default function EventsPanel() {
         actionB: () => {
           useGame.setState(s => ({
             skillPoints: s.skillPoints + 1,
-            log: [...s.log, { id: Date.now(), text: '✨ Вы поглотили пыль! Получено +1 очко скиллов!', color: '#c084fc', time: Date.now() }],
+            log: [...s.log, { id: Date.now(), text: '✨ Вы поглотили пыль! Получено +1 очко умений!', color: '#c084fc', time: Date.now() }],
           }));
         },
       },
@@ -227,8 +227,8 @@ export default function EventsPanel() {
         name: 'Сияние Солярной Кометы',
         desc: 'Пролетающая над миром комета озаряет землю божественным астральным светом.',
         icon: '✨',
-        choiceA: '✨ Принять озарение (+5 очков статов)',
-        choiceB: '📜 Впитать мудрость (+1 очко скиллов)',
+        choiceA: '✨ Принять озарение (+5 очков характеристик)',
+        choiceB: '📜 Впитать мудрость (+1 очко умений)',
         actionA: () => {
           useGame.setState(s => ({
             statPoints: s.statPoints + 5,
@@ -238,7 +238,7 @@ export default function EventsPanel() {
         actionB: () => {
           useGame.setState(s => ({
             skillPoints: s.skillPoints + 1,
-            log: [...s.log, { id: Date.now(), text: '📜 Получено +1 очко заклинаний!', color: '#818cf8', time: Date.now() }],
+            log: [...s.log, { id: Date.now(), text: '📜 Получено +1 очко умений!', color: '#818cf8', time: Date.now() }],
           }));
         },
       },
@@ -274,16 +274,16 @@ export default function EventsPanel() {
   };
 
   return (
-    <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-3 shadow-2xl backdrop-blur-md font-sans">
-      <div className="grid md:grid-cols-12 gap-3 items-center">
+    <div className="bg-slate-900/95 rounded-2xl border border-slate-700/60 p-2.5 shadow-xl backdrop-blur-md font-sans">
+      <div className="grid md:grid-cols-12 gap-2.5 items-center">
         {/* Left Side: Title & Timer Badge */}
-        <div className="md:col-span-5 flex items-center gap-2.5 border-b md:border-b-0 md:border-r border-slate-800 pb-2 md:pb-0 md:pr-3">
-          <span className="text-2xl p-2 bg-purple-500/10 rounded-xl border border-purple-500/30 shrink-0">🔮</span>
+        <div className="md:col-span-5 flex items-center gap-2 border-b md:border-b-0 md:border-r border-slate-800 pb-1.5 md:pb-0 md:pr-2.5">
+          <span className="text-xl p-1.5 bg-purple-500/10 rounded-xl border border-purple-500/30 shrink-0">🔮</span>
           <div>
-            <h3 className="font-black text-xs text-slate-100 uppercase tracking-wider">
+            <h3 className="font-black text-[11px] text-slate-100 uppercase tracking-wider">
               ЭКСПЕДИЦИИ И СОБЫТИЯ
             </h3>
-            <div className="text-[10px] text-purple-300 font-mono font-bold mt-0.5">
+            <div className="text-[9.5px] text-purple-300 font-mono font-bold mt-0.5">
               ⏱️ Событие через: <b className="text-amber-300 font-extrabold">{formatTimer(eventTimer)}</b>
             </div>
           </div>
@@ -292,22 +292,22 @@ export default function EventsPanel() {
         {/* Right Side: Scanner status card / Active Event choices */}
         <div className="md:col-span-7">
           {currentEvent ? (
-            <div className="p-2.5 rounded-xl bg-slate-950 border border-purple-500/60 space-y-2 animate-fadeIn shadow-xl">
-              <div className="flex items-start gap-2.5">
-                <span className="text-2xl p-1.5 bg-slate-900 rounded-lg border border-slate-800 shrink-0">{currentEvent.icon}</span>
+            <div className="p-2 rounded-xl bg-slate-950 border border-purple-500/60 space-y-1.5 animate-fadeIn shadow-xl">
+              <div className="flex items-start gap-2">
+                <span className="text-xl p-1 bg-slate-900 rounded-lg border border-slate-800 shrink-0">{currentEvent.icon}</span>
                 <div>
-                  <h4 className="font-black text-xs text-amber-300">{currentEvent.name}</h4>
-                  <p className="text-[10px] text-slate-300 leading-snug">{currentEvent.desc}</p>
+                  <h4 className="font-black text-[11px] text-amber-300">{currentEvent.name}</h4>
+                  <p className="text-[9.5px] text-slate-300 leading-snug">{currentEvent.desc}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-0.5">
+              <div className="grid grid-cols-2 gap-1.5 pt-0.5">
                 <button
                   onClick={() => {
                     currentEvent.actionA();
                     setCurrentEvent(null);
                   }}
-                  className="py-1.5 px-2 rounded-lg bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-bold text-[10px] text-left transition-all active:scale-95 shadow truncate"
+                  className="py-1 px-2 rounded-lg bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-bold text-[9.5px] text-left transition-all active:scale-95 shadow truncate cursor-pointer"
                 >
                   {currentEvent.choiceA}
                 </button>
@@ -316,21 +316,21 @@ export default function EventsPanel() {
                     currentEvent.actionB();
                     setCurrentEvent(null);
                   }}
-                  className="py-1.5 px-2 rounded-lg bg-amber-950/90 hover:bg-amber-900 border border-amber-500/50 text-amber-300 font-bold text-[10px] text-left transition-all active:scale-95 shadow truncate"
+                  className="py-1 px-2 rounded-lg bg-amber-950/90 hover:bg-amber-900 border border-amber-500/50 text-amber-300 font-bold text-[9.5px] text-left transition-all active:scale-95 shadow truncate cursor-pointer"
                 >
                   {currentEvent.choiceB}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="p-2.5 text-center bg-slate-950/60 rounded-xl border border-dashed border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2">
-              <div className="text-[10.5px] text-slate-300 flex items-center gap-1.5">
+            <div className="p-2 text-center bg-slate-950/60 rounded-xl border border-dashed border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-1.5">
+              <div className="text-[10px] text-slate-300 flex items-center gap-1.5">
                 <span>🔮</span>
                 <span>Сканер аномалий включен ({formatTimer(eventTimer)})</span>
               </div>
               <button
                 onClick={() => generateRandomEvent()}
-                className="py-1 px-3 rounded-lg bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 text-purple-200 text-[10px] font-extrabold transition-all active:scale-95 shadow shrink-0"
+                className="py-1 px-2.5 rounded-lg bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 text-purple-200 text-[9.5px] font-extrabold transition-all active:scale-95 shadow shrink-0 cursor-pointer"
               >
                 ⚡ Запустить Экспедицию Бездны
               </button>

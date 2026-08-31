@@ -781,29 +781,18 @@ export const BESTIARY_CATALOG: BestiaryEntry[] = [
   },
 ];
 
-export function getHuntingMasteryRank(killsCount: number): { rank: number; title: string; bonusDmgPct: number; bonusDefPct: number; nextNeeded: number } {
+export function getBestiaryMasteryTier(killsCount: number): { tier: number; label: string; bonusDmgPct: number; bonusDefPct: number; nextNeeded: number } {
   if (killsCount >= 100) {
-    return { rank: 3, title: '★3 Магистр Охоты', bonusDmgPct: 15, bonusDefPct: 10, nextNeeded: 100 };
+    return { tier: 3, label: '★3 Магистр Охоты (+15% Урона, +10% Защиты)', bonusDmgPct: 15, bonusDefPct: 10, nextNeeded: 100 };
   }
   if (killsCount >= 40) {
-    return { rank: 2, title: '★2 Истребитель', bonusDmgPct: 8, bonusDefPct: 5, nextNeeded: 100 };
+    return { tier: 2, label: '★2 Истребитель (+8% Урона, +5% Защиты)', bonusDmgPct: 8, bonusDefPct: 5, nextNeeded: 100 };
   }
   if (killsCount >= 10) {
-    return { rank: 1, title: '★1 Следопыт', bonusDmgPct: 3, bonusDefPct: 2, nextNeeded: 40 };
+    return { tier: 1, label: '★1 Следопыт (+3% Урона, +2% Защиты)', bonusDmgPct: 3, bonusDefPct: 2, nextNeeded: 40 };
   }
-  return { rank: 0, title: 'Новичок', bonusDmgPct: 0, bonusDefPct: 0, nextNeeded: 10 };
+  return { tier: 0, label: 'Новичок (Нет бонусов, нужно ещё 10 убийств)', bonusDmgPct: 0, bonusDefPct: 0, nextNeeded: 10 };
 }
 
-export function getBestiaryMasteryTier(kills: number): { tier: number; bonusDmg: number; bonusDef: number; label: string } {
-  if (kills >= 200) {
-    return { tier: 3, bonusDmg: 12, bonusDef: 8, label: '★3 Магистр Охоты (+12% Урона, +8% Защиты)' };
-  }
-  if (kills >= 50) {
-    return { tier: 2, bonusDmg: 6, bonusDef: 4, label: '★2 Опытный Истребитель (+6% Урона, +4% Защиты)' };
-  }
-  if (kills >= 10) {
-    return { tier: 1, bonusDmg: 2, bonusDef: 2, label: '★1 Следопыт (+2% Урона)' };
-  }
-  return { tier: 0, bonusDmg: 0, bonusDef: 0, label: 'Не изучен (0 убийств)' };
-}
+export const getHuntingMasteryRank = getBestiaryMasteryTier;
 

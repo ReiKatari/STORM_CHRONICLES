@@ -65,12 +65,12 @@ export default function SkillsPanel() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-black text-sm text-slate-100 leading-tight">Скиллы: {heroClass.name}</h3>
+              <h3 className="font-black text-sm text-slate-100 leading-tight">Книга Умений: {heroClass.name}</h3>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-amber-300 font-mono font-bold">
-                {classSkills.length} скиллов
+                {classSkills.length} способностей
               </span>
             </div>
-            <span className="text-[10px] text-slate-400">Уникальное древо заклинаний {heroClass.title}</span>
+            <span className="text-[10px] text-slate-400">Уникальное древо боевых умений класса {heroClass.title}</span>
           </div>
         </div>
 
@@ -87,13 +87,13 @@ export default function SkillsPanel() {
 
           <button
             onClick={handleMasterToggleAuto}
-            className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all shadow-md active:scale-95 flex items-center gap-1.5 ${
+            className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all shadow-md active:scale-95 flex items-center gap-1.5 cursor-pointer ${
               isMasterAutoOn
                 ? 'bg-emerald-600/30 border-emerald-500/60 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
                 : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span>⚡ Авто-каст: {isMasterAutoOn ? 'ВКЛ' : 'ВЫКЛ'}</span>
+            <span>⚡ Автоприменение: {isMasterAutoOn ? 'ВКЛЮЧЕНО' : 'ВЫКЛЮЧЕНО'}</span>
           </button>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default function SkillsPanel() {
         <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
           <button
             onClick={() => setFilter('all')}
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
               filter === 'all' ? 'bg-amber-500 text-slate-950 shadow-md font-black' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -111,7 +111,7 @@ export default function SkillsPanel() {
           </button>
           <button
             onClick={() => setFilter('learned')}
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
               filter === 'learned' ? 'bg-emerald-500 text-slate-950 shadow-md font-black' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -119,7 +119,7 @@ export default function SkillsPanel() {
           </button>
           <button
             onClick={() => setFilter('upgradeable')}
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
               filter === 'upgradeable' ? 'bg-amber-400 text-slate-950 shadow-md font-black' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -127,7 +127,7 @@ export default function SkillsPanel() {
           </button>
           <button
             onClick={() => setFilter('locked')}
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
               filter === 'locked' ? 'bg-slate-700 text-slate-200 shadow-md font-black' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -137,10 +137,10 @@ export default function SkillsPanel() {
 
         <input
           type="text"
-          placeholder="Поиск заклинания..."
+          placeholder="Поиск способности..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          className="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500/60 w-36"
+          className="bg-slate-950/80 border border-slate-800 rounded-lg px-2.5 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500/60 w-40"
         />
       </div>
 
@@ -149,7 +149,7 @@ export default function SkillsPanel() {
         {filteredSkills.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-center text-slate-500 text-xs">
             <span className="text-2xl mb-1">🔍</span>
-            Заклинания по выбранным фильтрам не найдены
+            Способности по выбранным критериям не найдены
           </div>
         ) : (
           filteredSkills.map((sk, idx) => {
@@ -212,7 +212,7 @@ export default function SkillsPanel() {
                             ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                             : 'bg-slate-900 text-slate-500 border-slate-800'
                         }`}>
-                          Ранг {rank}/{sk.maxRank}
+                          Ранг {rank} из {sk.maxRank}
                         </span>
                       </div>
 
@@ -226,11 +226,11 @@ export default function SkillsPanel() {
                     </p>
 
                     <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-0.5">
-                      <span>⏱️ Перезарядка: {sk.cooldown} сек.</span>
+                      <span>⏱️ Перезарядка: {sk.cooldown} секунд</span>
                       {!unlocked ? (
-                        <span className="text-red-400 font-bold">🔒 Ур. {sk.unlockLevel}</span>
+                        <span className="text-red-400 font-bold">🔒 Требуется Уровень {sk.unlockLevel}</span>
                       ) : (
-                        <span className="text-slate-500">Доступно с ур. {sk.unlockLevel}</span>
+                        <span className="text-slate-500">Доступно с уровня {sk.unlockLevel}</span>
                       )}
                     </div>
                   </div>
@@ -242,7 +242,7 @@ export default function SkillsPanel() {
                     {rank > 0 && (
                       <button
                         onClick={() => toggleAuto(sk.id)}
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 ${
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
                           isAuto
                             ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
                             : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
@@ -256,7 +256,7 @@ export default function SkillsPanel() {
                       <button
                         onClick={() => cast(sk.id)}
                         disabled={cd > 0}
-                        className="text-[10px] font-bold px-3 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white shadow-md transition-all disabled:opacity-50 active:scale-95"
+                        className="text-[10px] font-bold px-3 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white shadow-md transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
                       >
                         🪄 Использовать
                       </button>
@@ -266,9 +266,9 @@ export default function SkillsPanel() {
                   {canUpgrade && (
                     <button
                       onClick={() => upgrade(sk.id)}
-                      className="text-[10px] font-black px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-400 hover:to-red-400 text-slate-950 shadow-lg transition-all animate-pulse active:scale-95"
+                      className="text-[10px] font-black px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-400 hover:to-red-400 text-slate-950 shadow-lg transition-all animate-pulse active:scale-95 cursor-pointer"
                     >
-                      +1 Прокачать (⚡{points})
+                      +1 Повысить ранг (⚡{points})
                     </button>
                   )}
                 </div>
@@ -280,7 +280,7 @@ export default function SkillsPanel() {
 
       {/* Footer Info */}
       <div className="mt-2 text-[10px] text-slate-400 text-center shrink-0 border-t border-slate-800 pt-1.5">
-        ✨ Очки скиллов выдаются каждые 3 уровня · Назначайте скиллы на клавиши [1-9]
+        ✨ Очки умений начисляются при повышении уровня · Перетаскивайте способности на панель быстрого доступа
       </div>
     </div>
   );

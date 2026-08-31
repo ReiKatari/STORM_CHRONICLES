@@ -245,7 +245,7 @@ export default function TalentsPanel() {
                           ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
                           : 'bg-slate-800 text-slate-400 border-slate-700'
                       }`}>
-                        Ранг {rank}/{t.maxRank}
+                        Ранг {rank} из {t.maxRank}
                       </span>
                     </div>
 
@@ -258,12 +258,12 @@ export default function TalentsPanel() {
                       </span>
                       {rank > 0 && !isMax && (
                         <span className="text-[10.5px] text-purple-300 font-medium">
-                          ➜ Следующий: {t.per(rank + 1)}
+                          ➜ Следующий ранг: {t.per(rank + 1)}
                         </span>
                       )}
                       {!isUnlocked && (
                         <span className="text-[10px] text-red-400 font-semibold">
-                          🔒 Требуется {reqPoints} очков в ветку «{branch?.name}»
+                          🔒 Требуется вложить {reqPoints} очков в ветку «{branch?.name}»
                         </span>
                       )}
                     </div>
@@ -274,9 +274,9 @@ export default function TalentsPanel() {
                 {can && (
                   <button
                     onClick={() => learn(t.id)}
-                    className="rpg-button-primary px-4 py-2 rounded-xl text-xs font-black shrink-0 self-end md:self-center"
+                    className="rpg-button-primary px-4 py-2 rounded-xl text-xs font-black shrink-0 self-end md:self-center cursor-pointer"
                   >
-                    +1 Изучить
+                    +1 Изучить талант
                   </button>
                 )}
               </div>
@@ -286,7 +286,7 @@ export default function TalentsPanel() {
       </div>
 
       <div className="text-[10.5px] text-slate-400 text-center shrink-0 border-t border-slate-800 pt-2">
-        🌟 Очки талантов выдаются каждые 5 уровней · Новые ряды открываются при вложении очков в ветку
+        🌟 Очки талантов начисляются за повышение уровня · Новые ряды открываются при вложении очков в выбранную ветку
       </div>
     </div>
   );

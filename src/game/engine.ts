@@ -1,4 +1,5 @@
 import type { BaseStats, DerivedStats, Item, SlotId, StatId, StatDef } from './types';
+export type { BaseStats, DerivedStats, Item, SlotId, StatId, StatDef } from './types';
 import { SETS } from './items';
 
 export const MAX_LEVEL = 500;
@@ -18,7 +19,7 @@ export const STAT_DEFS: StatDef[] = [
 
 export function xpForLevel(level: number): number {
   const l = isNaN(level) || level < 1 ? 1 : level;
-  return Math.floor(100 * Math.pow(l, 1.48) + l * 25);
+  return Math.floor(180 * Math.pow(l, 1.62) + l * 60);
 }
 
 /**
@@ -73,6 +74,18 @@ export function computeDerived(
           else if (a.stat) iStats[a.stat] = (iStats[a.stat] ?? 0) + (a.value ?? 0);
         });
       }
+      // Socketed Gems Bonuses
+      if (Array.isArray(it.sockets)) {
+        it.sockets.forEach(gem => {
+          if (!gem) return;
+          if (gem.stat === 'dmg') iDmg += gem.value;
+          else if (gem.stat === 'armor') iArmor += gem.value;
+          else if (gem.stat === 'hp') iHp += gem.value;
+          else if (gem.stat === 'crit') iCrit += gem.value;
+          else if (gem.stat === 'speed') iSpeed += gem.value * 100;
+          else if (gem.stat in iStats) (iStats as any)[gem.stat] = ((iStats as any)[gem.stat] ?? 0) + gem.value;
+        });
+      }
     });
   }
 
@@ -119,18 +132,26 @@ export function computeDerived(
   return {
     maxHp: safeVal(Math.floor((115 + lvl * 10 + vit * 12 + iHp) * hpMult), 150),
     maxMana: safeVal(Math.floor((50 + lvl * 4 + wis * 8) * (1 + t('m_mana') * 0.10)), 60),
+    playerAtk: safeVal(Math.floor(baseDmg * dmgMult), 12),
     dmgMin: safeVal(Math.floor(baseDmg * 0.85 * dmgMult), 10),
     dmgMax: safeVal(Math.floor(baseDmg * 1.15 * dmgMult), 15),
+    playerDmgMin: safeVal(Math.floor(baseDmg * 0.85 * dmgMult), 10),
+    playerDmgMax: safeVal(Math.floor(baseDmg * 1.15 * dmgMult), 15),
     skillPower: safeVal(Math.floor((4 + lvl + intTotal * 2) * (1 + t('m_int') * 0.06 + wil * 0.01)), 10),
     armor: safeVal(Math.floor((end * 1.5 + iArmor) * (1 + t('w_armor') * 0.10 + setArmorPct / 100)), 5),
     critChance: Math.min(75, safeVal(5 + luk * 0.15 + per * 0.12 + iCrit + t('w_crit') * 2 + setCritPct, 5)),
     critMult: safeVal(1.8 + per * 0.004, 1.8),
     attackSpeed: Math.min(3.5, safeVal((1 + agi * 0.004 + iSpeed / 100) * (1 + t('w_rage') * 0.04), 1.0)),
     dodge: Math.min(40, safeVal(agi * 0.06 + t('t_dodge') * 1.5, 0)),
+    dodgeChance: Math.min(40, safeVal(agi * 0.06 + t('t_dodge') * 1.5, 0)),
     goldBonus: safeVal(cha * 1 + iGold + t('t_gold') * 10 + setGoldPct, 0),
+    goldBonusPct: safeVal(cha * 1 + iGold + t('t_gold') * 10 + setGoldPct, 0),
     xpBonus: safeVal(iXp + t('t_xp') * 8 + setXpPct, 0),
+    xpBonusPct: safeVal(iXp + t('t_xp') * 8 + setXpPct, 0),
     dropBonus: safeVal(luk * 0.8 + t('t_drop') * 8, 0),
+    dropRatePct: safeVal(luk * 0.8 + t('t_drop') * 8, 0),
     lifesteal: safeVal(t('w_lifesteal') * 1, 0),
+    lifestealPct: safeVal(t('w_lifesteal') * 1, 0),
     cdReduction: Math.min(50, safeVal(t('m_cd') * 4, 0)),
     bossDmg: safeVal(t('w_execute') * 15, 0),
     regen: safeVal((2.0 + end * 0.15) * (1 + t('t_second') * 0.5), 2.0),
@@ -138,11 +159,33 @@ export function computeDerived(
   };
 }
 
+export function calculateElementalReaction(elem1?: string, elem2?: string) {
+  if (!elem1 || !elem2 || elem1 === elem2 || elem1 === 'physical' || elem2 === 'physical') return null;
+
+  const pair = [elem1, elem2].sort().join('+');
+  if (pair === 'fire+ice') {
+    return { name: '🔥❄️ ТАЯНИЕ (MELT)', icon: '💥', color: '#f97316', dmgMult: 2.5, effectDesc: '+150% Взрывного урона' };
+  }
+  if (pair === 'ice+lightning') {
+    return { name: '❄️⚡ СВЕРХПРОВОДНИК', icon: '⚡', color: '#38bdf8', dmgMult: 1.8, effectDesc: '-35% Брони цели и шок' };
+  }
+  if (pair === 'fire+lightning') {
+    return { name: '🔥⚡ ПЕРЕГРУЗКА (OVERLOAD)', icon: '🌋', color: '#ef4444', dmgMult: 2.2, effectDesc: 'Оглушающий взрыв пламени' };
+  }
+  if (pair === 'fire+poison') {
+    return { name: '🔥☣️ ДЕТОНАЦИЯ ЯДА', icon: '💣', color: '#84cc16', dmgMult: 2.8, effectDesc: 'Детонация всех тиков яда' };
+  }
+  if (pair === 'dark+holy') {
+    return { name: '🌑🌟 АННИГИЛЯЦИЯ БЕЗДНЫ', icon: '🌌', color: '#e879f9', dmgMult: 3.0, effectDesc: 'Колоссальный чистый урон' };
+  }
+  return null;
+}
+
 export function monsterStats(level: number, hpMult: number, dmgMult: number) {
   const lvl = isNaN(level) || level < 1 ? 1 : level;
-  const hp = Math.floor((55 + Math.pow(lvl, 1.62) * 10) * (hpMult || 1.0));
-  const dmg = Math.floor((6 + Math.pow(lvl, 1.42) * 2.0) * (dmgMult || 1.0));
-  return { hp: Math.max(30, hp), dmg: Math.max(3, dmg) };
+  const hp = Math.floor((75 + Math.pow(lvl, 1.68) * 12.5) * (hpMult || 1.0));
+  const dmg = Math.floor((8 + Math.pow(lvl, 1.48) * 2.6) * (dmgMult || 1.0));
+  return { hp: Math.max(40, hp), dmg: Math.max(5, dmg) };
 }
 
 export function monsterReward(level: number, xpMult: number, goldMult: number) {

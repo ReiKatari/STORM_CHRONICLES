@@ -115,3 +115,89 @@ html, body, #root {
 .rpg-button-danger:active {
   transform: translateY(1px) scale(0.97);
 }
+
+@keyframes screenShake {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-3px, 2px) rotate(-0.5deg); }
+  40% { transform: translate(3px, -2px) rotate(0.5deg); }
+  60% { transform: translate(-2px, -1px) rotate(-0.3deg); }
+  80% { transform: translate(2px, 1px) rotate(0.3deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.animate-shake {
+  animation: screenShake 0.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes pulseAura {
+  0%, 100% { box-shadow: 0 0 10px rgba(56, 189, 248, 0.4), inset 0 0 8px rgba(56, 189, 248, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(56, 189, 248, 0.8), inset 0 0 14px rgba(56, 189, 248, 0.4); }
+}
+
+.aura-blue {
+  animation: pulseAura 2s infinite ease-in-out;
+  border-color: #38bdf8 !important;
+}
+
+@keyframes pulseGoldAura {
+  0%, 100% { box-shadow: 0 0 12px rgba(250, 204, 21, 0.5), inset 0 0 8px rgba(250, 204, 21, 0.2); }
+  50% { box-shadow: 0 0 26px rgba(250, 204, 21, 0.9), inset 0 0 16px rgba(250, 204, 21, 0.5); }
+}
+
+.aura-gold {
+  animation: pulseGoldAura 1.8s infinite ease-in-out;
+  border-color: #facc15 !important;
+}
+
+@keyframes pulseDivineAura {
+  0%, 100% { box-shadow: 0 0 15px rgba(232, 121, 249, 0.6), inset 0 0 10px rgba(232, 121, 249, 0.3); }
+  50% { box-shadow: 0 0 32px rgba(232, 121, 249, 1.0), inset 0 0 20px rgba(232, 121, 249, 0.6); }
+}
+
+.aura-divine {
+  animation: pulseDivineAura 1.5s infinite ease-in-out;
+  border-color: #e879f9 !important;
+}
+
+/* Holographic Card Shimmer for Mythic & Legendary Gear */
+@keyframes holoShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.holo-foil {
+  position: relative;
+  overflow: hidden;
+}
+
+.holo-foil::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  right: -50%;
+  bottom: -50%;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.15) 45%,
+    rgba(232, 121, 249, 0.25) 50%,
+    rgba(56, 189, 248, 0.25) 55%,
+    rgba(250, 204, 21, 0.15) 60%,
+    transparent 70%,
+    transparent 100%
+  );
+  background-size: 200% 200%;
+  animation: holoShimmer 3.5s infinite linear;
+  pointer-events: none;
+}
+
+/* Glassmorphic Dark Fantasy Container Style */
+.dark-glass {
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}

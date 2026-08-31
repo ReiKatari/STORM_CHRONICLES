@@ -1,16 +1,22 @@
 import { create } from 'zustand';
-import type { ActiveMonster, BaseStats, DungeonRun, FxEvent, Item, LogEntry, QuestState, SlotId, StatId, SlotKind } from './types';
+import type {
+  ActiveMonster, BaseStats, DungeonRun, FxEvent, Item, LogEntry, QuestState, SlotId, StatId, SlotKind,
+  GemItem, GemType, GemTier, ComboState, MercenarySquad, TarotCard
+} from './types';
 import { generateItem, rarityById, POTIONS_CATALOG } from './items';
-import { DUNGEONS, makeMonster, ZONES, zoneById, dungeonById } from './monsters';
+import { makeMonster, ZONES, zoneById, dungeonById } from './monsters';
 import { QUESTS } from './quests';
-import { SKILLS, TALENTS } from './skills';
 import { PETS } from './pets';
-import { computeDerived, fmt, MAX_LEVEL, mitigate, monsterReward, monsterStats, rarityAtLeast, xpForLevel } from './engine';
-import type { DerivedStats } from './engine';
+import { calculateElementalReaction, computeDerived, fmt, MAX_LEVEL, mitigate, monsterReward, monsterStats, rarityAtLeast, xpForLevel } from './engine';
+import type { DerivedStats } from './types';
 import { getClassById, HERO_CLASSES } from './classes';
 import { sound } from './sound';
+import { HERBS_CATALOG, ALCHEMY_RECIPES } from './alchemy';
+import { createGem, getRefinementInfo, applyUpgradeToItem } from './gems';
+import { MERCENARIES_CATALOG, EXPEDITIONS_CATALOG } from './expeditions';
+import { TAROT_DECK } from './tarot';
+import { WINGS_CATALOG, ASCENDANCY_CONSTELLATIONS } from './cosmetics';
 
-let fxId = 1;
 let logId = 1;
 
 const SAVE_KEY = 'storm_chronicles_save';
@@ -94,11 +100,27 @@ export interface GameState {
   inventory: Item[];
   selectedSlotFilter: SlotKind | 'all';
 
+  // RPG 2.0 Systems
+  gemsInventory: GemItem[];
+  herbsInventory: Record<string, number>;
+  enhancementStones: number;
+  celestialShards: number;
+  ascendancyLevels: Record<string, number>;
+  activePotions: { id: string; name: string; icon: string; expireTimestamp: number; color: string; statBonus: any }[];
+  mercenaries: MercenarySquad[];
+  activeExpeditions: { squadId: string; missionId: string; endTimestamp: number }[];
+  tarotCards: TarotCard[];
+  activeWings: string;
+  unlockedWings: string[];
+  combo: ComboState;
+  screenShake: boolean;
+
   // skills & talents
   skillRanks: Record<string, number>;
   skillCds: Record<string, number>;
   autoCast: Record<string, boolean>;
   talents: Record<string, number>;
+  lastSkillCast?: string;
 
   // world
   zoneId: string;
@@ -131,6 +153,7 @@ export interface GameState {
   fxQueue: FxEvent[];
   log: LogEntry[];
   lastSave: number;
+  derived: DerivedStats;
 
   // audio settings
   sfxMuted: boolean;
@@ -144,6 +167,8 @@ export interface GameState {
   equip: (itemId: string) => void;
   equipBestAll: () => void;
   unequip: (slot: SlotId) => void;
+  unequipAll: () => void;
+  usePotion: (itemId: string) => void;
   sellItem: (itemId: string) => void;
   sellJunk: (maxRarity: string) => void;
   castSkill: (id: string) => void;
@@ -162,6 +187,25 @@ export interface GameState {
   save: () => void;
   hardReset: () => void;
   setSlotFilter: (slot: SlotKind | 'all') => void;
+
+  // RPG 2.0 Actions
+  addGem: (gem: GemItem) => void;
+  combineGems: (type: GemType, tier: GemTier) => boolean;
+  socketGem: (slot: SlotId, socketIdx: number, gemId: string) => boolean;
+  unsocketGem: (slot: SlotId, socketIdx: number) => boolean;
+  refineEquipment: (slot: SlotId) => { success: boolean; newLevel: number };
+  gatherHerb: (herbId: string, count?: number) => void;
+  craftAlchemyPotion: (recipeId: string) => boolean;
+  useAlchemyPotion: (potionId: string) => boolean;
+  hireMercenary: (squadId: string) => boolean;
+  startExpedition: (squadId: string, missionId: string) => boolean;
+  claimExpedition: (squadId: string) => void;
+  drawTarotCard: () => boolean;
+  useTarotCard: (cardId: string) => boolean;
+  equipWing: (wingId: string) => void;
+  unlockWing: (wingId: string) => boolean;
+  upgradeAscendancy: (constellationId: string) => boolean;
+  triggerScreenShake: () => void;
 }
 
 const defaultStats = (): BaseStats => HERO_CLASSES[0].baseStats;
@@ -223,12 +267,7 @@ const initialDerived = computeDerived(1, defaultStats(), {}, {});
 export const useGame = create<GameState>((set, get) => {
   const initialMonster = spawnFor('hills', 1, 0, null);
 
-  function recalc(): DerivedStats {
-    const s = get();
-    return computeDerived(s.level, s.stats, s.equipment, s.talents);
-  }
-
-  function addQuestProgress(kind: QuestState['id'] extends never ? never : string, target: string, amount: number) {
+  function addQuestProgress(kind: string, target: string, amount: number) {
     const s = get();
     const quests = { ...s.quests };
     let changed = false;
@@ -335,6 +374,20 @@ export const useGame = create<GameState>((set, get) => {
       pushFx(s.fxQueue, { type: 'playerHit', value: mDmg, text: `-${fmt(mDmg)}`, color: '#ef4444' });
     }
 
+    // Combo reduction when taking unblocked hits
+    let combo: ComboState = s.combo ? { ...s.combo } : { count: 0, rank: 'D', multiplier: 1.0, timeLeftSec: 0 };
+    if (!isBlocked && remDmg > 0 && combo.count > 0) {
+      combo.count = Math.max(0, combo.count - 3);
+      combo.timeLeftSec = Math.max(0, combo.timeLeftSec - 1.2);
+      if (combo.count >= 40) { combo.rank = 'SSS'; combo.multiplier = 1.35; }
+      else if (combo.count >= 28) { combo.rank = 'SS'; combo.multiplier = 1.25; }
+      else if (combo.count >= 18) { combo.rank = 'S'; combo.multiplier = 1.18; }
+      else if (combo.count >= 10) { combo.rank = 'A'; combo.multiplier = 1.12; }
+      else if (combo.count >= 5) { combo.rank = 'B'; combo.multiplier = 1.08; }
+      else if (combo.count >= 2) { combo.rank = 'C'; combo.multiplier = 1.04; }
+      else { combo.rank = 'D'; combo.multiplier = 1.0; }
+    }
+
     if (hp <= 0) {
       hp = d.maxHp;
       pushLog(s.log, `☠️ Вы погибли от рук ${m.def.name}. Отступление на этап 1!`, '#ef4444');
@@ -346,11 +399,12 @@ export const useGame = create<GameState>((set, get) => {
         hp,
         mana: d.maxMana,
         shield: 0,
+        combo: { count: 0, rank: 'D', multiplier: 1.0, timeLeftSec: 0 },
         playerAtk: 0,
         fxQueue: [...s.fxQueue]
       });
     } else {
-      set({ hp, shield: currShield, fxQueue: [...s.fxQueue] });
+      set({ hp, shield: currShield, combo, fxQueue: [...s.fxQueue] });
     }
   }
 
@@ -425,6 +479,46 @@ export const useGame = create<GameState>((set, get) => {
       pushFx(s.fxQueue, { type: 'loot', text: potItem.name, color: '#4ade80' });
     }
 
+    // 1. Herbs Drop (35% chance)
+    const herbsInventory = { ...(s.herbsInventory || {}) };
+    if (Math.random() < 0.35) {
+      const h = HERBS_CATALOG[Math.floor(Math.random() * HERBS_CATALOG.length)];
+      herbsInventory[h.id] = (herbsInventory[h.id] || 0) + 1;
+      pushLog(s.log, `🌿 Собрана трава: ${h.name}`, h.color);
+      pushFx(s.fxQueue, { type: 'loot', text: `🌿 +1 ${h.name}`, color: h.color });
+    }
+
+    // 2. Gems Drop (20% chance)
+    let gemsInventory = [...(s.gemsInventory || [])];
+    if (Math.random() < 0.20 && gemsInventory.length < 50) {
+      const gTypes: GemType[] = ['ruby', 'sapphire', 'emerald', 'topaz', 'diamond', 'amethyst'];
+      const pickT = gTypes[Math.floor(Math.random() * gTypes.length)];
+      const newGem = createGem(pickT, 1);
+      gemsInventory.push(newGem);
+      sound.playLoot();
+      pushLog(s.log, `💎 Найден самоцвет: ${newGem.name}`, '#38bdf8');
+      pushFx(s.fxQueue, { type: 'loot', text: `💎 ${newGem.name}`, color: '#38bdf8' });
+    }
+
+    // 3. Enhancement Stones Drop (30% chance)
+    let enhancementStones = s.enhancementStones || 0;
+    if (Math.random() < 0.30) {
+      const stonesDrop = m.def.isBoss ? 3 : 1;
+      enhancementStones += stonesDrop;
+      pushLog(s.log, `🔨 Получен Камень Усиления x${stonesDrop}`, '#f59e0b');
+      pushFx(s.fxQueue, { type: 'loot', text: `🔨 +${stonesDrop} Камень`, color: '#f59e0b' });
+    }
+
+    // 4. Tarot Card Drop (8% chance)
+    let tarotCards = [...(s.tarotCards || [])];
+    if (Math.random() < 0.08 && tarotCards.length < 12) {
+      const randomTarot = TAROT_DECK[Math.floor(Math.random() * TAROT_DECK.length)];
+      tarotCards.push(randomTarot);
+      sound.playHoly();
+      pushLog(s.log, `🎴 Получена Карта Судьбы: ${randomTarot.name}!`, randomTarot.color);
+      pushFx(s.fxQueue, { type: 'quest', text: `🎴 ${randomTarot.name}`, color: randomTarot.color });
+    }
+
     // secret zone drop chance
     const unlockedSecrets = [...s.unlockedSecrets];
     if (Math.random() < 0.04) {
@@ -451,7 +545,7 @@ export const useGame = create<GameState>((set, get) => {
           dungeon: null,
           kills, bossKills, dungeonsCleared: s.dungeonsCleared + 1,
           gold: s.gold + goldGain, totalGoldEarned: s.totalGoldEarned + goldGain,
-          inventory: newInventory, unlockedSecrets,
+          inventory: newInventory, unlockedSecrets, herbsInventory, gemsInventory, enhancementStones, tarotCards,
           monster: spawnFor(s.zoneId, s.stage, s.mastery[s.zoneId] ?? 0, null),
         });
         return;
@@ -461,7 +555,7 @@ export const useGame = create<GameState>((set, get) => {
           dungeon: nextDungeonRun,
           kills, bossKills,
           gold: s.gold + goldGain, totalGoldEarned: s.totalGoldEarned + goldGain,
-          inventory: newInventory, unlockedSecrets,
+          inventory: newInventory, unlockedSecrets, herbsInventory, gemsInventory, enhancementStones, tarotCards,
           monster: spawnFor(s.zoneId, s.stage, s.mastery[s.zoneId] ?? 0, nextDungeonRun),
         });
         return;
@@ -500,7 +594,7 @@ export const useGame = create<GameState>((set, get) => {
     set({
       kills, bossKills, stage, stageKills, mastery, unlockedZones, unlockedSecrets,
       gold: s.gold + goldGain, totalGoldEarned: s.totalGoldEarned + goldGain,
-      inventory: newInventory,
+      inventory: newInventory, herbsInventory, gemsInventory, enhancementStones, tarotCards,
       monster: spawnFor(s.zoneId, stage, mastery[s.zoneId] ?? 0, null),
     });
 
@@ -525,6 +619,34 @@ export const useGame = create<GameState>((set, get) => {
     equipment: {},
     inventory: [],
     selectedSlotFilter: 'all',
+
+    // RPG 2.0 State
+    gemsInventory: [
+      createGem('ruby', 1),
+      createGem('sapphire', 1),
+      createGem('topaz', 1),
+    ],
+    herbsInventory: {
+      herb_moon: 10,
+      herb_fire: 6,
+      herb_ice: 4,
+      herb_astral: 2,
+    },
+    enhancementStones: 15,
+    celestialShards: 0,
+    ascendancyLevels: {},
+    activePotions: [],
+    mercenaries: MERCENARIES_CATALOG,
+    activeExpeditions: [],
+    tarotCards: [
+      TAROT_DECK[0],
+      TAROT_DECK[1],
+      TAROT_DECK[2],
+    ],
+    activeWings: 'wing_archangel',
+    unlockedWings: ['wing_archangel'],
+    combo: { count: 0, rank: 'D', multiplier: 1.0, timeLeftSec: 0 },
+    screenShake: false,
 
     skillRanks: {},
     skillCds: {},
@@ -624,7 +746,24 @@ export const useGame = create<GameState>((set, get) => {
           });
         }
 
-        set({ hp, mana, monster: currentM, skillCds: newCds });
+        // Combo Timer Decay
+        let combo: ComboState = s.combo ? { ...s.combo } : { count: 0, rank: 'D', multiplier: 1.0, timeLeftSec: 0 };
+        if (combo.count > 0) {
+          combo.timeLeftSec = Math.max(0, combo.timeLeftSec - dt);
+          if (combo.timeLeftSec <= 0) {
+            combo.count = Math.max(0, Math.floor(combo.count * 0.7) - 1);
+            if (combo.count >= 40) { combo.rank = 'SSS'; combo.multiplier = 1.35; }
+            else if (combo.count >= 28) { combo.rank = 'SS'; combo.multiplier = 1.25; }
+            else if (combo.count >= 18) { combo.rank = 'S'; combo.multiplier = 1.18; }
+            else if (combo.count >= 10) { combo.rank = 'A'; combo.multiplier = 1.12; }
+            else if (combo.count >= 5) { combo.rank = 'B'; combo.multiplier = 1.08; }
+            else if (combo.count >= 2) { combo.rank = 'C'; combo.multiplier = 1.04; }
+            else { combo.rank = 'D'; combo.multiplier = 1.0; }
+            combo.timeLeftSec = combo.count > 0 ? 3.0 : 0;
+          }
+        }
+
+        set({ hp, mana, monster: currentM, skillCds: newCds, combo });
       } catch (err) {
         console.error('Combat tick error:', err);
       }
@@ -669,11 +808,12 @@ export const useGame = create<GameState>((set, get) => {
 
     equipBestAll: () => {
       const s = get();
+      const allEquipment = { ...s.equipment };
       let currentInv = [...s.inventory];
-      let currentEq = { ...s.equipment };
       let equippedCount = 0;
 
-      const slotsToProcess: { id: SlotId; kind: SlotKind }[] = [
+      // 1. Single Slots
+      const singleSlots: { id: SlotId; kind: SlotKind }[] = [
         { id: 'helmet', kind: 'helmet' },
         { id: 'shoulders', kind: 'shoulders' },
         { id: 'armor', kind: 'armor' },
@@ -685,42 +825,88 @@ export const useGame = create<GameState>((set, get) => {
         { id: 'kneepads', kind: 'kneepads' },
         { id: 'boots', kind: 'boots' },
         { id: 'amulet', kind: 'amulet' },
-        { id: 'ring1', kind: 'ring' },
-        { id: 'ring2', kind: 'ring' },
-        { id: 'earring1', kind: 'earring' },
-        { id: 'earring2', kind: 'earring' },
       ];
 
-      slotsToProcess.forEach(slot => {
-        const equippedItem = currentEq[slot.id];
-        const currentScore = equippedItem ? equippedItem.score : -1;
-
+      singleSlots.forEach(slot => {
+        const currentEquipped = allEquipment[slot.id];
         const candidates = currentInv
           .filter(i => i.slot === slot.kind || i.slot.startsWith(slot.kind) || slot.id.startsWith(i.slot))
           .sort((a, b) => b.score - a.score);
 
         if (candidates.length > 0) {
-          const bestCandidate = candidates[0];
-          if (bestCandidate.score > currentScore) {
-            currentInv = currentInv.filter(i => i.id !== bestCandidate.id);
-            if (equippedItem) {
-              currentInv.push(equippedItem);
-            }
-            currentEq[slot.id] = bestCandidate;
+          const best = candidates[0];
+          if (!currentEquipped || best.score > currentEquipped.score) {
+            currentInv = currentInv.filter(i => i.id !== best.id);
+            if (currentEquipped) currentInv.push(currentEquipped);
+            allEquipment[slot.id] = best;
             equippedCount++;
           }
         }
       });
 
+      // 2. Dual Rings
+      const ringPool = [
+        ...(allEquipment.ring1 ? [allEquipment.ring1] : []),
+        ...(allEquipment.ring2 ? [allEquipment.ring2] : []),
+        ...currentInv.filter(i => i.slot === 'ring' || i.slot.startsWith('ring'))
+      ].sort((a, b) => b.score - a.score);
+
+      if (ringPool.length > 0) {
+        const top1 = ringPool[0];
+        const top2 = ringPool.length > 1 ? ringPool[1] : undefined;
+
+        if (allEquipment.ring1?.id !== top1?.id) {
+          allEquipment.ring1 = top1;
+          equippedCount++;
+        }
+        if (top2 && allEquipment.ring2?.id !== top2?.id) {
+          allEquipment.ring2 = top2;
+          equippedCount++;
+        }
+
+        const equippedRingIds = new Set([allEquipment.ring1?.id, allEquipment.ring2?.id].filter(Boolean));
+        currentInv = currentInv.filter(i => !(i.slot === 'ring' || i.slot.startsWith('ring')));
+        ringPool.forEach(r => {
+          if (!equippedRingIds.has(r.id)) currentInv.push(r);
+        });
+      }
+
+      // 3. Dual Earrings
+      const earringPool = [
+        ...(allEquipment.earring1 ? [allEquipment.earring1] : []),
+        ...(allEquipment.earring2 ? [allEquipment.earring2] : []),
+        ...currentInv.filter(i => i.slot === 'earring' || i.slot.startsWith('earring'))
+      ].sort((a, b) => b.score - a.score);
+
+      if (earringPool.length > 0) {
+        const top1 = earringPool[0];
+        const top2 = earringPool.length > 1 ? earringPool[1] : undefined;
+
+        if (allEquipment.earring1?.id !== top1?.id) {
+          allEquipment.earring1 = top1;
+          equippedCount++;
+        }
+        if (top2 && allEquipment.earring2?.id !== top2?.id) {
+          allEquipment.earring2 = top2;
+          equippedCount++;
+        }
+
+        const equippedEarringIds = new Set([allEquipment.earring1?.id, allEquipment.earring2?.id].filter(Boolean));
+        currentInv = currentInv.filter(i => !(i.slot === 'earring' || i.slot.startsWith('earring')));
+        earringPool.forEach(e => {
+          if (!equippedEarringIds.has(e.id)) currentInv.push(e);
+        });
+      }
+
       if (equippedCount > 0) {
-        const derived = computeDerived(s.level, s.stats, currentEq, s.talents);
-        const newTotalScore = Object.values(currentEq).reduce((sum, i) => sum + (i?.score ?? 0), 0);
+        const derived = computeDerived(s.level, s.stats, allEquipment, s.talents);
+        const newTotalScore = Object.values(allEquipment).reduce((sum, i) => sum + (i?.score ?? 0), 0);
         sound.playEquip();
-        pushLog(s.log, `⚡ Автоматически надето ${equippedCount} предметов с наивысшей мощью! (Общая мощь: ⚡${fmt(newTotalScore)})`, '#facc15');
-        pushFx(s.fxQueue, { type: 'loot', text: `⚡ НАДЕТО ${equippedCount} ИТЕМА!`, color: '#facc15' });
-        set({ equipment: currentEq, inventory: currentInv, derived });
+        pushLog(s.log, `⚡ Надето всё наилучшее снаряжение! (Общая мощь: ⚡${fmt(newTotalScore)})`, '#facc15');
+        pushFx(s.fxQueue, { type: 'loot', text: `⚡ НАДЕТО ЛУЧШЕЕ!`, color: '#facc15' });
+        set({ equipment: allEquipment, inventory: currentInv, derived });
       } else {
-        pushLog(s.log, `ℹ️ На вас уже надето всё самое лучшее снаряжение из инвентаря!`, '#94a3b8');
+        pushLog(s.log, `ℹ️ На вас уже надето всё самое мощное снаряжение из инвентаря!`, '#94a3b8');
       }
     },
 
@@ -733,7 +919,48 @@ export const useGame = create<GameState>((set, get) => {
       delete equipment[slot];
       const inventory = [...s.inventory, prev];
       const derived = computeDerived(s.level, s.stats, equipment, s.talents);
+      sound.playEquip();
       set({ equipment, inventory, derived });
+    },
+
+    unequipAll: () => {
+      const s = get();
+      const itemsToUnequip = Object.values(s.equipment).filter(Boolean) as Item[];
+      if (itemsToUnequip.length === 0) return;
+
+      const inventory = [...s.inventory, ...itemsToUnequip];
+      const equipment = {};
+      const derived = computeDerived(s.level, s.stats, equipment, s.talents);
+      sound.playEquip();
+      pushLog(s.log, `🛡️ Снято ${itemsToUnequip.length} предметов снаряжения в инвентарь.`, '#94a3b8');
+      set({ equipment, inventory, derived });
+    },
+
+    usePotion: (itemId: string) => {
+      const s = get();
+      const item = s.inventory.find(i => i.id === itemId);
+      if (!item) return;
+
+      const d = s.derived;
+      let hpGain = 0;
+      let manaGain = 0;
+
+      if (item.name.includes('Здоровья') || item.name.includes('Регенерация')) {
+        hpGain = Math.round(d.maxHp * 0.5);
+      } else if (item.name.includes('Маны')) {
+        manaGain = Math.round(d.maxMana * 0.6);
+      } else {
+        hpGain = Math.round(d.maxHp * 0.4);
+        manaGain = Math.round(d.maxMana * 0.4);
+      }
+
+      const newHp = Math.min(d.maxHp, s.hp + hpGain);
+      const newMana = Math.min(d.maxMana, s.mana + manaGain);
+      const newInv = s.inventory.filter(i => i.id !== item.id);
+
+      sound.playSpell();
+      pushFx(s.fxQueue, { type: 'heal', text: `+${fmt(hpGain)} HP`, color: '#4ade80' });
+      set({ hp: newHp, mana: newMana, inventory: newInv });
     },
 
     sellItem: (itemId: string) => {
@@ -764,23 +991,55 @@ export const useGame = create<GameState>((set, get) => {
       const d = s.derived;
       const skillCds = { ...s.skillCds, [id]: sk.cooldown * (1 - d.cdReduction / 100) };
 
+      // Skill Weaving Combo Calculation
+      const isNewSkill = s.lastSkillCast && s.lastSkillCast !== id;
+      const comboBonus = isNewSkill ? 3 : 1;
+      const curComboCount = s.combo?.count ?? 0;
+      const nextComboCount = curComboCount + comboBonus;
+
+      let rank: 'D' | 'C' | 'B' | 'A' | 'S' | 'SS' | 'SSS' = 'D';
+      let comboMult = 1.0;
+      if (nextComboCount >= 40) { rank = 'SSS'; comboMult = 1.35; }
+      else if (nextComboCount >= 28) { rank = 'SS'; comboMult = 1.25; }
+      else if (nextComboCount >= 18) { rank = 'S'; comboMult = 1.18; }
+      else if (nextComboCount >= 10) { rank = 'A'; comboMult = 1.12; }
+      else if (nextComboCount >= 5) { rank = 'B'; comboMult = 1.08; }
+      else if (nextComboCount >= 2) { rank = 'C'; comboMult = 1.04; }
+
+      if (rank === 'SSS' && s.combo?.rank !== 'SSS') {
+        sound.playCombo();
+        pushFx(s.fxQueue, { type: 'quest', text: '🔥 SSS КУРАЖ СТИЛЯ (+35% Урона)!', color: '#facc15' });
+        pushLog(s.log, '🔥 ДОСТИГНУТ РАНГ SSS! Герой входит в боевой кураж!', '#facc15');
+      }
+
+      if (isNewSkill) {
+        pushFx(s.fxQueue, { type: 'quest', text: '⚡ РОТАЦИЯ СКИЛЛА (+3 КОМБО)', color: '#38bdf8' });
+      }
+
+      const updatedCombo = {
+        count: nextComboCount,
+        rank,
+        multiplier: comboMult,
+        timeLeftSec: 4.5,
+      };
+
       if (id.includes('heal') || id.includes('meditate') || id.includes('rejuvenation')) {
         const hp = Math.min(d.maxHp, s.hp + Math.round(d.maxHp * 0.35));
         pushFx(s.fxQueue, { type: 'heal', skillId: sk.id, text: `+${fmt(Math.round(d.maxHp * 0.35))} HP`, color: '#4ade80' });
-        set({ mana, hp, skillCds, fxQueue: [...s.fxQueue] });
+        set({ mana, hp, skillCds, combo: updatedCombo, lastSkillCast: id, fxQueue: [...s.fxQueue] });
         if (s.monster && s.monster.hp > 0) {
           triggerMonsterTurn(get(), s.monster, false);
         }
       } else if (s.monster) {
-        const skillDmg = Math.round(d.skillPower * 2.5);
+        const skillDmg = Math.round(d.skillPower * 2.5 * comboMult);
         const mHp = Math.max(0, s.monster.hp - skillDmg);
         pushFx(s.fxQueue, { type: 'skill', skillId: sk.id, text: `${sk.icon} ${sk.name} -${fmt(skillDmg)}`, color: sk.color });
         if (mHp <= 0) {
           onKill(s.monster);
-          set({ mana, skillCds, fxQueue: [...s.fxQueue] });
+          set({ mana, skillCds, combo: updatedCombo, lastSkillCast: id, fxQueue: [...s.fxQueue] });
         } else {
           const updatedM = { ...s.monster, hp: mHp };
-          set({ mana, skillCds, monster: updatedM, fxQueue: [...s.fxQueue] });
+          set({ mana, skillCds, monster: updatedM, combo: updatedCombo, lastSkillCast: id, fxQueue: [...s.fxQueue] });
           triggerMonsterTurn(get(), updatedM, false);
         }
       }
@@ -861,8 +1120,51 @@ export const useGame = create<GameState>((set, get) => {
       const critMult = (d && !isNaN(d.critMult) && d.critMult > 1) ? d.critMult : 1.5;
 
       const isCrit = Math.random() * 100 < critChance;
+
+      // 1. Elemental Reactions
+      const weaponItem = s.equipment.weapon;
+      const heroElement = weaponItem?.element ?? (s.classId === 'archmage' ? 'fire' : s.classId === 'paladin' ? 'holy' : s.classId === 'necromancer' ? 'dark' : s.classId === 'deathknight' ? 'ice' : 'physical');
+      const monsterElement = s.monster.def.family === 'elemental_fire' ? 'fire' : s.monster.def.family === 'elemental_ice' ? 'ice' : s.monster.def.family === 'elemental_storm' ? 'lightning' : s.monster.def.family === 'spider' ? 'poison' : s.monster.def.family === 'abyss' ? 'dark' : undefined;
+
+      const reaction = calculateElementalReaction(heroElement, monsterElement);
+
+      // Skill-based Combo Bonus points
+      let comboBonus = 1;
+      if (isCrit) comboBonus += 2;
+      if (reaction) comboBonus += 4;
+
+      const curCount = s.combo?.count ?? 0;
+      const nextCount = curCount + comboBonus;
+      let rank: 'D' | 'C' | 'B' | 'A' | 'S' | 'SS' | 'SSS' = 'D';
+      let comboMult = 1.0;
+      if (nextCount >= 40) { rank = 'SSS'; comboMult = 1.35; }
+      else if (nextCount >= 28) { rank = 'SS'; comboMult = 1.25; }
+      else if (nextCount >= 18) { rank = 'S'; comboMult = 1.18; }
+      else if (nextCount >= 10) { rank = 'A'; comboMult = 1.12; }
+      else if (nextCount >= 5) { rank = 'B'; comboMult = 1.08; }
+      else if (nextCount >= 2) { rank = 'C'; comboMult = 1.04; }
+
+      if (rank === 'SSS' && s.combo?.rank !== 'SSS') {
+        sound.playCombo();
+        pushFx(s.fxQueue, { type: 'quest', text: '🔥 SSS КУРАЖ СТИЛЯ (+35% Урона)!', color: '#facc15' });
+        pushLog(s.log, '🔥 ДОСТИГНУТ РАНГ SSS! Герой входит в боевой кураж!', '#facc15');
+      }
+
+      const updatedCombo = {
+        count: nextCount,
+        rank,
+        multiplier: comboMult,
+        timeLeftSec: 4.5,
+      };
+
       const rawDmg = Math.floor(dmgMin + Math.random() * (dmgMax - dmgMin + 1));
-      let dealt = Math.max(1, Math.round(rawDmg * (isCrit ? critMult : 1.0)));
+      let dealt = Math.max(1, Math.round(rawDmg * (isCrit ? critMult : 1.0) * comboMult));
+
+      if (reaction) {
+        dealt = Math.round(dealt * reaction.dmgMult);
+        pushFx(s.fxQueue, { type: 'crit', text: `${reaction.icon} ${reaction.name} x${reaction.dmgMult}! (+4 КОМБО)`, color: reaction.color });
+        pushLog(s.log, `💥 РЕАКЦИЯ СТИХИЙ: ${reaction.name} наносит ${fmt(dealt)} урона!`, reaction.color);
+      }
 
       // Active Pet companion attack bonus
       if (s.activePetId) {
@@ -882,16 +1184,323 @@ export const useGame = create<GameState>((set, get) => {
         type: isCrit ? 'crit' : 'monsterHit',
         value: dealt,
         text: isCrit ? `💥 КРИТ ${fmt(dealt)}` : `${fmt(dealt)}`,
-        color: isCrit ? '#facc15' : '#f87171'
+        color: isCrit ? '#facc15' : reaction ? reaction.color : '#f87171'
       });
+
+      // Screen Shake Trigger on critical or boss hits
+      if (isCrit || reaction || (m.hp <= 0 && (m.def.isBoss || m.def.isMiniBoss))) {
+        set({ screenShake: true });
+        setTimeout(() => set({ screenShake: false }), 220);
+      }
 
       if (m.hp <= 0) {
         onKill(m);
-        set({ playerAtk: 1.0, fxQueue: [...s.fxQueue] });
+        set({ playerAtk: 1.0, combo: updatedCombo, fxQueue: [...s.fxQueue] });
       } else {
-        set({ monster: { ...m }, playerAtk: 1.0, fxQueue: [...s.fxQueue] });
+        set({ monster: { ...m }, playerAtk: 1.0, combo: updatedCombo, fxQueue: [...s.fxQueue] });
         triggerMonsterTurn(get(), m, false);
       }
+    },
+
+    // ==================== RPG 2.0 ACTIONS ====================
+
+    addGem: (gem: GemItem) => {
+      const s = get();
+      set({ gemsInventory: [...s.gemsInventory, gem] });
+    },
+
+    combineGems: (type: GemType, tier: GemTier) => {
+      const s = get();
+      if (tier >= 5) return false;
+      const matching = s.gemsInventory.filter(g => g.type === type && g.tier === tier);
+      if (matching.length < 3) return false;
+
+      // Remove 3 gems and add 1 of next tier
+      let removed = 0;
+      const newGems = s.gemsInventory.filter(g => {
+        if (g.type === type && g.tier === tier && removed < 3) {
+          removed++;
+          return false;
+        }
+        return true;
+      });
+
+      const upgraded = createGem(type, (tier + 1) as GemTier);
+      newGems.push(upgraded);
+      sound.playSocket();
+      pushLog(s.log, `💎 Огранен самоцвет высшего ранга: ${upgraded.name}!`, '#f59e0b');
+      set({ gemsInventory: newGems });
+      return true;
+    },
+
+    socketGem: (slot: SlotId, socketIdx: number, gemId: string) => {
+      const s = get();
+      const item = s.equipment[slot];
+      const gem = s.gemsInventory.find(g => g.id === gemId);
+      if (!item || !gem) return false;
+
+      const curSockets = item.sockets ? [...item.sockets] : [null, null];
+      curSockets[socketIdx] = gem;
+
+      const updatedItem: Item = { ...item, sockets: curSockets };
+      const equipment = { ...s.equipment, [slot]: updatedItem };
+      const gemsInventory = s.gemsInventory.filter(g => g.id !== gemId);
+      const derived = computeDerived(s.level, s.stats, equipment, s.talents);
+
+      sound.playSocket();
+      pushLog(s.log, `💎 ${gem.name} инкрустирован в ${item.name}!`, '#38bdf8');
+      set({ equipment, gemsInventory, derived });
+      return true;
+    },
+
+    unsocketGem: (slot: SlotId, socketIdx: number) => {
+      const s = get();
+      const item = s.equipment[slot];
+      if (!item || !item.sockets || !item.sockets[socketIdx]) return false;
+
+      const removedGem = item.sockets[socketIdx]!;
+      const curSockets = [...item.sockets];
+      curSockets[socketIdx] = null;
+
+      const updatedItem: Item = { ...item, sockets: curSockets };
+      const equipment = { ...s.equipment, [slot]: updatedItem };
+      const gemsInventory = [...s.gemsInventory, removedGem];
+      const derived = computeDerived(s.level, s.stats, equipment, s.talents);
+
+      sound.playSocket();
+      pushLog(s.log, `💎 ${removedGem.name} извлечен из ${item.name}.`, '#94a3b8');
+      set({ equipment, gemsInventory, derived });
+      return true;
+    },
+
+    refineEquipment: (slot: SlotId) => {
+      const s = get();
+      const item = s.equipment[slot];
+      if (!item) return { success: false, newLevel: 0 };
+
+      const curLvl = item.upgradeLevel ?? 0;
+      const refInfo = getRefinementInfo(curLvl);
+      if (!refInfo) return { success: false, newLevel: curLvl };
+
+      if (s.gold < refInfo.goldCost || (s.enhancementStones || 0) < refInfo.stonesCost) {
+        pushLog(s.log, `❌ Недостаточно Золота или Камней Усиления для заточки!`, '#ef4444');
+        return { success: false, newLevel: curLvl };
+      }
+
+      const newGold = s.gold - refInfo.goldCost;
+      const newStones = s.enhancementStones - refInfo.stonesCost;
+
+      const roll = Math.random() * 100;
+      if (roll <= refInfo.successChance) {
+        const upgraded = applyUpgradeToItem(item);
+        const equipment = { ...s.equipment, [slot]: upgraded };
+        const derived = computeDerived(s.level, s.stats, equipment, s.talents);
+        sound.playRefineSuccess();
+        pushLog(s.log, `✨ ЗАТОЧКА УДАЛАСЬ! ${item.name} улучшен до +${upgraded.upgradeLevel}!`, '#facc15');
+        pushFx(s.fxQueue, { type: 'loot', text: `✨ +${upgraded.upgradeLevel} УСПЕХ!`, color: '#facc15' });
+        set({ equipment, gold: newGold, enhancementStones: newStones, derived });
+        return { success: true, newLevel: upgraded.upgradeLevel ?? 0 };
+      } else {
+        sound.playRefineFail();
+        pushLog(s.log, `💥 ЗАТОЧКА НЕ УДАЛАСЬ! Камни потрачены, но предмет уцелел.`, '#ef4444');
+        pushFx(s.fxQueue, { type: 'playerHit', text: `💥 НЕУДАЧА!`, color: '#ef4444' });
+        set({ gold: newGold, enhancementStones: newStones });
+        return { success: false, newLevel: curLvl };
+      }
+    },
+
+    gatherHerb: (herbId: string, count = 1) => {
+      const s = get();
+      const herbsInventory = { ...s.herbsInventory, [herbId]: (s.herbsInventory[herbId] || 0) + count };
+      set({ herbsInventory });
+    },
+
+    craftAlchemyPotion: (recipeId: string) => {
+      const s = get();
+      const rec = ALCHEMY_RECIPES.find(r => r.id === recipeId);
+      if (!rec) return false;
+
+      // Check materials
+      const herbs = { ...s.herbsInventory };
+      for (const ing of rec.recipe) {
+        if ((herbs[ing.herbId] || 0) < ing.count) return false;
+      }
+
+      // Consume materials
+      for (const ing of rec.recipe) {
+        herbs[ing.herbId] -= ing.count;
+      }
+
+      sound.playPotion();
+      pushLog(s.log, `🧪 Сварено зелье: ${rec.name}!`, rec.color);
+      pushFx(s.fxQueue, { type: 'loot', text: `🧪 ${rec.name}`, color: rec.color });
+
+      // Automatically add or drink
+      get().useAlchemyPotion(rec.id);
+      set({ herbsInventory: herbs });
+      return true;
+    },
+
+    useAlchemyPotion: (potionId: string) => {
+      const s = get();
+      const rec = ALCHEMY_RECIPES.find(r => r.id === potionId);
+      if (!rec) return false;
+
+      const expireTimestamp = Date.now() + rec.durationSec * 1000;
+      const activePotions = [...s.activePotions.filter(p => p.id !== potionId), {
+        id: rec.id,
+        name: rec.name,
+        icon: rec.icon,
+        expireTimestamp,
+        color: rec.color,
+        statBonus: rec.statBonus,
+      }];
+
+      sound.playPotion();
+      pushLog(s.log, `✨ Активирован эффект зелья «${rec.name}» на ${Math.round(rec.durationSec / 60)} мин!`, rec.color);
+      set({ activePotions });
+      return true;
+    },
+
+    hireMercenary: (squadId: string) => {
+      const s = get();
+      const squad = s.mercenaries.find(m => m.id === squadId);
+      if (!squad || squad.hired || s.gold < squad.cost) return false;
+
+      const mercenaries = s.mercenaries.map(m => m.id === squadId ? { ...m, hired: true } : m);
+      sound.playHoly();
+      pushLog(s.log, `⚔️ Нанят наёмничий отряд «${squad.name}»!`, '#38bdf8');
+      set({ mercenaries, gold: s.gold - squad.cost });
+      return true;
+    },
+
+    startExpedition: (squadId: string, missionId: string) => {
+      const s = get();
+      const squad = s.mercenaries.find(m => m.id === squadId);
+      const mission = EXPEDITIONS_CATALOG.find(e => e.id === missionId);
+      if (!squad || !squad.hired || !mission || squad.power < mission.minPower) return false;
+
+      const endTimestamp = Date.now() + mission.durationSec * 1000;
+      const mercenaries = s.mercenaries.map(m => m.id === squadId ? { ...m, currentMissionId: missionId, missionEndTimestamp: endTimestamp } : m);
+      const activeExpeditions = [...s.activeExpeditions.filter(e => e.squadId !== squadId), { squadId, missionId, endTimestamp }];
+
+      sound.playEquip();
+      pushLog(s.log, `🚀 Отряд «${squad.name}» отправился в «${mission.name}»!`, '#f59e0b');
+      set({ mercenaries, activeExpeditions });
+      return true;
+    },
+
+    claimExpedition: (squadId: string) => {
+      const s = get();
+      const squad = s.mercenaries.find(m => m.id === squadId);
+      if (!squad || !squad.currentMissionId) return;
+
+      const mission = EXPEDITIONS_CATALOG.find(e => e.id === squad.currentMissionId);
+      if (!mission) return;
+
+      let gold = s.gold + mission.rewardGold;
+      let enhancementStones = (s.enhancementStones || 0) + mission.rewardStones;
+      let herbs = { ...s.herbsInventory };
+      if (mission.herbDropId && mission.herbDropCount) {
+        herbs[mission.herbDropId] = (herbs[mission.herbDropId] || 0) + mission.herbDropCount;
+      }
+
+      let gems = [...s.gemsInventory];
+      if (Math.random() < mission.gemChance && gems.length < 50) {
+        gems.push(createGem('diamond', 2));
+      }
+
+      const mercenaries = s.mercenaries.map(m => m.id === squadId ? { ...m, currentMissionId: undefined, missionEndTimestamp: undefined, level: m.level + 1, power: m.power + 35 } : m);
+      const activeExpeditions = s.activeExpeditions.filter(e => e.squadId !== squadId);
+
+      grantXp(mission.rewardXp);
+      sound.playLevelUp();
+      pushLog(s.log, `🏆 Экспедиция «${mission.name}» завершена! +${fmt(mission.rewardGold)}g, +${mission.rewardStones} Камней!`, '#4ade80');
+      pushFx(s.fxQueue, { type: 'loot', text: `🏆 ЭКСПЕДИЦИЯ ЗАВЕРШЕНА!`, color: '#4ade80' });
+      set({ gold, enhancementStones, herbsInventory: herbs, gemsInventory: gems, mercenaries, activeExpeditions });
+    },
+
+    drawTarotCard: () => {
+      const s = get();
+      if (s.gold < 15000) return false;
+      const pick = TAROT_DECK[Math.floor(Math.random() * TAROT_DECK.length)];
+      sound.playTarot();
+      pushLog(s.log, `🎴 Из колоды вытянута карта Таро: ${pick.name}!`, pick.color);
+      set({ gold: s.gold - 15000, tarotCards: [...s.tarotCards, pick] });
+      return true;
+    },
+
+    useTarotCard: (cardId: string) => {
+      const s = get();
+      const card = s.tarotCards.find(c => c.id === cardId);
+      if (!card) return false;
+
+      sound.playTarot();
+      const d = s.derived;
+
+      if (card.effect === 'heal_full') {
+        set({ hp: d.maxHp, mana: d.maxMana });
+        pushFx(s.fxQueue, { type: 'heal', text: '☀️ СОЛНЦЕ: 100% HP/МАНА!', color: card.color });
+      } else if (card.effect === 'boss_smite' && s.monster) {
+        const smiteDmg = Math.round(s.monster.hp * 0.35);
+        s.monster.hp = Math.max(0, s.monster.hp - smiteDmg);
+        pushFx(s.fxQueue, { type: 'crit', text: `💀 СМЕРТЬ -${fmt(smiteDmg)}!`, color: card.color });
+      } else if (card.effect === 'meteor_storm' && s.monster) {
+        const stormDmg = Math.round(d.playerAtk * 4.5);
+        s.monster.hp = Math.max(0, s.monster.hp - stormDmg);
+        pushFx(s.fxQueue, { type: 'skill', text: `⚡ БАШНЯ: МЕТЕОР -${fmt(stormDmg)}!`, color: card.color });
+      } else if (card.effect === 'invulnerability') {
+        set({ shield: (s.shield || 0) + Math.round(d.maxHp * 1.5) });
+        pushFx(s.fxQueue, { type: 'block', text: '👑 ИМПЕРАТОР: НЕУЯЗВИМОСТЬ!', color: card.color });
+      }
+
+      const tarotCards = s.tarotCards.filter(c => c.id !== cardId);
+      pushLog(s.log, `🎴 Активирована Карта Судьбы: ${card.name}!`, card.color);
+      set({ tarotCards });
+      return true;
+    },
+
+    equipWing: (wingId: string) => {
+      const s = get();
+      sound.playHoly();
+      pushLog(s.log, `🪽 Надеты крылья: ${WINGS_CATALOG.find(w => w.id === wingId)?.name}!`, '#facc15');
+      set({ activeWings: wingId });
+    },
+
+    unlockWing: (wingId: string) => {
+      const s = get();
+      const def = WINGS_CATALOG.find(w => w.id === wingId);
+      if (!def || s.unlockedWings.includes(wingId)) return false;
+      if (def.costGold && s.gold < def.costGold) return false;
+
+      sound.playHoly();
+      pushLog(s.log, `🪽 Разблокирована косметика: ${def.name}!`, def.auraColor);
+      set({
+        gold: def.costGold ? s.gold - def.costGold : s.gold,
+        unlockedWings: [...s.unlockedWings, wingId],
+        activeWings: wingId,
+      });
+      return true;
+    },
+
+    upgradeAscendancy: (constellationId: string) => {
+      const s = get();
+      const def = ASCENDANCY_CONSTELLATIONS.find(c => c.id === constellationId);
+      const curLvl = s.ascendancyLevels[constellationId] || 0;
+      if (!def || curLvl >= def.maxLevel || s.celestialShards < def.costPerLevel) return false;
+
+      sound.playLevelUp();
+      pushLog(s.log, `🌌 Улучшено созвездие «${def.name}» (Ур. ${curLvl + 1})!`, '#c084fc');
+      set({
+        celestialShards: s.celestialShards - def.costPerLevel,
+        ascendancyLevels: { ...s.ascendancyLevels, [constellationId]: curLvl + 1 },
+      });
+      return true;
+    },
+
+    triggerScreenShake: () => {
+      set({ screenShake: true });
+      setTimeout(() => set({ screenShake: false }), 220);
     },
 
     manualBlock: () => {
@@ -955,6 +1564,17 @@ export const useGame = create<GameState>((set, get) => {
         unlockedZones: s.unlockedZones, unlockedSecrets: s.unlockedSecrets,
         activePetId: s.activePetId, petLvl: s.petLvl, petXp: s.petXp, petCustomNames: s.petCustomNames,
         quests: s.quests, kills: s.kills, bossKills: s.bossKills, dungeonsCleared: s.dungeonsCleared,
+        // RPG 2.0 Persisted Data
+        gemsInventory: s.gemsInventory,
+        herbsInventory: s.herbsInventory,
+        enhancementStones: s.enhancementStones,
+        celestialShards: s.celestialShards,
+        ascendancyLevels: s.ascendancyLevels,
+        mercenaries: s.mercenaries,
+        activeExpeditions: s.activeExpeditions,
+        tarotCards: s.tarotCards,
+        activeWings: s.activeWings,
+        unlockedWings: s.unlockedWings,
         sfxMuted: s.sfxMuted, musicMuted: s.musicMuted,
         savedAt: Date.now(),
       };
@@ -1013,6 +1633,17 @@ export function loadSave() {
       petLvl: d.petLvl ?? 1,
       petXp: d.petXp ?? 0,
       petCustomNames: d.petCustomNames ?? {},
+      // RPG 2.0 Restore
+      gemsInventory: d.gemsInventory ?? s.gemsInventory,
+      herbsInventory: d.herbsInventory ?? s.herbsInventory,
+      enhancementStones: d.enhancementStones ?? s.enhancementStones,
+      celestialShards: d.celestialShards ?? 0,
+      ascendancyLevels: d.ascendancyLevels ?? {},
+      mercenaries: d.mercenaries ?? s.mercenaries,
+      activeExpeditions: d.activeExpeditions ?? [],
+      tarotCards: d.tarotCards ?? s.tarotCards,
+      activeWings: d.activeWings ?? 'wing_archangel',
+      unlockedWings: d.unlockedWings ?? ['wing_archangel'],
       sfxMuted: d.sfxMuted ?? false,
       musicMuted: d.musicMuted ?? false,
       quests, kills: d.kills ?? 0, bossKills: d.bossKills ?? 0, dungeonsCleared: d.dungeonsCleared ?? 0,

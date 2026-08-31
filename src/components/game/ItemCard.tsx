@@ -36,32 +36,69 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
 
   const scoreDiff = equippedItem ? (item.score || 0) - (equippedItem.score || 0) : (item.score || 0);
 
+  const upgradeLvl = item.upgradeLevel || 0;
+  const auraClass = upgradeLvl >= 17 ? 'aura-divine' : upgradeLvl >= 12 ? 'aura-gold' : upgradeLvl >= 7 ? 'aura-blue' : '';
+  const isHolo = item.rarity === 'legendary' || item.rarity === 'mythic';
+
   return (
     <div
-      className="rounded-xl border-2 p-3 text-xs bg-slate-950 min-w-[230px] max-w-[280px] shadow-[0_20px_60px_rgba(0,0,0,1)] opacity-100"
+      className={`rounded-xl border-2 p-3 text-xs bg-slate-950 min-w-[230px] max-w-[280px] shadow-[0_20px_60px_rgba(0,0,0,1)] opacity-100 ${auraClass} ${isHolo ? 'holo-foil' : ''}`}
       style={{ borderColor: r.color, boxShadow: `0 0 20px ${r.glow}, 0 20px 60px rgba(0,0,0,1)` }}
     >
       {/* Header */}
       <div className="flex items-center gap-2.5 mb-2 border-b border-slate-800 pb-2">
         <div
-          className="w-10 h-10 rounded-lg border flex items-center justify-center text-xl shrink-0 bg-slate-900"
+          className="w-10 h-10 rounded-lg border flex items-center justify-center text-xl shrink-0 bg-slate-900 relative"
           style={{ borderColor: r.color }}
         >
           {item.icon || '📦'}
+          {upgradeLvl > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 px-1 py-0.2 rounded-full bg-amber-500 text-slate-950 font-black text-[9px] shadow font-mono">
+              +{upgradeLvl}
+            </span>
+          )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="font-black leading-tight truncate text-sm" style={{ color: r.color }}>
-            {item.name || 'Безымянный предмет'}
+          <div className="font-black leading-tight truncate text-sm flex items-center gap-1" style={{ color: r.color }}>
+            <span>{item.name || 'Безымянный предмет'}</span>
+            {upgradeLvl > 0 && <span className="text-amber-400 font-mono text-xs">+{upgradeLvl}</span>}
           </div>
           <div className="text-slate-400 text-[10px] flex items-center gap-1.5 mt-0.5 font-bold">
             <span>{r.name}</span>
             <span>·</span>
-            <span>{fmt(item.ilvl || 1)} ур.</span>
+            <span>Уровень {fmt(item.ilvl || 1)}</span>
             <span>·</span>
             <span className="text-amber-300">⚡{fmt(item.score || 0)}</span>
           </div>
         </div>
       </div>
+
+      {/* Sockets & Inscribed Gems */}
+      {Array.isArray(item.sockets) && item.sockets.length > 0 && (
+        <div className="mb-2 p-1.5 rounded-lg bg-slate-900/90 border border-slate-800 space-y-1">
+          <div className="text-[9px] font-bold text-slate-400 flex items-center gap-1">
+            <span>💎 ГНЁЗДА САМОЦВЕТОВ ({item.sockets.filter(Boolean).length} из {item.sockets.length}):</span>
+          </div>
+          <div className="space-y-0.5">
+            {item.sockets.map((gem, idx) => (
+              <div key={idx} className="flex items-center gap-1 text-[10px] font-mono">
+                {gem ? (
+                  <>
+                    <span>{gem.icon}</span>
+                    <span className="text-slate-200">{gem.name}:</span>
+                    <span className="text-amber-400 font-black">+{gem.value} {gem.stat.toUpperCase()}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-slate-600">⚪</span>
+                    <span className="text-slate-500 italic text-[9px]">Пустое гнездо для камня</span>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Base Stats */}
       <div className="space-y-1 text-slate-200 text-[11px]">
@@ -101,7 +138,7 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
           </div>
         )}
 
-        {!compact && <div className="text-amber-300 font-bold pt-1 text-[10px]">💰 Продажа: {fmt(item.sellPrice || 10)} gold</div>}
+        {!compact && <div className="text-amber-300 font-bold pt-1 text-[10px]">💰 Стоимость продажи: {fmt(item.sellPrice || 10)} золота</div>}
       </div>
 
       {/* Set Item Info */}
@@ -109,12 +146,12 @@ export function ItemCard({ item, equippedItem, compact }: { item: Item; equipped
         <div className="mt-2 p-2 rounded-lg bg-emerald-950 border border-emerald-500/60 text-[10px] space-y-1">
           <div className="font-extrabold flex items-center gap-1" style={{ color: setDef.color }}>
             <span>{setDef.icon}</span>
-            <span>{setDef.name}</span>
+            <span>Комплект: {setDef.name}</span>
           </div>
           <div className="text-[9px] text-slate-300 space-y-0.5">
             {setDef.bonuses.map((b, i) => (
               <div key={i} className="text-emerald-300">
-                • ({b.reqPieces} предм.): {b.desc}
+                • ({b.reqPieces} предметов): {b.desc}
               </div>
             ))}
           </div>

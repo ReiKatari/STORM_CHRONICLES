@@ -1,64 +1,60 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGame } from '@/game/store';
-import { CRAFTING_RECIPES, salvageItem, craftFromRecipe, type CraftingRecipe } from '@/game/crafting';
-import { RUNES, type RuneDef } from '@/game/runes';
+import { CRAFTING_RECIPES, salvageItem, craftFromRecipe } from '@/game/crafting';
 import { rarityById } from '@/game/items';
-import type { Item } from '@/game/types';
-
-function getTargetCraftingTime(): number {
-  try {
-    const saved = localStorage.getItem('storm_crafting_target');
-    if (saved) {
-      const val = parseInt(saved, 10);
-      if (!isNaN(val) && val > Date.now()) return val;
-    }
-  } catch { /* ignore */ }
-  const target = Date.now() + 180000;
-  try { localStorage.setItem('storm_crafting_target', target.toString()); } catch { /* ignore */ }
-  return target;
-}
-
-const DEFAULT_RUNES = ['ruby_1', 'emerald_1'];
+import type { Item, RarityId } from '@/game/types';
+import { fmt, computeDerived } from '@/game/engine';
+import { sound } from '@/game/sound';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 export default function CraftingModal({ onClose }: { onClose: () => void }) {
-  const [tab, setTab] = useState<'craft' | 'salvage' | 'sockets'>('craft');
+  useEscapeKey(onClose);
+  const [tab, setTab] = useState<'temper' | 'reforge' | 'craft' | 'salvage'>('temper');
   const level = useGame(s => s.level);
   const inventory = useGame(s => s.inventory);
-  const ore = useGame(s => (s as unknown as { astralOre: number }).astralOre ?? 120);
-  const essence = useGame(s => (s as unknown as { astralEssence: number }).astralEssence ?? 25);
-  const rawRunes = useGame(s => (s as unknown as { runesInventory: string[] }).runesInventory);
-  const playerRunes = rawRunes || DEFAULT_RUNES;
+  const equipment = useGame(s => s.equipment);
+  const gold = useGame(s => s.gold);
 
-  const [selectedItemForRune, setSelectedItemForRune] = useState<Item | null>(null);
-
-  // 3-Minute Persistent Recipe Rotation Timer (180 seconds)
-  const [recipeTimer, setRecipeTimer] = useState<number>(180);
-  const [activeRecipes, setActiveRecipes] = useState<CraftingRecipe[]>(() => {
-    const shuffled = [...CRAFTING_RECIPES].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 5);
+  // Persistent Blacksmith Materials
+  const [astralOre, setAstralOre] = useState<number>(() => {
+    const saved = localStorage.getItem('storm_astral_ore');
+    return saved ? parseInt(saved, 10) : 250;
   });
 
-  const refreshRecipes = () => {
-    const shuffled = [...CRAFTING_RECIPES].sort(() => Math.random() - 0.5);
-    setActiveRecipes(shuffled.slice(0, 5));
-    const nextTarget = Date.now() + 180000;
-    try { localStorage.setItem('storm_crafting_target', nextTarget.toString()); } catch { /* ignore */ }
-    setRecipeTimer(180);
-  };
+  const [astralEssence, setAstralEssence] = useState<number>(() => {
+    const saved = localStorage.getItem('storm_astral_essence');
+    return saved ? parseInt(saved, 10) : 80;
+  });
 
-  // Live persistent countdown timer for 3-minute recipe rotation
+  // Selected item for tempering / reforging
+  const [selectedGear, setSelectedGear] = useState<Item | null>(null);
+  const [itemEnhanceLevel, setItemEnhanceLevel] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem('storm_item_enhances');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  // Transmute selection (3 items)
+  const [transmuteItems, setTransmuteItems] = useState<string[]>([]);
+  const [logMsg, setLogMsg] = useState<string>('🔨 Добро пожаловать в Кузницу Бездны! Выберите предмет для заточки или перековки.');
+
+  const allGear = [
+    ...Object.values(equipment).filter(Boolean) as Item[],
+    ...inventory.filter(i => i.slot !== ('consumable' as any))
+  ];
+
+  // Persistence
   useEffect(() => {
-    const tickTimer = () => {
-      const target = getTargetCraftingTime();
-      const diff = Math.max(0, Math.ceil((target - Date.now()) / 1000));
-      setRecipeTimer(diff);
-    };
-    tickTimer();
-    const timerId = setInterval(tickTimer, 1000);
-    return () => clearInterval(timerId);
-  }, []);
+    localStorage.setItem('storm_astral_ore', astralOre.toString());
+  }, [astralOre]);
 
-  // ESC key listener
+  useEffect(() => {
+    localStorage.setItem('storm_astral_essence', astralEssence.toString());
+  }, [astralEssence]);
+
+  useEffect(() => {
+    localStorage.setItem('storm_item_enhances', JSON.stringify(itemEnhanceLevel));
+  }, [itemEnhanceLevel]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -67,295 +63,486 @@ export default function CraftingModal({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const handleCraft = (rec: CraftingRecipe) => {
-    if (inventory.length >= 72) return;
-    const item = craftFromRecipe(rec, level);
-    useGame.setState(s => ({
-      inventory: [...s.inventory, item],
-      log: [...s.log, { id: Date.now(), text: `🔨 Выплавлено снаряжение: ${item.name}!`, color: '#facc15', time: Date.now() }],
-    }));
+  // Tempering Upgrade Handler (+1 to +20)
+  const handleTemperItem = () => {
+    if (!selectedGear) {
+      setLogMsg('⚠️ Выберите предмет для заточки!');
+      return;
+    }
+
+    const curLvl = itemEnhanceLevel[selectedGear.id] || 0;
+    if (curLvl >= 20) {
+      setLogMsg('⭐ Этот предмет уже достиг максимального уровня заточки (+20)!');
+      return;
+    }
+
+    const goldCost = Math.round((curLvl + 1) * 1200 * (1 + curLvl * 0.15));
+    const oreCost = (curLvl + 1) * 10;
+
+    if (gold < goldCost) {
+      setLogMsg(`⚠️ Недостаточно золота для заточки (нужно: ${fmt(goldCost)} золота)!`);
+      return;
+    }
+    if (astralOre < oreCost) {
+      setLogMsg(`⚠️ Недостаточно Астральной Руды (нужно: ${oreCost} штук)! Распилите ненужные вещи.`);
+      return;
+    }
+
+    // Success rate formula: 100% at +1, down to 35% at +20
+    const successRate = Math.max(30, 100 - curLvl * 4);
+    const roll = Math.random() * 100;
+
+    // Deduct resources
+    useGame.setState(s => ({ gold: s.gold - goldCost }));
+    setAstralOre(prev => prev - oreCost);
+
+    if (roll < successRate) {
+      // SUCCESS!
+      sound.playLevelUp();
+      const nextLvl = curLvl + 1;
+      setItemEnhanceLevel(prev => ({ ...prev, [selectedGear.id]: nextLvl }));
+
+      // Boost stats
+      selectedGear.score = Math.round(selectedGear.score * 1.08);
+      if (selectedGear.base.dmg) selectedGear.base.dmg = Math.round(selectedGear.base.dmg * 1.08);
+      if (selectedGear.base.armor) selectedGear.base.armor = Math.round(selectedGear.base.armor * 1.08);
+      if (selectedGear.base.hp) selectedGear.base.hp = Math.round(selectedGear.base.hp * 1.08);
+
+      // Recalculate hero derived stats
+      const s = useGame.getState();
+      const derived = computeDerived(s.level, s.stats, s.equipment, s.talents);
+      useGame.setState({ derived, playerAtk: Math.round((derived.dmgMin + derived.dmgMax) / 2) });
+
+      setLogMsg(`🎉 УСПЕХ ЗАТОЧКИ! ${selectedGear.name} усилен до +${nextLvl}! Боевая мощь: ⚡${fmt(selectedGear.score)}`);
+    } else {
+      // FAILED
+      sound.playBlock();
+      setLogMsg(`💥 ЗАТОЧКА НЕ УДАЛАСЬ! Шанс был ${successRate}%. Предмет сохранен благодаря защите.`);
+    }
   };
 
+  // Reforge Affixes Handler
+  const handleReforgeAffixes = () => {
+    if (!selectedGear) return;
+    const costEssence = 15;
+    const costGold = 3000;
+
+    if (astralEssence < costEssence || gold < costGold) {
+      setLogMsg(`⚠️ Для перековки требуется ${costEssence} Эссенций и ${fmt(costGold)} золота!`);
+      return;
+    }
+
+    sound.playSpell();
+    setAstralEssence(prev => prev - costEssence);
+    useGame.setState(s => ({ gold: s.gold - costGold }));
+
+    // Re-roll affixes
+    const possibleStats = ['dmg', 'armor', 'hp', 'crit', 'mana'];
+    selectedGear.affixes = [
+      { stat: possibleStats[Math.floor(Math.random() * possibleStats.length)] as any, value: 5 + Math.floor(Math.random() * 25), name: 'Астральный Всплеск' },
+      { stat: possibleStats[Math.floor(Math.random() * possibleStats.length)] as any, value: 5 + Math.floor(Math.random() * 25), name: 'Благословение Бездны' },
+    ];
+    selectedGear.score += 15;
+
+    const s = useGame.getState();
+    const derived = computeDerived(s.level, s.stats, s.equipment, s.talents);
+    useGame.setState({ derived, playerAtk: Math.round((derived.dmgMin + derived.dmgMax) / 2) });
+
+    setLogMsg(`🌀 ПЕРЕКОВКА ЗАВЕРШЕНА! Новые аффиксы получены для ${selectedGear.name}!`);
+  };
+
+  // Transmutation: Combine 3 items of same rarity into 1 item of higher rarity
+  const handleTransmute = () => {
+    if (transmuteItems.length < 3) {
+      setLogMsg('⚠️ Выберите ровно 3 предмета одной редкости для трансмутации!');
+      return;
+    }
+
+    const items = inventory.filter(i => transmuteItems.includes(i.id));
+    if (items.length < 3) return;
+
+    const baseRarity = items[0].rarity;
+    const rarityRanks: RarityId[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
+    const currentIdx = rarityRanks.indexOf(baseRarity);
+    const nextRarity = rarityRanks[Math.min(rarityRanks.length - 1, currentIdx + 1)];
+
+    sound.playHoly();
+
+    // Remove 3 source items
+    const remainingInv = inventory.filter(i => !transmuteItems.includes(i.id));
+    
+    // Create new higher tier item
+    const newItem = craftFromRecipe(CRAFTING_RECIPES[Math.floor(Math.random() * CRAFTING_RECIPES.length)], level);
+    newItem.rarity = nextRarity;
+    newItem.score = Math.round(newItem.score * 1.4);
+
+    useGame.setState(s => ({
+      inventory: [...remainingInv, newItem],
+      log: [...s.log, { id: Date.now(), text: `🌀 ТРАНСМУТАЦИЯ: Создан ${newItem.name} (${rarityById(nextRarity).name})!`, color: rarityById(nextRarity).color, time: Date.now() }]
+    }));
+
+    setTransmuteItems([]);
+    setLogMsg(`✨ ТРАНСМУТАЦИЯ УСПЕШНА! Получен ${newItem.name} повышенной редкости (${rarityById(nextRarity).name})!`);
+  };
+
+  // Bulk Salvage Trash
   const handleSalvageAllTrash = () => {
     const trash = inventory.filter(i => i.rarity === 'common' || i.rarity === 'uncommon');
-    if (trash.length === 0) return;
+    if (trash.length === 0) {
+      setLogMsg('ℹ️ В инвентаре нет обычных или необычных предметов для распила.');
+      return;
+    }
 
+    sound.playLoot();
     let gainedOre = 0;
     let gainedEssence = 0;
+
     trash.forEach(it => {
       const res = salvageItem(it);
-      gainedOre += res.ore;
-      gainedEssence += res.essence;
+      gainedOre += res.ore || 12;
+      gainedEssence += res.essence || 3;
     });
 
     const newInv = inventory.filter(i => i.rarity !== 'common' && i.rarity !== 'uncommon');
-    useGame.setState(s => ({
-      inventory: newInv,
-      astralOre: ((s as unknown as { astralOre: number }).astralOre ?? 0) + gainedOre,
-      astralEssence: ((s as unknown as { astralEssence: number }).astralEssence ?? 0) + gainedEssence,
-      log: [...s.log, { id: Date.now(), text: `🪵 Разобрано ${trash.length} предметов. Получено +${gainedOre} руды, +${gainedEssence} эссенций!`, color: '#38bdf8', time: Date.now() }],
-    }));
-  };
-
-  const handleCraftRune = (rune: RuneDef) => {
-    if (ore < rune.oreCost || essence < rune.essenceCost) return;
-    useGame.setState(s => ({
-      astralOre: ((s as unknown as { astralOre: number }).astralOre ?? 0) - rune.oreCost,
-      astralEssence: ((s as unknown as { astralEssence: number }).astralEssence ?? 0) - rune.essenceCost,
-      runesInventory: [...((s as unknown as { runesInventory: string[] }).runesInventory ?? []), rune.id],
-      log: [...s.log, { id: Date.now(), text: `🔮 Высечена руна: ${rune.name}!`, color: rune.color, time: Date.now() }],
-    }));
-  };
-
-  const handleSocketRuneToItem = (item: Item, runeId: string) => {
-    const rune = RUNES.find(r => r.id === runeId);
-    if (!rune) return;
-
-    // Apply stat bonus to item
-    const updatedItem: Item = { ...item };
-    if (rune.stat === 'dmg') updatedItem.dmg = (updatedItem.dmg ?? 0) + rune.value;
-    if (rune.stat === 'armor') updatedItem.armor = (updatedItem.armor ?? 0) + rune.value;
-    if (rune.stat === 'hp') updatedItem.hp = (updatedItem.hp ?? 0) + rune.value;
-    updatedItem.name = `${updatedItem.name} [${rune.name}]`;
-
-    // Remove 1 copy of runeId from player runes inventory
-    const newRunes = [...playerRunes];
-    const idx = newRunes.indexOf(runeId);
-    if (idx !== -1) newRunes.splice(idx, 1);
-
-    // Replace item in game inventory
-    const newInv = inventory.map(i => i.id === item.id ? updatedItem : i);
+    setAstralOre(prev => prev + gainedOre);
+    setAstralEssence(prev => prev + gainedEssence);
 
     useGame.setState(s => ({
       inventory: newInv,
-      runesInventory: newRunes,
-      log: [...s.log, { id: Date.now(), text: `✨ Вставлена ${rune.name} в предмете ${updatedItem.name}!`, color: '#4ade80', time: Date.now() }],
+      log: [...s.log, { id: Date.now(), text: `🪵 Разобрано ${trash.length} предметов. Получено +${gainedOre} руды, +${gainedEssence} эссенций!`, color: '#38bdf8', time: Date.now() }]
     }));
 
-    setSelectedItemForRune(null);
-  };
-
-  const formatTimer = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    setLogMsg(`🪵 Разобрано ${trash.length} предметов. Получено +${gainedOre} Астральной Руды и +${gainedEssence} Эссенций!`);
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 font-sans">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-3xl w-full p-4 shadow-2xl space-y-3 relative max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 font-sans">
+      <div className="bg-slate-950 border border-orange-500/50 rounded-2xl max-w-4xl w-full p-4 shadow-[0_0_60px_rgba(249,115,22,0.3)] space-y-3 relative max-h-[94vh] flex flex-col">
+        
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl p-2 bg-amber-500/10 border border-amber-500/30 rounded-2xl">🔨</span>
+        <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl p-1.5 bg-orange-500/10 border border-orange-500/30 rounded-xl shadow-[0_0_15px_rgba(249,115,22,0.4)]">🔨</span>
             <div>
-              <h2 className="font-extrabold text-sm text-slate-100 uppercase tracking-wider">
-                АСТРАЛЬНАЯ КУЗНИЦА, РАЗБОР И РУНЫ
+              <h2 className="font-black text-sm text-slate-100 uppercase tracking-wider flex items-center gap-2">
+                <span>КУЗНИЦА БЕЗДНЫ И ЗАКАЛКА (FORGE OF TITANS)</span>
               </h2>
-              <div className="text-[10px] text-slate-400 flex items-center gap-3 font-mono mt-0.5">
-                <span className="text-amber-300 font-bold">🪵 Руда: {ore}</span>
-                <span className="text-purple-300 font-bold">🔮 Эссенции: {essence}</span>
-                <span className="text-emerald-300 font-bold">💎 Сумка Рун: {playerRunes.length}</span>
+              <div className="text-[11px] text-slate-400 font-mono mt-0.5 flex items-center gap-3">
+                <span>Руда: <b className="text-amber-300 font-black">🪵 {fmt(astralOre)} штук</b></span>
+                <span>·</span>
+                <span>Эссенция: <b className="text-cyan-300 font-black">🧪 {fmt(astralEssence)} штук</b></span>
+                <span>·</span>
+                <span>Золото: <b className="text-yellow-300 font-black">🪙 {fmt(gold)} золота</b></span>
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300 font-bold text-sm flex items-center justify-center transition-colors">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-xl bg-slate-900 hover:bg-red-900/60 text-slate-400 hover:text-red-300 font-bold text-sm flex items-center justify-center border border-slate-800 transition-colors"
+          >
             ✕
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800 shrink-0">
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 shrink-0">
           <button
-            onClick={() => setTab('craft')}
-            className={`flex-1 py-2 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 ${
-              tab === 'craft' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            onClick={() => setTab('temper')}
+            className={`flex-1 text-xs py-2 px-3 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 ${
+              tab === 'temper' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <span>🔨</span>
-            <span>Выплавка Рецептов</span>
+            <span>Заточка (+1...+20)</span>
           </button>
+
+          <button
+            onClick={() => setTab('reforge')}
+            className={`flex-1 text-xs py-2 px-3 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 ${
+              tab === 'reforge' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>🌀</span>
+            <span>Перековка & Трансмутация</span>
+          </button>
+
+          <button
+            onClick={() => setTab('craft')}
+            className={`flex-1 text-xs py-2 px-3 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 ${
+              tab === 'craft' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>⚒️</span>
+            <span>Крафт Сетов</span>
+          </button>
+
           <button
             onClick={() => setTab('salvage')}
-            className={`flex-1 py-2 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 ${
-              tab === 'salvage' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            className={`flex-1 text-xs py-2 px-3 rounded-lg font-extrabold transition-all flex items-center justify-center gap-1.5 ${
+              tab === 'salvage' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <span>🪵</span>
-            <span>Разбор Лута</span>
-          </button>
-          <button
-            onClick={() => setTab('sockets')}
-            className={`flex-1 py-2 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 ${
-              tab === 'sockets' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <span>🔮</span>
-            <span>Крафт и Вставка Рун</span>
+            <span>Распил (Salvage)</span>
           </button>
         </div>
 
-        {/* Tab Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
-          {/* TAB 1: CRAFTING RECIPES */}
-          {tab === 'craft' && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                <div className="text-[11px] font-bold text-slate-300">
-                  🔥 Ассортимент рецептов кузницы (Смена каждые 3 мин)
-                </div>
-                <div className="flex items-center gap-2 font-mono text-[10px]">
-                  <span className="text-amber-300 font-black">⏱️ {formatTimer(recipeTimer)}</span>
-                  <button
-                    onClick={refreshRecipes}
-                    className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded border border-slate-700 font-bold"
-                  >
-                    🔄 Сменить
-                  </button>
-                </div>
+        {/* Tab 1: Tempering (+1 ... +20) */}
+        {tab === 'temper' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 min-h-0 overflow-y-auto pr-1">
+            
+            {/* Gear Selector */}
+            <div className="p-3 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
+              <div className="font-black text-xs text-orange-300 uppercase tracking-wider">
+                1. Выберите Предмет для Заточки
               </div>
+              <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+                {allGear.map(item => {
+                  const r = rarityById(item.rarity);
+                  const isSelected = selectedGear?.id === item.id;
+                  const enhLvl = itemEnhanceLevel[item.id] || 0;
 
-              <div className="space-y-2">
-                {activeRecipes.map(rec => (
-                  <div key={rec.id} className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition-all">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl p-2 bg-slate-900 rounded-xl border border-slate-800">{rec.icon}</span>
-                      <div>
-                        <div className="font-extrabold text-xs text-amber-300">{rec.name}</div>
-                        <div className="text-[10px] text-slate-300 leading-snug">{rec.desc}</div>
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setSelectedGear(item)}
+                      className={`w-full p-2 rounded-xl border flex items-center justify-between gap-2 text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-orange-950/80 border-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.4)] ring-1 ring-orange-400'
+                          : 'bg-slate-950/60 border-slate-800 hover:bg-slate-850'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-7 h-7 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-sm shrink-0">
+                          {item.icon}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-xs font-black truncate" style={{ color: r.color }}>
+                            {item.name} {enhLvl > 0 && <span className="text-amber-300 font-mono font-black">+{enhLvl}</span>}
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            {r.name} · Урон: {item.base.dmg || 0} · Броня: {item.base.armor || 0}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-amber-300 bg-slate-900 px-2 py-0.5 rounded-md shrink-0">
+                        ⚡{fmt(item.score)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tempering Anvil Box */}
+            <div className="p-4 bg-slate-900 border border-orange-500/40 rounded-2xl flex flex-col justify-between space-y-3 shadow-inner">
+              {selectedGear ? (() => {
+                const curLvl = itemEnhanceLevel[selectedGear.id] || 0;
+                const nextLvl = curLvl + 1;
+                const goldCost = Math.round((curLvl + 1) * 1200 * (1 + curLvl * 0.15));
+                const oreCost = (curLvl + 1) * 10;
+                const successRate = Math.max(30, 100 - curLvl * 4);
+                const r = rarityById(selectedGear.rarity);
+
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-3xl p-2 bg-slate-950 rounded-xl border border-slate-800">{selectedGear.icon}</span>
+                        <div>
+                          <div className="text-sm font-black" style={{ color: r.color }}>
+                            {selectedGear.name} <span className="text-amber-300 font-mono">+{curLvl}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-400 font-mono">
+                            Текущая мощь: <b className="text-amber-300">⚡{fmt(selectedGear.score)}</b>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-black text-emerald-400 bg-slate-950 px-3 py-1 rounded-xl border border-slate-800">
+                        Шанс: {successRate}%
+                      </span>
+                    </div>
+
+                    {/* Progress Bar +1 to +20 */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] font-black text-slate-400">
+                        <span>Уровень заточки: +{curLvl}</span>
+                        <span>Цель: +{nextLvl} (Макс: +20)</span>
+                      </div>
+                      <div className="h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                        <div
+                          className="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 transition-all duration-300"
+                          style={{ width: `${(curLvl / 20) * 100}%` }}
+                        />
                       </div>
                     </div>
+
+                    {/* Upgrade Cost Details */}
+                    <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 grid grid-cols-2 gap-2 text-xs font-mono">
+                      <div>💰 Золото: <b className={gold >= goldCost ? 'text-amber-300' : 'text-red-400'}>{fmt(goldCost)} золота</b></div>
+                      <div>🪵 Руда: <b className={astralOre >= oreCost ? 'text-amber-300' : 'text-red-400'}>{oreCost} штук</b></div>
+                    </div>
+
                     <button
-                      onClick={() => handleCraft(rec)}
-                      className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 font-extrabold text-white text-[10px] uppercase shadow-md active:scale-95 shrink-0"
+                      onClick={handleTemperItem}
+                      disabled={curLvl >= 20}
+                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 hover:scale-[1.01] text-white font-black text-xs border border-orange-400 shadow-xl transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      🔨 Ковать
+                      <span>🔥</span>
+                      <span>{curLvl >= 20 ? 'Максимальный уровень (+20)' : `Закалить до +${nextLvl}`}</span>
                     </button>
                   </div>
-                ))}
+                );
+              })() : (
+                <div className="h-full flex flex-col items-center justify-center text-slate-500 text-xs text-center py-12">
+                  <span className="text-4xl mb-2">🔨</span>
+                  <span>Выберите предмет из списка слева для заточки на наковальне</span>
+                </div>
+              )}
+
+              {/* Status Log Box */}
+              <div className="p-2.5 bg-orange-950/40 border border-orange-500/40 rounded-xl text-xs text-orange-200 font-mono shadow">
+                {logMsg}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* TAB 2: SALVAGE */}
-          {tab === 'salvage' && (
-            <div className="space-y-4 p-4 text-center bg-slate-950/80 rounded-2xl border border-slate-800">
-              <div className="text-3xl">🪵</div>
-              <h3 className="font-extrabold text-sm text-slate-100">Автоматический Разбор Наград и Хлама</h3>
-              <p className="text-xs text-slate-300 max-w-md mx-auto">
-                Автоматически расщепляйте ненужное снаряжение из сумки на ценную Астральную Руду и Эссенции для кузнечного производства.
+        {/* Tab 2: Reforge & Transmute */}
+        {tab === 'reforge' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 min-h-0 overflow-y-auto pr-1">
+            {/* Reforge Affixes Box */}
+            <div className="p-3 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+              <div className="font-black text-xs text-orange-300 uppercase">
+                🌀 Перековка Аффиксов
+              </div>
+              <p className="text-xs text-slate-300">
+                Перебросьте случайные бонусные свойства выбранного предмета за Астральные Эссенции!
               </p>
-              <button
-                onClick={handleSalvageAllTrash}
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 font-black text-white text-xs uppercase shadow-xl hover:scale-105 active:scale-95 transition-all border border-orange-400"
-              >
-                🪵 Переплавить весь мусор (Обычные / Необычные)
-              </button>
+              {selectedGear ? (
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                  <div className="text-xs font-black text-slate-100">{selectedGear.name}</div>
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    Требуется: 15x Эссенций · {fmt(3000)} золота
+                  </div>
+                  <button
+                    onClick={handleReforgeAffixes}
+                    className="w-full py-2 px-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-black text-xs transition-all active:scale-95 cursor-pointer"
+                  >
+                    Перековать Аффиксы
+                  </button>
+                </div>
+              ) : (
+                <div className="text-xs text-slate-500 py-6 text-center">
+                  Выберите предмет во вкладке «Заточка»
+                </div>
+              )}
             </div>
-          )}
 
-          {/* TAB 3: RUNES & SOCKETING */}
-          {tab === 'sockets' && (
-            <div className="space-y-4">
-              {/* Rune Inscription Section */}
-              <div className="p-3 rounded-2xl bg-purple-950/30 border border-purple-500/40 space-y-2">
-                <div className="font-extrabold text-xs text-purple-300">
-                  🔮 Астральная Гравировка и Вставка Рун в Снаряжение
-                </div>
-                <div className="text-[10px] text-slate-300">
-                  Выберите предмет из инвентаря для вставки скрафченной руны:
-                </div>
-
-                {/* Inventory Picker for Socketing */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto pr-1">
+            {/* Transmutation Box */}
+            <div className="p-3 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+              <div className="font-black text-xs text-orange-300 uppercase">
+                ✨ Трансмутация (3 предмета в 1)
+              </div>
+              <p className="text-xs text-slate-300">
+                Выберите 3 предмета одинаковой редкости из инвентаря для создания 1 предмета повышенной редкости!
+              </p>
+              <div className="space-y-2">
+                <div className="max-h-32 overflow-y-auto space-y-1">
                   {inventory.map(item => {
+                    const isPicked = transmuteItems.includes(item.id);
                     const r = rarityById(item.rarity);
-                    const isSelected = selectedItemForRune?.id === item.id;
                     return (
                       <button
                         key={item.id}
-                        onClick={() => setSelectedItemForRune(item)}
-                        className={`p-1.5 rounded-xl border text-left flex items-center gap-2 transition-all ${
-                          isSelected
-                            ? 'bg-purple-900/60 border-purple-400 ring-2 ring-purple-400'
-                            : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                        onClick={() => {
+                          if (isPicked) setTransmuteItems(prev => prev.filter(id => id !== item.id));
+                          else if (transmuteItems.length < 3) setTransmuteItems(prev => [...prev, item.id]);
+                        }}
+                        className={`w-full p-1.5 rounded-lg border text-xs flex items-center justify-between ${
+                          isPicked ? 'bg-orange-950 border-orange-400 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'
                         }`}
                       >
-                        <span className="text-xl">{item.icon}</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-[10px] truncate" style={{ color: r.color }}>{item.name}</div>
-                          <div className="text-[9px] text-slate-400 font-mono">ilvl {item.ilvl}</div>
-                        </div>
+                        <span style={{ color: r.color }}>{item.name}</span>
+                        <span>{isPicked ? '✅' : '➕'}</span>
                       </button>
                     );
                   })}
                 </div>
-
-                {/* Socketing Confirmation */}
-                {selectedItemForRune && (
-                  <div className="p-2.5 rounded-xl bg-slate-900 border border-purple-500/60 space-y-2 mt-2">
-                    <div className="text-[10px] text-purple-200 font-bold">
-                      Выбран предмет: <b className="text-slate-100">{selectedItemForRune.name}</b>. Нажмите на руну ниже для вставки:
-                    </div>
-                    {playerRunes.length === 0 ? (
-                      <div className="text-[10px] text-red-400">У вас нет готовых рун в сумке! Высеките их ниже.</div>
-                    ) : (
-                      <div className="flex flex-wrap gap-1.5">
-                        {playerRunes.map((runeId, i) => {
-                          const rDef = RUNES.find(r => r.id === runeId);
-                          if (!rDef) return null;
-                          return (
-                            <button
-                              key={i}
-                              onClick={() => handleSocketRuneToItem(selectedItemForRune, runeId)}
-                              className="px-2.5 py-1 rounded-lg bg-purple-950 border border-purple-500/60 text-purple-200 text-[10px] font-bold hover:bg-purple-800 transition-all flex items-center gap-1 shadow"
-                            >
-                              <span>{rDef.icon}</span>
-                              <span>{rDef.name}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Craftable Runes List */}
-              <div className="space-y-2">
-                <div className="text-[11px] font-extrabold text-slate-200 uppercase tracking-wider">
-                  💎 Алтарь Высечения Древних Рун (Рецепты Рун)
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {RUNES.map(r => {
-                    const canAfford = ore >= r.oreCost && essence >= r.essenceCost;
-                    return (
-                      <div key={r.id} className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-2 shadow-sm">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-2xl p-1 bg-slate-900 rounded-lg">{r.icon}</span>
-                          <div className="min-w-0">
-                            <div className="font-bold text-xs truncate" style={{ color: r.color }}>{r.name}</div>
-                            <div className="text-[10px] text-slate-300 font-mono">{r.desc}</div>
-                            <div className="text-[9px] text-slate-400 font-mono">
-                              🪵 {r.oreCost} руды · 🔮 {r.essenceCost} эссенций
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleCraftRune(r)}
-                          disabled={!canAfford}
-                          className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-[10px] shrink-0 disabled:opacity-40 transition-all active:scale-95 shadow"
-                        >
-                          🔮 Высечь
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+                <button
+                  onClick={handleTransmute}
+                  disabled={transmuteItems.length < 3}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:scale-105 disabled:opacity-40 text-white font-black text-xs transition-all active:scale-95 cursor-pointer"
+                >
+                  Трансмутировать ({transmuteItems.length}/3)
+                </button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Tab 3: Crafting Sets */}
+        {tab === 'craft' && (
+          <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {CRAFTING_RECIPES.map(rec => {
+                const r = rarityById(rec.targetRarity);
+                const canCraft = astralOre >= rec.oreCost && astralEssence >= rec.essenceCost;
+
+                return (
+                  <div key={rec.id} className="p-3 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col justify-between space-y-2 shadow">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl p-1.5 bg-slate-950 rounded-xl border border-slate-800">{rec.icon}</span>
+                      <div>
+                        <div className="font-black text-xs" style={{ color: r.color }}>{rec.name}</div>
+                        <div className="text-[10px] text-slate-400">{rec.slot} · {r.name}</div>
+                      </div>
+                    </div>
+                    <div className="text-[10px] font-mono text-slate-400 flex justify-between bg-slate-950 p-2 rounded-lg border border-slate-800">
+                      <span>Руда: {rec.oreCost} штук</span>
+                      <span>Эссенция: {rec.essenceCost} штук</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!canCraft || inventory.length >= 72) return;
+                        sound.playEquip();
+                        setAstralOre(prev => prev - rec.oreCost);
+                        setAstralEssence(prev => prev - rec.essenceCost);
+                        const item = craftFromRecipe(rec, level);
+                        useGame.setState(s => ({
+                          inventory: [...s.inventory, item],
+                          log: [...s.log, { id: Date.now(), text: `🔨 Скован предмет: ${item.name}!`, color: '#facc15', time: Date.now() }]
+                        }));
+                        setLogMsg(`🔨 Вы сковали ${item.name}!`);
+                      }}
+                      disabled={!canCraft}
+                      className="w-full py-2 px-3 rounded-xl bg-orange-600 hover:bg-orange-500 disabled:opacity-40 text-white font-black text-xs transition-all active:scale-95 cursor-pointer"
+                    >
+                      Выплавить
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Bulk Salvage */}
+        {tab === 'salvage' && (
+          <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl text-center space-y-3 flex-1 min-h-0 overflow-y-auto">
+            <span className="text-5xl animate-bounce inline-block">🪵</span>
+            <h3 className="font-black text-base text-orange-300 uppercase">Распил Ненужного Снаряжения</h3>
+            <p className="text-xs text-slate-300 max-w-md mx-auto">
+              Мгновенно распилите все обычные и необычные предметы в инвентаре на Астральную Руду и Эссенции для заточки!
+            </p>
+            <button
+              onClick={handleSalvageAllTrash}
+              className="py-3 px-8 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:scale-105 text-white font-black text-xs border border-orange-400 shadow-2xl transition-all active:scale-95 cursor-pointer"
+            >
+              Разобрать весь хлам на материалы
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
